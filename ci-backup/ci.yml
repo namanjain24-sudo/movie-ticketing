@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    # The suite runs against a real Postgres, never a mock. Every claim this
+    # project makes is about behaviour under concurrent transactions, which a
+    # fake database cannot exhibit.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ticketing
+          POSTGRES_PASSWORD: ticketing
+          POSTGRES_DB: ticketing_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U ticketing -d ticketing_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+          --tmpfs /var/lib/postgresql/data
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate --workspace @app/api
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Includes the concurrency suite: real simultaneous HTTP requests against
+      # a real database, asserting no seat is ever held twice and no booking is
+      # ever charged twice.
+      - name: Test
+        run: npm test
+
+      # The tests assert behaviour; this asserts the data. It runs against the
+      # database the suite just left behind, so a test that passed while
+      # corrupting state still fails the build.
+      - name: Verify invariants
+        run: npm run verify:invariants
+        env:
+          DATABASE_URL: postgresql://ticketing:ticketing@localhost:5434/ticketing_test
+          REDIS_URL: redis://localhost:6380
+          JWT_ACCESS_SECRET: ci-access-secret-long-enough-for-validation-ok
+          JWT_REFRESH_SECRET: ci-refresh-secret-long-enough-for-validation
+          LOG_LEVEL: fatal
