@@ -1,0 +1,262 @@
+{
+  "fetchedAt": "2026-09-14T05:12:31.379Z",
+  "nowShowing": [
+    {
+      "slug": "jawan",
+      "title": "Jawan",
+      "wikipedia": "Jawan_(film)",
+      "tmdbQuery": {
+        "query": "Jawan",
+        "year": 2023
+      },
+      "durationMins": 169,
+      "certification": "UA",
+      "languages": ["Hindi", "Tamil", "Telugu"],
+      "genres": ["Action", "Thriller"],
+      "synopsis": "Jawan (transl.\u2009Soldier) is a 2023 Indian Hindi-language action thriller film co-written and directed by Atlee in his Hindi film debut, and produced by Gauri Khan under Red Chillies Entertainment. It stars Shah Rukh Khan in a dual role alongside Vijay Sethupathi, Nayanthara, Deepika Padukone, Priyamani, Sanya Malhotra, and Sunil Grover. In the film, a vigilante recruits inmates and commits acts that shed light on corruption in India.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/3/39/Jawan_film_poster.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "pathaan",
+      "title": "Pathaan",
+      "wikipedia": "Pathaan_(film)",
+      "tmdbQuery": {
+        "query": "Pathaan",
+        "year": 2023
+      },
+      "durationMins": 146,
+      "certification": "UA",
+      "languages": ["Hindi"],
+      "genres": ["Action", "Thriller"],
+      "synopsis": "Pathaan is a 2023 Indian Hindi-language action thriller film directed by Siddharth Anand and produced by Aditya Chopra under Yash Raj Films. The film stars Shah Rukh Khan in the titular role, alongside Deepika Padukone, John Abraham, Dimple Kapadia, and Ashutosh Rana. It is the fourth installment in the YRF Spy Universe and the first installment in the universe to establish crossovers between characters from other universe films. The film follows an exiled RAW agent who works with an ISI agent to take down a former RAW agent turned rogue, who plans to attack India with a deadly lab-generated virus.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/c/c3/Pathaan_film_poster.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "12th-fail",
+      "title": "12th Fail",
+      "wikipedia": "12th_Fail",
+      "tmdbQuery": {
+        "query": "12th Fail",
+        "year": 2023
+      },
+      "durationMins": 147,
+      "certification": "U",
+      "languages": ["Hindi"],
+      "genres": ["Drama", "Biography"],
+      "synopsis": "12th Fail is a 2023 Indian Hindi-language biographical drama film directed, produced and written by Vidhu Vinod Chopra, and jointly written and edited by Chopra and Jaskunwar Kohli. It is based on the 2019 eponymous non-fiction book by Anurag Pathak about Manoj Kumar Sharma, who overcame extreme poverty to become an Indian Police Service officer, and Shraddha Joshi, who became an Indian Revenue Service officer and married Sharma. The film stars Vikrant Massey as Sharma and Medha Shankr as Joshi, alongside Anant Joshi, Anshumaan Pushkar and Priyanshu Chatterjee.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/f/f2/12th_Fail_poster.jpeg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "laapataa-ladies",
+      "title": "Laapataa Ladies",
+      "wikipedia": "Laapataa_Ladies",
+      "tmdbQuery": {
+        "query": "Laapataa Ladies",
+        "year": 2023
+      },
+      "durationMins": 122,
+      "certification": "U",
+      "languages": ["Hindi"],
+      "genres": ["Comedy", "Drama"],
+      "synopsis": "Laapataa Ladies, released internationally as Lost Ladies, is a 2023 Indian Hindi-language comedy-drama film directed by Kiran Rao, and produced by Rao, Aamir Khan, and Jyoti Deshpande. It stars Sparsh Shrivastava, Nitanshi Goel, Pratibha Ranta, Chhaya Kadam and Ravi Kishan, and tells the story of two young newly-wed brides who get exchanged during a train ride to their husband's homes.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/5/52/Laapataa_Ladies_poster.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "animal",
+      "title": "Animal",
+      "wikipedia": "Animal_(2023_Indian_film)",
+      "tmdbQuery": {
+        "query": "Animal",
+        "year": 2023
+      },
+      "durationMins": 201,
+      "certification": "A",
+      "languages": ["Hindi", "Telugu"],
+      "genres": ["Action", "Crime", "Drama"],
+      "synopsis": "Animal is a 2023 Indian Hindi-language action drama film co-written, directed and edited by Sandeep Reddy Vanga, dipanshu, kunal and jointly produced by T-Series Films, Bhadrakali Pictures and Cine1 Studios. The film stars Ranbir Kapoor, Anil Kapoor, Bobby Deol, Rashmika Mandanna and Triptii Dimri. The film follows Ranvijay Singh and his troubled relationship with his industrialist father, Balbir Singh. After spending years abroad, Ranvijay learns about an unsuccessful assassination attempt on Balbir and returns home, embarking on a ruthless quest for vengeance.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/9/90/Animal_%282023_film%29_poster.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "stree-2",
+      "title": "Stree 2",
+      "wikipedia": "Stree_2",
+      "tmdbQuery": {
+        "query": "Stree 2",
+        "year": 2024
+      },
+      "durationMins": 149,
+      "certification": "UA",
+      "languages": ["Hindi"],
+      "genres": ["Horror", "Comedy"],
+      "synopsis": "Stree 2: Sarkate Ka Aatank is a 2024 Indian Hindi-language comedy horror film directed by Amar Kaushik, written by Niren Bhatt and produced jointly by Maddock Films and Jio Studios. A sequel to Stree (2018), which spawned the Maddock Horror Comedy Universe, it serves as the fourth instalment in the franchise. The film stars Shraddha Kapoor,Rajkummar Rao, Pankaj Tripathi, Abhishek Banerjee and Aparshakti Khurana and as a group of friends who must defeat Sarkata, a headless malevolent entity abducting the women of Chanderi.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/a/a1/Stree_2.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "kalki-2898-ad",
+      "title": "Kalki 2898 AD",
+      "wikipedia": "Kalki_2898_AD",
+      "tmdbQuery": {
+        "query": "Kalki 2898 AD",
+        "year": 2024
+      },
+      "durationMins": 181,
+      "certification": "UA",
+      "languages": ["Telugu", "Hindi"],
+      "genres": ["Science Fiction", "Action"],
+      "synopsis": "Kalki 2898 AD is a 2024 Indian Telugu-language epic mythological science fiction film written and directed by Nag Ashwin. Produced by Vyjayanthi Movies, it features an ensemble cast including Amitabh Bachchan, Kamal Haasan, Prabhas, Deepika Padukone, Shobana and Disha Patani. Inspired by Hindu scriptures, the film serves as the first installment in the planned Kalki Cinematic Universe. Set in a dystopian future in the year 2898 AD in the city of Kashi, the story follows a group on a mission to protect lab subject SUM-80's unborn child, believed to be Kalki, the final incarnation of Vishnu.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/4/4c/Kalki_2898_AD.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "dune-part-two",
+      "title": "Dune: Part Two",
+      "wikipedia": "Dune:_Part_Two",
+      "tmdbQuery": {
+        "query": "Dune: Part Two",
+        "year": 2024
+      },
+      "durationMins": 166,
+      "certification": "UA",
+      "languages": ["English"],
+      "genres": ["Science Fiction", "Adventure"],
+      "synopsis": "Dune: Part Two is a 2024 American epic space opera film directed by Denis Villeneuve, from a screenplay he wrote with Jon Spaihts. It is a sequel to Dune (2021), is the second film in a two-part adaptation of Frank Herbert's 1965 science fiction novel Dune, and is the second of a trilogy of films developed by Legendary Pictures. Timoth\u00e9e Chalamet leads an ensemble cast as Paul Atreides, an exiled monarch who allies with the Fremen to overthrow House Harkonnen as part of a quest to become a messianic figure. Villeneuve produced Dune: Part Two with his wife and business partner Tanya Lapointe, Mary Parent and Cale Boyter of Legendary Pictures, and Patrick McCormick. Funding came from a distribution agreement between Legendary and Warner Bros. Pictures, as well as tax subsidies from Hungarian, Jordanian, and Abu Dhabi governments.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/5/52/Dune_Part_Two_poster.jpeg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "oppenheimer",
+      "title": "Oppenheimer",
+      "wikipedia": "Oppenheimer_(film)",
+      "tmdbQuery": {
+        "query": "Oppenheimer",
+        "year": 2023
+      },
+      "durationMins": 180,
+      "certification": "A",
+      "languages": ["English"],
+      "genres": ["Drama", "Biography"],
+      "synopsis": "Oppenheimer is a 2023 epic biographical thriller film written, co-produced, and directed by Christopher Nolan. It follows the life of J.\u00a0Robert Oppenheimer, the American theoretical physicist who helped develop the first nuclear weapons during World War II. Based on the 2005 biography American Prometheus by Kai Bird and Martin J. Sherwin, the film dramatizes Oppenheimer's studies, his direction of the Los Alamos Laboratory and his 1954 security hearing. Cillian Murphy stars as Oppenheimer, alongside Robert Downey Jr. as the United States Atomic Energy Commission member Lewis Strauss. The ensemble supporting cast includes Emily Blunt, Matt Damon, Florence Pugh, Josh Hartnett, Casey Affleck, Rami Malek, and Kenneth Branagh.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/4/4a/Oppenheimer_%28film%29.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "inside-out-2",
+      "title": "Inside Out 2",
+      "wikipedia": "Inside_Out_2",
+      "tmdbQuery": {
+        "query": "Inside Out 2",
+        "year": 2024
+      },
+      "durationMins": 96,
+      "certification": "U",
+      "languages": ["English", "Hindi"],
+      "genres": ["Animation", "Family"],
+      "synopsis": "Inside Out 2 is a 2024 American animated coming-of-age film directed by Kelsey Mann and written by Meg LeFauve and Dave Holstein. Produced by Pixar Animation Studios for Walt Disney Pictures, it is the sequel to Inside Out (2015). Amy Poehler, Phyllis Smith, Lewis Black, Diane Lane, and Kyle MacLachlan reprise their roles from the first film, with Maya Hawke, Kensington Tallman, Liza Lapira, Tony Hale, Ayo Edebiri, Lilimar, Grace Lu, Sumayyah Nuriddin-Green, Ad\u00e8le Exarchopoulos, and Paul Walter Hauser joining the cast. The film follows Riley's emotions unexpectedly joined by new emotions, eager to take control of her mind.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/f/f7/Inside_Out_2_poster.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "3-idiots",
+      "title": "3 Idiots",
+      "wikipedia": "3_Idiots",
+      "tmdbQuery": {
+        "query": "3 Idiots",
+        "year": 2009
+      },
+      "durationMins": 170,
+      "certification": "U",
+      "languages": ["Hindi"],
+      "genres": ["Comedy", "Drama"],
+      "synopsis": "3 Idiots is a 2009 Indian Hindi-language coming-of-age comedy-drama film written, edited and directed by Rajkumar Hirani, co-written by Abhijat Joshi and produced by Vidhu Vinod Chopra. The film stars Aamir Khan, R. Madhavan and Sharman Joshi in the title roles, while Kareena Kapoor, Boman Irani, Mona Singh and Omi Vaidya play supporting roles. Narrated through two parallel timelines, one in the present and the other set ten years earlier, the story follows the friendship of three students at an Indian engineering college and is a satire about the intrinsic paternalism under the Indian education system.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/d/df/3_idiots_poster.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "interstellar",
+      "title": "Interstellar",
+      "wikipedia": "Interstellar_(film)",
+      "tmdbQuery": {
+        "query": "Interstellar",
+        "year": 2014
+      },
+      "durationMins": 169,
+      "certification": "UA",
+      "languages": ["English"],
+      "genres": ["Science Fiction", "Drama"],
+      "synopsis": "Interstellar is a 2014 epic science fiction drama film directed by Christopher Nolan, who co-wrote the screenplay with his brother, Jonathan Nolan. It features an ensemble cast led by Matthew McConaughey, Anne Hathaway, Jessica Chastain, Bill Irwin, Ellen Burstyn, and Michael Caine. Set in a dystopian future where Earth is suffering from catastrophic blight and famine, the film follows a group of astronauts who travel through space in search of a new home for humanity.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    }
+  ],
+  "comingSoon": [
+    {
+      "slug": "the-godfather",
+      "title": "The Godfather",
+      "wikipedia": "The_Godfather",
+      "tmdbQuery": {
+        "query": "The Godfather",
+        "year": 1972
+      },
+      "durationMins": 175,
+      "certification": "A",
+      "languages": ["English"],
+      "genres": ["Crime", "Drama"],
+      "synopsis": "The Godfather is a 1972 American epic gangster film directed by Francis Ford Coppola, who co-wrote the screenplay with Mario Puzo based on Puzo's best-selling 1969 novel. The film features an ensemble cast that includes Marlon Brando, Al Pacino, James Caan, Richard Castellano, Robert Duvall, Sterling Hayden, John Marley, Richard Conte and Diane Keaton. It is the first installment in The Godfather trilogy, which chronicles the Corleone family under patriarch Vito Corleone (Brando) and the transformation of his youngest son, Michael Corleone (Pacino), from reluctant family outsider to ruthless Mafia boss.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/1/1c/Godfather_ver1.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "spirited-away",
+      "title": "Spirited Away",
+      "wikipedia": "Spirited_Away",
+      "tmdbQuery": {
+        "query": "Spirited Away",
+        "year": 2001
+      },
+      "durationMins": 125,
+      "certification": "U",
+      "languages": ["Japanese", "English"],
+      "genres": ["Animation", "Fantasy"],
+      "synopsis": "Spirited Away is a 2001 Japanese animated fantasy film written and directed by Hayao Miyazaki. It was produced by Toshio Suzuki, animated by Studio Ghibli, and distributed by Toho. The film stars Rumi Hiiragi, alongside Miyu Irino, Mari Natsuki, Takashi Naito, Yasuko Sawaguchi, Tsunehiko Kamij\u014d, Takehiko Ono, and Bunta Sugawara. It follows a young girl named Chihiro \"Sen\" Ogino, who moves to a new neighborhood and inadvertently enters the world of kami. After her parents are turned into pigs by the witch Yubaba, Chihiro takes a job working in Yubaba's bathhouse to find a way to free herself and her parents and return to the human world.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/d/db/Spirited_Away_Japanese_poster.png",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    },
+    {
+      "slug": "sholay",
+      "title": "Sholay",
+      "wikipedia": "Sholay",
+      "tmdbQuery": {
+        "query": "Sholay",
+        "year": 1975
+      },
+      "durationMins": 204,
+      "certification": "UA",
+      "languages": ["Hindi"],
+      "genres": ["Action", "Adventure"],
+      "synopsis": "Sholay is a 1975 Indian Hindi-language action-adventure film directed by Ramesh Sippy, produced by his father G. P. Sippy, and written by Salim\u2013Javed. The film follows two criminals, Veeru (Dharmendra) and Jai, who are hired by a retired police officer to capture the ruthless bandit Gabbar Singh. Hema Malini and Jaya Bhaduri also star as Veeru and Jai's love interests, Basanti and Radha, respectively. The soundtrack was composed by R. D. Burman.",
+      "posterUrl": "https://upload.wikimedia.org/wikipedia/en/5/52/Sholay-poster.jpg",
+      "backdropUrl": null,
+      "source": "wikipedia"
+    }
+  ]
+}

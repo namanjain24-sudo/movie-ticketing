@@ -1,0 +1,85 @@
+# Local infrastructure. The API and the Expo app run on the host; only the
+# stateful pieces live in containers so a `docker compose down -v` is always a
+# clean slate.
+#
+# Postgres is not optional. The booking mechanic is built on `SELECT ... FOR
+# UPDATE` row locks, which SQLite cannot express, so correctness under
+# concurrency can only be demonstrated here.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ticketing-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ticketing
+      POSTGRES_PASSWORD: ticketing
+      POSTGRES_DB: ticketing
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # max_connections is raised because the load test opens far more concurrent
+    # transactions than the default 100 allows.
+    command:
+      - postgres
+      - -c
+      - max_connections=300
+      - -c
+      - log_min_duration_statement=500
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ticketing -d ticketing']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # A second database on the same server, used only by `npm test`. Kept
+  # separate so a test run can truncate everything without touching dev data.
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: ticketing-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ticketing
+      POSTGRES_PASSWORD: ticketing
+      POSTGRES_DB: ticketing_test
+    ports:
+      - '5434:5432'
+    # tmpfs: the test database is disposable, so trade durability for speed.
+    tmpfs:
+      - /var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+      - -c
+      - max_connections=300
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ticketing -d ticketing_test']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: ticketing-redis
+    restart: unless-stopped
+    ports:
+      - '6380:6379'
+    # appendonly is off deliberately. Redis holds no source of truth in this
+    # system: seat state lives in Postgres, Redis only carries pub/sub fanout
+    # and rate-limit counters. Losing it must be survivable, and the chaos
+    # suite proves it.
+    command: ['redis-server', '--appendonly', 'no']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:

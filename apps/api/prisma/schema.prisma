@@ -1,0 +1,476 @@
+// Postgres, not SQLite. The entire booking mechanic rests on `SELECT ... FOR
+// UPDATE` row locks (see modules/holds/holds.service.ts), which SQLite has no
+// equivalent for. Run `docker compose up -d` before migrating.
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------------------------
+// Accounts
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  holds         Hold[]
+  bookings      Booking[]
+  reviews       Review[]
+  watchlist     WatchlistItem[]
+
+  @@index([email])
+}
+
+/// One row per issued refresh token. The raw token is never stored, only a
+/// SHA-256 hash, so a database leak cannot be replayed against the API.
+/// Rotation revokes the old row and writes a new one on every refresh.
+model RefreshToken {
+  id        String    @id
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// Catalogue
+// ---------------------------------------------------------------------------
+
+model Movie {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  synopsis      String
+  posterUrl     String
+  backdropUrl   String?
+  durationMins  Int
+  certification String
+  languages     String[]
+  genres        String[]
+  releaseDate   DateTime
+  isNowShowing  Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  showtimes Showtime[]
+  reviews   Review[]
+  savedBy   WatchlistItem[]
+
+  @@index([isNowShowing, releaseDate])
+}
+
+/// A rating and an optional note, written by a signed-in user about a film.
+///
+/// `@@unique([userId, movieId])` is the whole moderation policy: one person,
+/// one review. Editing means updating that row, so the aggregate cannot be
+/// moved by posting the same opinion repeatedly.
+model Review {
+  id        String   @id @default(cuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Whole stars, 1–5. Half stars read precisely but are not, and the range is
+  /// enforced at the edge as well as here.
+  rating    Int
+  body      String?
+  /// True when the author has a confirmed booking for this film. The app marks
+  /// these, because "saw it" is the only credential a film review has.
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, movieId])
+  @@index([movieId, createdAt])
+  @@index([movieId, rating])
+}
+
+/// A film a user has saved for later. The composite key is the whole policy:
+/// saving twice is the same act as saving once, so PUT is idempotent by
+/// construction rather than by a check that could race.
+model WatchlistItem {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, movieId])
+  @@index([userId, createdAt])
+}
+
+enum PromoKind {
+  /// `value` is a whole percentage, 1 to 100.
+  PERCENT
+  /// `value` is an amount in minor units.
+  FLAT
+}
+
+/// A discount code. Redemption is counted from live bookings rather than kept
+/// in a counter: a cancelled or failed booking frees its use automatically, and
+/// there is no second number that could drift from the first.
+model PromoCode {
+  id               String    @id @default(cuid())
+  /// Stored upper-case; lookups upper-case the input, so codes are not case
+  /// sensitive to a person typing on a phone.
+  code             String    @unique
+  description      String
+  kind             PromoKind
+  value            Int
+  /// Ceiling for a percentage code, so 50% off a full house has a bound.
+  maxDiscountMinor Int?
+  minSubtotalMinor Int       @default(0)
+  startsAt         DateTime?
+  expiresAt        DateTime?
+  /// Total redemptions across everyone. Null is unlimited.
+  usageLimit       Int?
+  perUserLimit     Int       @default(1)
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+
+  bookings Booking[]
+}
+
+model Cinema {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  /// The chain the venue belongs to (PVR, INOX, Cinépolis…). Kept separate
+  /// from `name` so the app can group and filter by operator without parsing
+  /// the display name.
+  brand     String
+  city      String
+  address   String
+  /// WGS84, as a real cinema has. Nullable would push a null check into every
+  /// map call site, and a venue whose location is unknown cannot be shown on a
+  /// map or sorted by distance, so it is required.
+  latitude  Float
+  longitude Float
+  phone     String?
+  /// Facilities the venue advertises: recliners, Dolby Atmos, parking. Free
+  /// text rather than an enum, because this list changes with marketing and
+  /// nothing in the booking mechanic depends on its contents.
+  amenities String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  screens Screen[]
+
+  @@index([city])
+  @@index([brand])
+}
+
+/// A physical auditorium. `rowCount` and `columnCount` are the bounding box the
+/// seat map canvas draws into; individual seats carry their own coordinates
+/// because real auditoriums are not dense rectangles.
+model Screen {
+  id          String   @id @default(cuid())
+  cinemaId    String
+  cinema      Cinema   @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+  name        String
+  rowCount    Int
+  columnCount Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  seats     Seat[]
+  showtimes Showtime[]
+
+  @@unique([cinemaId, name])
+}
+
+enum SeatTier {
+  STANDARD
+  PREMIUM
+  RECLINER
+}
+
+/// One physical seat. `rowIndex` and `columnIndex` are grid coordinates for the
+/// renderer; `rowLabel` and `number` are what a human reads on the ticket.
+/// Gaps and aisles are simply absent coordinates, never rows in this table.
+model Seat {
+  id           String   @id @default(cuid())
+  screenId     String
+  screen       Screen   @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  rowLabel     String
+  number       Int
+  rowIndex     Int
+  columnIndex  Int
+  tier         SeatTier @default(STANDARD)
+  isAccessible Boolean  @default(false)
+
+  showSeats ShowSeat[]
+
+  @@unique([screenId, rowLabel, number])
+  @@unique([screenId, rowIndex, columnIndex])
+  @@index([screenId])
+}
+
+enum ShowFormat {
+  TWO_D
+  THREE_D
+  IMAX
+  FOUR_DX
+}
+
+model Showtime {
+  id           String     @id @default(cuid())
+  movieId      String
+  movie        Movie      @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  screenId     String
+  screen       Screen     @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  startsAt     DateTime
+  endsAt       DateTime
+  format       ShowFormat @default(TWO_D)
+  language     String
+  currency     String     @default("INR")
+  /// Booking closes at this instant, normally a few minutes after `startsAt`.
+  salesCloseAt DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  tierPrices ShowtimeTierPrice[]
+  showSeats  ShowSeat[]
+  holds      Hold[]
+  bookings   Booking[]
+
+  /// One show per screen per start time. This is the conflict detection the
+  /// operator dashboard relies on, enforced by the database rather than by a
+  /// check the dashboard could forget to run.
+  @@unique([screenId, startsAt])
+  @@index([movieId, startsAt])
+  @@index([startsAt])
+}
+
+model ShowtimeTierPrice {
+  id         String   @id @default(cuid())
+  showtimeId String
+  showtime   Showtime @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  tier       SeatTier
+  priceMinor Int
+
+  @@unique([showtimeId, tier])
+}
+
+enum ShowSeatState {
+  AVAILABLE
+  HELD
+  CONFIRMED
+  BLOCKED
+}
+
+/// Inventory. One row per seat per showtime, created when the showtime is
+/// created, and the only place seat availability is ever decided.
+///
+/// Two rules make overselling structurally impossible rather than merely
+/// unlikely:
+///
+///   1. `@@unique([showtimeId, seatId])` means a seat cannot appear twice in a
+///      show's inventory, so "sum of confirmed seats <= capacity" holds by
+///      construction.
+///   2. `bookingId` is a single nullable column, so a seat physically cannot
+///      belong to two bookings at once.
+///
+/// Every mutation happens inside a transaction that took `FOR UPDATE` on these
+/// rows first. Nothing writes here outside that path.
+model ShowSeat {
+  id         String        @id @default(cuid())
+  showtimeId String
+  showtime   Showtime      @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  seatId     String
+  seat       Seat          @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  state      ShowSeatState @default(AVAILABLE)
+  /// Materialised from the tier price when the showtime is created, so the
+  /// price a user was shown cannot drift mid-checkout.
+  priceMinor Int
+
+  holdId        String?
+  hold          Hold?     @relation(fields: [holdId], references: [id], onDelete: SetNull)
+  /// Duplicated from the hold so the read path can decide expiry without a
+  /// join. See the logical-expiry note in holds.service.ts.
+  holdExpiresAt DateTime?
+
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  /// Operator-supplied reason when `state` is BLOCKED.
+  blockedReason String?
+  updatedAt     DateTime @updatedAt
+
+  @@unique([showtimeId, seatId])
+  @@index([showtimeId, state])
+  @@index([holdId])
+  @@index([bookingId])
+  @@index([state, holdExpiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// Booking lifecycle
+// ---------------------------------------------------------------------------
+
+enum HoldStatus {
+  ACTIVE
+  RELEASED
+  EXPIRED
+  CONVERTED
+}
+
+/// A short-lived claim on a set of seats. `expiresAt` is authoritative and is
+/// set by the database clock, never by the client.
+model Hold {
+  id            String     @id @default(cuid())
+  showtimeId    String
+  showtime      Showtime   @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status        HoldStatus @default(ACTIVE)
+  expiresAt     DateTime
+  seatCount     Int
+  /// Sum of the seat prices at the moment the hold was taken. The booking fee
+  /// is added at checkout, not here, so a hold shows the user seat cost only.
+  subtotalMinor Int
+  createdAt     DateTime   @default(now())
+  releasedAt    DateTime?
+
+  showSeats ShowSeat[]
+  booking   Booking?
+
+  @@index([showtimeId, status])
+  @@index([userId, status])
+  @@index([status, expiresAt])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  FAILED
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  /// Short human-readable code printed on the ticket, e.g. BK-7F3K9Q.
+  reference     String        @unique
+  showtimeId    String
+  showtime      Showtime      @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// One booking per hold, enforced by the database. A retried checkout
+  /// therefore cannot produce a second booking for the same seats.
+  holdId        String        @unique
+  hold          Hold          @relation(fields: [holdId], references: [id], onDelete: Restrict)
+  status        BookingStatus @default(PENDING)
+  subtotalMinor Int
+  feeMinor      Int
+  /// Taken off the seat subtotal, never the fee. Zero when no code was used.
+  /// `totalMinor = subtotalMinor + feeMinor - discountMinor`, which the
+  /// invariant script asserts against the database.
+  discountMinor Int           @default(0)
+  totalMinor    Int
+  promoCodeId   String?
+  promoCode     PromoCode?    @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  currency      String        @default("INR")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  confirmedAt   DateTime?
+  cancelledAt   DateTime?
+  failureReason String?
+
+  showSeats ShowSeat[]
+  payments  Payment[]
+
+  @@index([userId, status])
+  @@index([showtimeId, status])
+  @@index([status, createdAt])
+  @@index([promoCodeId, status])
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+/// One row per payment attempt. A booking may have several after a decline,
+/// but only one may ever reach CAPTURED, which the invariant script asserts.
+model Payment {
+  id             String        @id @default(cuid())
+  bookingId      String
+  booking        Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  provider       String
+  /// The gateway's own identifier. Unique so a duplicate webhook cannot create
+  /// a second payment row.
+  providerRef    String        @unique
+  status         PaymentStatus @default(PENDING)
+  amountMinor    Int
+  currency       String        @default("INR")
+  /// The client-supplied key that started this attempt. Kept for forensics
+  /// when reconciling against the gateway.
+  idempotencyKey String
+  failureReason  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  authorizedAt   DateTime?
+  capturedAt     DateTime?
+
+  @@index([bookingId, status])
+  @@index([status, createdAt])
+}
+
+enum IdempotencyState {
+  IN_FLIGHT
+  COMPLETED
+}
+
+/// Replay protection for unsafe endpoints. The row is claimed before the work
+/// starts, so a retry that arrives while the first attempt is still running is
+/// told to wait rather than allowed to run the work a second time.
+model IdempotencyRecord {
+  key            String           @id
+  /// Endpoint identifier, so the same key on a different route cannot collide.
+  scope          String
+  userId         String?
+  /// SHA-256 of the canonical request body. A key reused with a different body
+  /// is a client bug and is rejected rather than silently replayed.
+  requestHash    String
+  state          IdempotencyState @default(IN_FLIGHT)
+  responseStatus Int?
+  responseBody   Json?
+  createdAt      DateTime         @default(now())
+  completedAt    DateTime?
+  expiresAt      DateTime
+
+  @@index([expiresAt])
+}
+
+/// Gateway callbacks, deduplicated by the gateway's own event id. Inserting
+/// here is the dedupe: a duplicate delivery loses the unique-constraint race
+/// and is acknowledged without being processed again.
+model WebhookEvent {
+  id          String    @id
+  provider    String
+  type        String
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  error       String?
+
+  @@index([processedAt])
+}

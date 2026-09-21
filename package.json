@@ -1,0 +1,43 @@
+{
+  "name": "mobile-app",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run start --workspace @app/mobile",
+    "mobile:ios": "npm run ios --workspace @app/mobile",
+    "mobile:android": "npm run android --workspace @app/mobile",
+    "api": "npm run dev --workspace @app/api",
+    "dev": "npm-run-all --parallel api mobile",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml}\"",
+    "db:migrate": "npm run db:migrate --workspace @app/api",
+    "db:studio": "npm run db:studio --workspace @app/api",
+    "db:seed": "npm run db:seed --workspace @app/api",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/mobile/.expo",
+    "verify:invariants": "npm run verify:invariants --workspace @app/api",
+    "loadtest:prepare": "npm run loadtest:prepare --workspace @app/api",
+    "loadtest:report": "npm run loadtest:report --workspace @app/api",
+    "loadtest:run": "./.tooling/k6 run loadtest/opening-night.js",
+    "loadtest": "npm run loadtest:prepare && npm run loadtest:run && npm run loadtest:report",
+    "infra": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "api:cluster": "npm run dev:cluster --workspace @app/api",
+    "chaos": "npm run chaos --workspace @app/api",
+    "infra:local": "./scripts/local-infra.sh start",
+    "infra:local:stop": "./scripts/local-infra.sh stop"
+  },
+  "devDependencies": {
+    "npm-run-all2": "^8.0.4",
+    "prettier": "^3.6.2"
+  }
+}
