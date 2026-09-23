@@ -49,4 +49,6 @@ export const STORAGE_KEYS = {
   accessToken: 'auth.accessToken',
   refreshToken: 'auth.refreshToken',
   themePreference: 'settings.themePreference',
+  recentFilmSearches: 'search.recentFilms',
+  recentCinemaSearches: 'search.recentCinemas',
 } as const;

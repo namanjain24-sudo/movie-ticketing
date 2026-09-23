@@ -11,7 +11,10 @@ import { AppBar, Skeleton, Text } from '../../components/ui';
 import { CinemaCard } from '../../features/cinemas/cinema-card';
 import { CinemaMap } from '../../features/cinemas/cinema-map';
 import { useUserLocation } from '../../features/cinemas/use-location';
+import { RecentSearchChips } from '../../features/search/recent-search-chips';
+import { useRecentSearches } from '../../features/search/use-recent-searches';
 import { queryKeys } from '../../lib/query-client';
+import { STORAGE_KEYS } from '../../lib/storage';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
@@ -23,9 +26,11 @@ export default function Cinemas() {
   const { colors, radius, spacing } = useTheme();
 
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [city, setCity] = useState<string | undefined>(undefined);
   const [brand, setBrand] = useState<string | undefined>(undefined);
   const [mapOpen, setMapOpen] = useState(false);
+  const recentSearches = useRecentSearches(STORAGE_KEYS.recentCinemaSearches);
 
   const location = useUserLocation();
   const coords = location.state.status === 'granted' ? location.state.coords : null;
@@ -89,6 +94,9 @@ export default function Cinemas() {
           <TextInput
             value={search}
             onChangeText={setSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            onSubmitEditing={() => recentSearches.record(search)}
             placeholder="Search a cinema or area"
             placeholderTextColor={colors.textMuted}
             returnKeyType="search"
@@ -108,6 +116,17 @@ export default function Cinemas() {
           ) : null}
         </View>
       </View>
+
+      {searchFocused && !search ? (
+        <RecentSearchChips
+          recent={recentSearches.recent}
+          onSelect={(query) => {
+            setSearch(query);
+            recentSearches.record(query);
+          }}
+          onClear={recentSearches.clear}
+        />
+      ) : null}
 
       {/* Filters. "Near me" leads because it is the one that needs permission
           and the one people actually want; the rest narrow what it returns. */}

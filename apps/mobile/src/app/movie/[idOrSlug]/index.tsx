@@ -5,7 +5,14 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Share, View } from 'react-native';
+import { Pressable, Share, View } from 'react-native';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { catalogApi } from '../../../api/catalog';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/query-state';
@@ -43,6 +50,29 @@ export default function MovieDetail() {
   const { colors, radius, spacing, elevation } = useTheme();
   const watchlist = useWatchlist();
   const insets = useSafeAreaInsets();
+
+  // The backdrop's one authored moment: it stretches on the overscroll bounce
+  // and drifts slower than the page as you scroll past it, the way a header
+  // image reads as depth rather than a static banner.
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+  const backdropStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY: interpolate(
+          scrollY.value,
+          [-BACKDROP_HEIGHT, 0, BACKDROP_HEIGHT],
+          [0, 0, BACKDROP_HEIGHT * 0.35],
+          Extrapolation.CLAMP,
+        ),
+      },
+      {
+        scale: interpolate(scrollY.value, [-BACKDROP_HEIGHT, 0], [2, 1], Extrapolation.CLAMP),
+      },
+    ],
+  }));
 
   const days = useMemo(() => upcomingDays(DAYS_AHEAD), []);
   const [date, setDate] = useState(days[0].value);
@@ -105,9 +135,11 @@ export default function MovieDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView
+      <Animated.ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <View style={{ height: BACKDROP_HEIGHT, backgroundColor: colors.surfaceMuted }}>
           {/*
@@ -115,16 +147,22 @@ export default function MovieDetail() {
             exists, it becomes an out-of-focus wash rather than a second, sharp
             copy of the image already sitting on top of it — the poster stays
             the one thing in focus, which is how a film page should read.
+
+            The animated wrapper (not the image itself, which expo-image does
+            not expose an Animated variant of) is what stretches on overscroll
+            and drifts on scroll.
           */}
-          <Image
-            source={film.backdropUrl ?? film.posterUrl}
-            style={{ position: 'absolute', width: '100%', height: '100%' }}
-            contentFit="cover"
-            blurRadius={film.backdropUrl ? 0 : 18}
-            contentPosition={{ top: '12%' }}
-            transition={220}
-            accessible={false}
-          />
+          <Animated.View style={[{ position: 'absolute', inset: 0 }, backdropStyle]}>
+            <Image
+              source={film.backdropUrl ?? film.posterUrl}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              blurRadius={film.backdropUrl ? 0 : 18}
+              contentPosition={{ top: '12%' }}
+              transition={220}
+              accessible={false}
+            />
+          </Animated.View>
           {/* Darkened at the top for the back button, then melted into the page
               at the bottom. A hard edge where the wash stops and the page
               begins read as a cropped photo; a fade reads as one surface. */}
@@ -441,7 +479,7 @@ export default function MovieDetail() {
         ) : (
           <ComingSoonPanel releaseDate={film.releaseDate} />
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
