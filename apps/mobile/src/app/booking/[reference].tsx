@@ -10,6 +10,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { bookingApi } from '../../api/booking';
 import { ErrorState, LoadingState } from '../../components/query-state';
 import { Badge, Button, Text } from '../../components/ui';
+import { addShowtimeToCalendar } from '../../lib/calendar';
 import {
   cancelShowtimeReminder,
   requestNotificationPermissionIfUnasked,
@@ -60,6 +61,21 @@ export default function BookingTicket() {
         'Could not cancel',
         error instanceof Error ? error.message : 'Please try again in a moment.',
       ),
+  });
+
+  const addToCalendar = useMutation({
+    mutationFn: () => addShowtimeToCalendar(booking.data!),
+    onSuccess: (result) => {
+      if (result === 'added') {
+        notify('Added to calendar', `${booking.data?.showtime.movie.title} is on your calendar.`);
+      } else if (result === 'permission-denied') {
+        notify('No calendar access', 'Allow calendar access in Settings to add this showtime.');
+      } else if (result === 'unsupported') {
+        notify('Not available', 'Adding to the calendar is not supported on this device.');
+      } else {
+        notify('Could not add to calendar', 'Please try again in a moment.');
+      }
+    },
   });
 
   // Re-runs on every refetch, not just the first confirmation — harmless,
@@ -267,6 +283,15 @@ export default function BookingTicket() {
             )}
           </View>
         ) : null}
+
+        {cancelled ? null : (
+          <Button
+            label="Add to calendar"
+            variant="secondary"
+            loading={addToCalendar.isPending}
+            onPress={() => addToCalendar.mutate()}
+          />
+        )}
 
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <Button

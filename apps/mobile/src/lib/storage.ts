@@ -51,4 +51,5 @@ export const STORAGE_KEYS = {
   themePreference: 'settings.themePreference',
   recentFilmSearches: 'search.recentFilms',
   recentCinemaSearches: 'search.recentCinemas',
+  recentlyViewedFilms: 'catalog.recentlyViewed',
 } as const;

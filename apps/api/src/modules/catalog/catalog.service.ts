@@ -141,8 +141,10 @@ export async function listCities(): Promise<string[]> {
 }
 
 /**
- * Showtimes for one movie on one day, grouped by cinema, which is the shape
- * the picker screen renders directly.
+ * Showtimes on one day, grouped by cinema, which is the shape the picker
+ * screen renders directly. `movieId` narrows this to one film's showings
+ * across cinemas; left off, a cinema's entry can span several films at once,
+ * which is why every showtime carries its own movie rather than assuming one.
  */
 export async function listShowtimes(params: {
   movieId?: string;
@@ -168,6 +170,7 @@ export async function listShowtimes(params: {
       salesCloseAt: true,
       tierPrices: { select: { priceMinor: true } },
       screen: { select: { cinema: { select: CINEMA_SELECT } } },
+      movie: { select: { id: true, slug: true, title: true, posterUrl: true } },
       _count: { select: { showSeats: true } },
     },
   });
@@ -190,6 +193,7 @@ export async function listShowtimes(params: {
       salesCloseAt: s.salesCloseAt.toISOString(),
       fromPriceMinor: Math.min(...s.tierPrices.map((t) => t.priceMinor)),
       availability: band(availability.get(s.id) ?? 0, s._count.showSeats),
+      movie: s.movie,
     });
     grouped.set(cinema.id, entry);
   }

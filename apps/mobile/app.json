@@ -15,7 +15,8 @@
       "bundleIdentifier": "com.naman.mobileapp",
       "icon": "./assets/expo.icon",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app uses your location to sort cinemas by how far away they are."
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to sort cinemas by how far away they are.",
+        "NSCalendarsFullAccessUsageDescription": "This app adds a showtime to your calendar only when you ask it to."
       }
     },
     "android": {
@@ -27,7 +28,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
+      ],
       "config": {
         "googleMaps": {
           "apiKey": "$GOOGLE_MAPS_ANDROID_KEY"
@@ -57,6 +63,12 @@
           "locationWhenInUsePermission": "This app uses your location to sort cinemas by how far away they are. It is never stored or shared.",
           "isIosBackgroundLocationEnabled": false,
           "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "This app adds a showtime to your calendar only when you ask it to."
         }
       ]
     ],
