@@ -79,14 +79,14 @@ export function MovieCard({
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 3,
+                  gap: spacing.xs,
                   paddingHorizontal: spacing.sm,
                   paddingTop: spacing.lg,
                   paddingBottom: spacing.sm,
                 }}
               >
                 <Ionicons name="star" size={11} color={colors.warning} />
-                <Text variant="caption" numeric style={{ color: '#FFFFFF' }}>
+                <Text variant="caption" numeric style={{ color: colors.onImage }}>
                   {movie.rating.average?.toFixed(1)}
                 </Text>
                 <Text variant="caption" numeric style={{ color: 'rgba(255,255,255,0.68)' }}>
@@ -99,7 +99,7 @@ export function MovieCard({
         <SaveHeart movie={movie} />
       </View>
 
-      <View style={{ gap: 2 }}>
+      <View style={{ gap: spacing['2xs'] }}>
         <Text variant="label" numberOfLines={1}>
           {movie.title}
         </Text>

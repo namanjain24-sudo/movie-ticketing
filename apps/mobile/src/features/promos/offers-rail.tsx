@@ -13,7 +13,7 @@ import { SectionHeader } from '../catalog/section-header';
  * say where to use it rather than pretending to be buttons that do nothing.
  */
 export function OffersRail({ offers }: { offers: PromoOffer[] }) {
-  const { spacing, radius } = useTheme();
+  const { spacing, radius, colors } = useTheme();
 
   if (offers.length === 0) return null;
 
@@ -35,14 +35,14 @@ export function OffersRail({ offers }: { offers: PromoOffer[] }) {
             accessibilityLabel={`Offer ${offer.code}. ${offer.description}`}
             style={{
               width: 232,
-              gap: 2,
+              gap: spacing['2xs'],
               padding: spacing.md,
               borderRadius: radius.lg,
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Ionicons name="pricetag" size={16} color="#FFFFFF" />
-              <Text variant="heading" style={{ color: '#FFFFFF', letterSpacing: 1 }}>
+              <Ionicons name="pricetag" size={16} color={colors.onImage} />
+              <Text variant="heading" style={{ color: colors.onImage, letterSpacing: 1 }}>
                 {offer.code}
               </Text>
             </View>

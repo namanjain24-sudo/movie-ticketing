@@ -60,6 +60,9 @@ export function Poster({
 
   return (
     <View
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`${title} poster`}
       style={[
         {
           borderRadius: rounded,
@@ -72,14 +75,20 @@ export function Poster({
         style,
       ]}
     >
-      <Text variant="title" style={{ color: colors.borderStrong }} numberOfLines={1}>
+      <Text
+        variant="title"
+        style={{ color: colors.borderStrong }}
+        numberOfLines={1}
+        accessible={false}
+      >
         {initials || '—'}
       </Text>
       <Text
         variant="caption"
         align="center"
         numberOfLines={2}
-        style={{ color: colors.borderStrong, marginTop: 2 }}
+        style={{ color: colors.borderStrong, marginTop: spacing['2xs'] }}
+        accessible={false}
       >
         {title}
       </Text>

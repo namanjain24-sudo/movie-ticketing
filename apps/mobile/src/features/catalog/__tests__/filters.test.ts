@@ -13,6 +13,7 @@ function film(id: string, languages: string[], genres: string[]): MovieSummary {
     genres,
     releaseDate: '2026-01-01T00:00:00.000Z',
     rating: { average: null, count: 0 },
+    isNowShowing: true,
   };
 }
 

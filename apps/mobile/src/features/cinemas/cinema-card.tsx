@@ -47,13 +47,13 @@ export function CinemaCard({
       ]}
     >
       <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
-        <View style={{ flex: 1, gap: 2 }}>
+        <View style={{ flex: 1, gap: spacing['2xs'] }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <Text variant="overline" tone="primary">
               {cinema.brand.toUpperCase()}
             </Text>
             {distance ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing['2xs'] }}>
                 <Ionicons name="navigate" size={11} color={colors.accent} />
                 <Text variant="caption" numeric style={{ color: colors.accent }}>
                   {distance}

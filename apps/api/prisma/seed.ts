@@ -540,6 +540,7 @@ async function main() {
   await prisma.hold.deleteMany();
   await prisma.review.deleteMany();
   await prisma.promoCode.deleteMany();
+  await prisma.concessionItem.deleteMany();
   await prisma.showtimeTierPrice.deleteMany();
   await prisma.showtime.deleteMany();
   await prisma.seat.deleteMany();
@@ -574,6 +575,21 @@ async function main() {
         minSubtotalMinor: 80_000,
         perUserLimit: 2,
       },
+    ],
+  });
+
+  console.log('Seeding concessions…');
+  await prisma.concessionItem.createMany({
+    data: [
+      { name: 'Classic popcorn (large)', description: 'Salted, freshly popped.', priceMinor: 25_000 },
+      {
+        name: 'Popcorn & drink combo',
+        description: 'Large popcorn with a regular soft drink.',
+        priceMinor: 42_000,
+      },
+      { name: 'Nachos with cheese dip', description: 'Crisp nachos, warm cheese dip.', priceMinor: 22_000 },
+      { name: 'Soft drink (regular)', description: 'Coke, Sprite or Thums Up.', priceMinor: 12_000 },
+      { name: 'Packaged drinking water', description: '500ml, sealed.', priceMinor: 4_000 },
     ],
   });
 

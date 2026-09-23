@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { CheckoutResult, PaymentStatusResult, SeatDelta } from '@app/shared';
+import type { AddOnLine, CheckoutResult, PaymentStatusResult, SeatDelta } from '@app/shared';
 import type { PaymentStatus } from '@prisma/client';
 import { prisma, type Tx } from '../../db';
 import { env } from '../../env';
@@ -7,6 +7,7 @@ import { HttpError } from '../../http/errors';
 import { bookingReference } from '../../lib/reference';
 import { dbNow, withTxRetry } from '../../lib/tx';
 import { logger } from '../../logger';
+import { addOnsTotal, priceAddOns, type PricedAddOn } from '../concessions/concessions.service';
 import { bookingFeeMinor, lockActiveHold } from '../holds/holds.service';
 import { evaluatePromo } from '../promos/promos.service';
 import { publishSeatDeltas } from '../realtime/seat-events';
@@ -35,6 +36,7 @@ export interface CheckoutParams {
   method: string;
   /** Only read when this call creates the booking; see `checkoutSchema`. */
   promoCode?: string;
+  addOns?: AddOnLine[];
   idempotencyKey: string;
 }
 
@@ -77,6 +79,12 @@ export async function checkout(params: CheckoutParams): Promise<CheckoutResult> 
           : null;
         const discountMinor = applied?.discountMinor ?? 0;
 
+        // Priced against the live catalogue, under the same transaction, so
+        // an item going inactive between the checkout screen and the tap is
+        // caught here rather than charged.
+        const pricedAddOns = await priceAddOns(tx, params.addOns ?? []);
+        const addOnsMinor = addOnsTotal(pricedAddOns);
+
         booking = await createBooking(tx, {
           holdId: params.holdId,
           userId: params.userId,
@@ -84,10 +92,12 @@ export async function checkout(params: CheckoutParams): Promise<CheckoutResult> 
           currency: hold.currency,
           subtotalMinor,
           feeMinor,
+          addOnsMinor,
           discountMinor,
           promoCodeId: applied?.promo.id ?? null,
-          totalMinor: subtotalMinor + feeMinor - discountMinor,
+          totalMinor: subtotalMinor + feeMinor + addOnsMinor - discountMinor,
           showSeatIds: hold.seats.map((s) => s.id),
+          addOns: pricedAddOns,
         });
       }
       const totalMinor = booking.totalMinor;
@@ -159,10 +169,12 @@ async function createBooking(
     currency: string;
     subtotalMinor: number;
     feeMinor: number;
+    addOnsMinor: number;
     discountMinor: number;
     promoCodeId: string | null;
     totalMinor: number;
     showSeatIds: string[];
+    addOns: PricedAddOn[];
   },
 ) {
   const booking = await tx.booking.create({
@@ -174,10 +186,18 @@ async function createBooking(
       status: 'PENDING',
       subtotalMinor: input.subtotalMinor,
       feeMinor: input.feeMinor,
+      addOnsMinor: input.addOnsMinor,
       discountMinor: input.discountMinor,
       promoCodeId: input.promoCodeId,
       totalMinor: input.totalMinor,
       currency: input.currency,
+      addOns: {
+        create: input.addOns.map((a) => ({
+          concessionItemId: a.itemId,
+          quantity: a.quantity,
+          unitPriceMinor: a.unitPriceMinor,
+        })),
+      },
     },
     select: { id: true, reference: true, status: true, totalMinor: true },
   });

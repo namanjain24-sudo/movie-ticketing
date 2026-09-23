@@ -50,7 +50,7 @@ export function ShowtimeChip({
         // read at arm's length, and colour alone would fail without it.
         borderColor: bookable ? accent : colors.border,
         backgroundColor: colors.surface,
-        gap: 3,
+        gap: spacing.xs,
         opacity: bookable ? (pressed ? 0.7 : 1) : 0.5,
       })}
     >

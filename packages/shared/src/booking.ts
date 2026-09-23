@@ -49,6 +49,34 @@ export const seatConflictSchema = z.object({
 export type SeatConflict = z.infer<typeof seatConflictSchema>;
 
 // ---------------------------------------------------------------------------
+// Concessions
+// ---------------------------------------------------------------------------
+
+export const concessionItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  priceMinor: z.number().int(),
+  currency: z.string(),
+});
+export type ConcessionItem = z.infer<typeof concessionItemSchema>;
+
+export const addOnLineSchema = z.object({
+  itemId: z.string().min(1),
+  quantity: z.number().int().min(1).max(20),
+});
+export type AddOnLine = z.infer<typeof addOnLineSchema>;
+
+/** A priced line item on a confirmed booking — the item plus what it cost. */
+export const bookingAddOnSchema = z.object({
+  itemId: z.string(),
+  name: z.string(),
+  quantity: z.number().int(),
+  unitPriceMinor: z.number().int(),
+});
+export type BookingAddOn = z.infer<typeof bookingAddOnSchema>;
+
+// ---------------------------------------------------------------------------
 // Checkout and payment
 // ---------------------------------------------------------------------------
 
@@ -64,6 +92,12 @@ export const checkoutSchema = z.object({
    * payment reuses that booking and its price, so a code sent then is ignored.
    */
   promoCode: z.string().trim().min(1).max(32).optional(),
+  /**
+   * Concessions, priced against the live catalogue at checkout — not held
+   * against inventory the way seats are, since popcorn has no scarcity to
+   * protect. Priced once, same as the promo code: a retry reuses the booking.
+   */
+  addOns: z.array(addOnLineSchema).max(20).optional(),
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
@@ -119,12 +153,14 @@ export const bookingSchema = z.object({
   confirmedAt: z.string().nullable(),
   subtotalMinor: z.number().int(),
   feeMinor: z.number().int(),
+  addOnsMinor: z.number().int(),
   discountMinor: z.number().int(),
   /** The code that produced `discountMinor`, when one was used. */
   promoCode: z.string().nullable(),
   totalMinor: z.number().int(),
   currency: z.string(),
   seats: z.array(heldSeatSchema),
+  addOns: z.array(bookingAddOnSchema),
   showtime: z.object({
     id: z.string(),
     startsAt: z.string(),

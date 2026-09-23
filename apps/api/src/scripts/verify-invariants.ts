@@ -104,18 +104,31 @@ const CHECKS: Check[] = [
   },
   {
     name: 'booking-totals',
-    description: 'Booking totals equal seat prices plus the fee, minus any discount',
+    description: 'Booking totals equal seat prices plus the fee and add-ons, minus any discount',
     run: () => prisma.$queryRaw`
       SELECT b.id AS "bookingId", b."subtotalMinor", SUM(ss."priceMinor") AS "seatSum",
-             b."totalMinor", b."feeMinor", b."discountMinor"
+             b."totalMinor", b."feeMinor", b."addOnsMinor", b."discountMinor"
       FROM "Booking" b
       JOIN "ShowSeat" ss ON ss."bookingId" = b.id
       WHERE b.status = 'CONFIRMED'
       GROUP BY b.id
       HAVING SUM(ss."priceMinor") <> b."subtotalMinor"
-          OR b."totalMinor" <> b."subtotalMinor" + b."feeMinor" - b."discountMinor"
+          OR b."totalMinor" <> b."subtotalMinor" + b."feeMinor" + b."addOnsMinor" - b."discountMinor"
           OR b."discountMinor" < 0
           OR b."totalMinor" < 1
+      LIMIT 20
+    `,
+  },
+  {
+    name: 'addon-total',
+    description: 'A booking’s add-ons total equals the sum of its priced add-on lines',
+    run: () => prisma.$queryRaw`
+      SELECT b.id AS "bookingId", b."addOnsMinor", COALESCE(SUM(a.quantity * a."unitPriceMinor"), 0) AS "lineSum"
+      FROM "Booking" b
+      LEFT JOIN "BookingAddOn" a ON a."bookingId" = b.id
+      WHERE b.status = 'CONFIRMED'
+      GROUP BY b.id
+      HAVING b."addOnsMinor" <> COALESCE(SUM(a.quantity * a."unitPriceMinor"), 0)
       LIMIT 20
     `,
   },

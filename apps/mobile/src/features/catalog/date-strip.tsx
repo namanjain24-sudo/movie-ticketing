@@ -35,7 +35,7 @@ export function DateStrip({
               paddingVertical: spacing.sm,
               borderRadius: radius.md,
               alignItems: 'center',
-              gap: 2,
+              gap: spacing['2xs'],
               backgroundColor: selected ? colors.primary : colors.surface,
               borderWidth: 1,
               borderColor: selected ? colors.primary : colors.border,

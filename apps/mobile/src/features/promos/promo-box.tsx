@@ -124,7 +124,7 @@ export function PromoBox({
               }}
               style={{
                 width: 200,
-                gap: 2,
+                gap: spacing['2xs'],
                 padding: spacing.md,
                 borderRadius: radius.lg,
                 borderWidth: 1,

@@ -30,6 +30,7 @@ export async function listWatchlist(userId: string): Promise<MovieSummary[]> {
           languages: true,
           genres: true,
           releaseDate: true,
+          isNowShowing: true,
         },
       },
     },

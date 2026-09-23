@@ -146,6 +146,36 @@ model PromoCode {
   bookings Booking[]
 }
 
+/// A global concessions menu — popcorn, drinks — not per-cinema. A real chain's
+/// menu varies by venue; this repo's own rule is no invented data, so rather
+/// than fabricate that variation, every cinema sells the same items.
+model ConcessionItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  priceMinor  Int
+  currency    String   @default("INR")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  bookingAddOns BookingAddOn[]
+}
+
+/// A line item on a confirmed booking. `unitPriceMinor` is materialised at
+/// checkout, the same way `ShowSeat.priceMinor` is — so a later menu price
+/// change never rewrites what an existing booking actually cost.
+model BookingAddOn {
+  id               String         @id @default(cuid())
+  bookingId        String
+  booking          Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  concessionItemId String
+  concessionItem   ConcessionItem @relation(fields: [concessionItemId], references: [id], onDelete: Restrict)
+  quantity         Int
+  unitPriceMinor   Int
+
+  @@unique([bookingId, concessionItemId])
+}
+
 model Cinema {
   id        String   @id @default(cuid())
   slug      String   @unique
@@ -377,9 +407,13 @@ model Booking {
   status        BookingStatus @default(PENDING)
   subtotalMinor Int
   feeMinor      Int
-  /// Taken off the seat subtotal, never the fee. Zero when no code was used.
-  /// `totalMinor = subtotalMinor + feeMinor - discountMinor`, which the
-  /// invariant script asserts against the database.
+  /// Concessions ordered at checkout. Not refunded on cancellation, the same
+  /// treatment as the booking fee — see `refundableMinor` in
+  /// bookings.service.ts.
+  addOnsMinor   Int           @default(0)
+  /// Taken off the seat subtotal, never the fee or the add-ons. Zero when no
+  /// code was used. `totalMinor = subtotalMinor + feeMinor + addOnsMinor -
+  /// discountMinor`, which the invariant script asserts against the database.
   discountMinor Int           @default(0)
   totalMinor    Int
   promoCodeId   String?
@@ -393,6 +427,7 @@ model Booking {
 
   showSeats ShowSeat[]
   payments  Payment[]
+  addOns    BookingAddOn[]
 
   @@index([userId, status])
   @@index([showtimeId, status])

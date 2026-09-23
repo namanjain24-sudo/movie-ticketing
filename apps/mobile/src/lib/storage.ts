@@ -48,4 +48,5 @@ export const secureStorage = {
 export const STORAGE_KEYS = {
   accessToken: 'auth.accessToken',
   refreshToken: 'auth.refreshToken',
+  themePreference: 'settings.themePreference',
 } as const;

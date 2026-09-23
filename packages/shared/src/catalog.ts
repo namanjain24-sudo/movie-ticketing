@@ -51,6 +51,8 @@ export const movieSummarySchema = z.object({
   genres: z.array(z.string()),
   releaseDate: z.string(),
   rating: ratingSummarySchema,
+  /** False for a "Coming soon" film — announced but not yet bookable. */
+  isNowShowing: z.boolean(),
 });
 export type MovieSummary = z.infer<typeof movieSummarySchema>;
 

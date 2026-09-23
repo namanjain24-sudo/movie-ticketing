@@ -29,13 +29,13 @@ export function SaveHeart({ movie }: { movie: MovieSummary }) {
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(16,16,21,0.55)',
+        backgroundColor: colors.onImageScrim,
       }}
     >
       <Ionicons
         name={saved ? 'heart' : 'heart-outline'}
         size={18}
-        color={saved ? colors.primary : '#FFFFFF'}
+        color={saved ? colors.primary : colors.onImage}
       />
     </Pressable>
   );

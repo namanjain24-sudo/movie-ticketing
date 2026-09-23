@@ -3,14 +3,20 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { AppState, Pressable, ScrollView, View, type AppStateStatus } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { bookingApi } from '../../api/booking';
+import { concessionsApi } from '../../api/concessions';
 import { promosApi } from '../../api/promos';
 import { ApiRequestError } from '../../api/client';
 import { ErrorState, LoadingState } from '../../components/query-state';
 import { AppBar, Button, Card, Text } from '../../components/ui';
+import { ConcessionsBox } from '../../features/checkout/concessions-box';
 import { useCountdown } from '../../features/checkout/use-countdown';
+import {
+  cancelHoldExpiryNudge,
+  scheduleHoldExpiryNudge,
+} from '../../features/notifications/notifications';
 import { PromoBox } from '../../features/promos/promo-box';
 import { successFeedback } from '../../lib/haptics';
 import { idempotencyKey } from '../../lib/idempotency';
@@ -46,6 +52,7 @@ export default function Checkout() {
   const [slowConfirm, setSlowConfirm] = useState(false);
   const [applied, setApplied] = useState<PromoQuote | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   /** Set once a booking exists: from then on the price is fixed, code or not. */
   const [priced, setPriced] = useState(false);
 
@@ -61,6 +68,20 @@ export default function Checkout() {
     queryFn: promosApi.offers,
     staleTime: 5 * 60_000,
   });
+
+  const concessions = useQuery({
+    queryKey: queryKeys.concessions,
+    queryFn: concessionsApi.list,
+    staleTime: 5 * 60_000,
+  });
+
+  const addOnLines = Object.entries(quantities)
+    .filter(([, quantity]) => quantity > 0)
+    .map(([itemId, quantity]) => ({ itemId, quantity }));
+  const addOnsMinor = (concessions.data ?? []).reduce(
+    (sum, item) => sum + item.priceMinor * (quantities[item.id] ?? 0),
+    0,
+  );
 
   const checkCode = useMutation({
     mutationFn: (code: string) => promosApi.validate({ holdId, code }),
@@ -78,6 +99,32 @@ export default function Checkout() {
   });
 
   const countdown = useCountdown(hold.data?.expiresAt, hold.data?.serverTime);
+
+  /**
+   * The countdown is only visible while the app is in the foreground. Someone
+   * who backgrounds the app mid-checkout — a normal interruption, per
+   * PRODUCT.md — gets a local nudge instead, timed to the same server-anchored
+   * deadline the on-screen countdown uses. Coming back to the app cancels it:
+   * the countdown itself is the reminder once it is back on screen.
+   */
+  useEffect(() => {
+    const holdData = hold.data;
+    if (!holdData || !holdId) return;
+
+    const onChange = (next: AppStateStatus) => {
+      if ((next === 'background' || next === 'inactive') && paymentId === null) {
+        void scheduleHoldExpiryNudge(holdId, holdData.expiresAt, holdData.serverTime);
+      } else if (next === 'active') {
+        void cancelHoldExpiryNudge(holdId);
+      }
+    };
+
+    const sub = AppState.addEventListener('change', onChange);
+    return () => {
+      sub.remove();
+      void cancelHoldExpiryNudge(holdId);
+    };
+  }, [hold.data, holdId, paymentId]);
 
   /**
    * Once a payment exists the client stops guessing and starts asking. This is
@@ -120,7 +167,12 @@ export default function Checkout() {
     mutationFn: () => {
       keyRef.current ??= idempotencyKey('checkout');
       return bookingApi.checkout(
-        { holdId, method, ...(applied ? { promoCode: applied.code } : {}) },
+        {
+          holdId,
+          method,
+          ...(applied ? { promoCode: applied.code } : {}),
+          ...(addOnLines.length > 0 ? { addOns: addOnLines } : {}),
+        },
         keyRef.current,
       );
     },
@@ -160,7 +212,7 @@ export default function Checkout() {
   }
 
   const held = hold.data;
-  const totalMinor = applied ? applied.totalMinor : held.totalMinor;
+  const totalMinor = (applied ? applied.totalMinor : held.totalMinor) + addOnsMinor;
   const expired = countdown.hasExpired || held.status === 'EXPIRED' || held.status === 'RELEASED';
   const waiting = paymentId !== null && settled?.bookingStatus !== 'FAILED';
   const declined =
@@ -244,6 +296,9 @@ export default function Checkout() {
 
           <Row label="Subtotal" value={formatMoney(held.subtotalMinor, held.currency)} />
           <Row label="Booking fee" value={formatMoney(held.feeMinor, held.currency)} />
+          {addOnsMinor > 0 ? (
+            <Row label="Snacks & drinks" value={formatMoney(addOnsMinor, held.currency)} />
+          ) : null}
           {applied ? (
             <Row
               label={`Discount (${applied.code})`}
@@ -253,6 +308,15 @@ export default function Checkout() {
           ) : null}
           <Row label="Total" value={formatMoney(totalMinor, held.currency)} strong />
         </Card>
+
+        <ConcessionsBox
+          items={concessions.data ?? []}
+          quantities={quantities}
+          locked={priced}
+          onChange={(itemId, quantity) =>
+            setQuantities((prev) => ({ ...prev, [itemId]: quantity }))
+          }
+        />
 
         <PromoBox
           offers={offers.data ?? []}
