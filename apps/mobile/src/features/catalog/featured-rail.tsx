@@ -69,7 +69,7 @@ export function FeaturedRail({
                   borderRadius: radius.xl,
                   overflow: 'hidden',
                   // Dark in both themes: a hero is a screen in a dark room.
-                  backgroundColor: '#16161C',
+                  backgroundColor: colors.onImageSurface,
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.08)',
                   transform: [{ scale: pressed ? 0.985 : 1 }],
@@ -102,27 +102,25 @@ export function FeaturedRail({
                 />
 
                 <View style={{ flex: 1, justifyContent: 'center', gap: spacing.sm }}>
-                  <Text variant="title" numberOfLines={2} style={{ color: '#FFFFFF' }}>
+                  <Text variant="title" numberOfLines={2} style={{ color: colors.onImage }}>
                     {item.title}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                    <Text variant="caption" style={{ color: 'rgba(255,255,255,0.72)' }}>
+                    <Text variant="caption" style={{ color: colors.onImageMuted }}>
                       {item.certification} · {formatRuntime(item.durationMins)}
                     </Text>
                     {rated ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                      <View
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+                      >
                         <Ionicons name="star" size={11} color={colors.warning} />
-                        <Text variant="caption" numeric style={{ color: '#FFFFFF' }}>
+                        <Text variant="caption" numeric style={{ color: colors.onImage }}>
                           {item.rating.average?.toFixed(1)}
                         </Text>
                       </View>
                     ) : null}
                   </View>
-                  <Text
-                    variant="caption"
-                    numberOfLines={1}
-                    style={{ color: 'rgba(255,255,255,0.72)' }}
-                  >
+                  <Text variant="caption" numberOfLines={1} style={{ color: colors.onImageMuted }}>
                     {item.genres.join(' · ')}
                   </Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
@@ -162,10 +160,10 @@ export function FeaturedRail({
                       elevation.glow,
                     ]}
                   >
-                    <Text variant="label" style={{ color: '#FFFFFF' }}>
+                    <Text variant="label" style={{ color: colors.onImage }}>
                       Book tickets
                     </Text>
-                    <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+                    <Ionicons name="arrow-forward" size={14} color={colors.onImage} />
                   </LinearGradient>
                 </View>
               </View>

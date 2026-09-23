@@ -7,24 +7,28 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '../components/error-boundary';
 import { AuthProvider, useAuth } from '../features/auth/auth-provider';
+import { installNotificationHandler } from '../features/notifications/notifications';
 import { queryClient } from '../lib/query-client';
 import { ThemeProvider, useTheme } from '../theme';
 
 export { ErrorBoundary } from '../components/error-boundary';
 
 void SplashScreen.preventAutoHideAsync();
+installNotificationHandler();
 
 function RootNavigator() {
   const { isReady } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, themeReady } = useTheme();
+  const ready = isReady && themeReady;
 
   useEffect(() => {
-    // Hold the splash until the stored session has been read, so the user
-    // never sees the sign-in screen flash before landing on the app.
-    if (isReady) void SplashScreen.hideAsync();
-  }, [isReady]);
+    // Hold the splash until the stored session and the stored theme
+    // preference have both been read, so the user never sees the sign-in
+    // screen — or the wrong theme — flash before landing on the app.
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
 
-  if (!isReady) return null;
+  if (!ready) return null;
 
   return (
     <>

@@ -9,8 +9,9 @@ import { ErrorState, LoadingState } from '../../components/query-state';
 import { AppBar, Button, Text, TextField } from '../../components/ui';
 import { useWatchlist } from '../../features/watchlist/use-watchlist';
 import { useAuthStore } from '../../features/auth/auth-store';
+import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
-import { useTheme } from '../../theme';
+import { useTheme, type ThemePreference } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
 export default function Profile() {
@@ -159,6 +160,11 @@ export default function Profile() {
           <Row icon="film-outline" label="Browse films" onPress={() => router.push('/(tabs)')} />
         </View>
 
+        <View style={{ gap: spacing.sm }}>
+          <Text variant="heading">Appearance</Text>
+          <ThemeToggle />
+        </View>
+
         <Button
           label="Sign out"
           variant="ghost"
@@ -184,7 +190,7 @@ function Stat({ label, value }: { label: string; value?: number }) {
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: colors.surface,
-        gap: 2,
+        gap: spacing['2xs'],
       }}
     >
       {/* An em dash until the count is known, rather than a zero that is a lie
@@ -234,4 +240,68 @@ function Row({
 function Divider() {
   const { colors } = useTheme();
   return <View style={{ height: 1, backgroundColor: colors.border }} />;
+}
+
+const THEME_OPTIONS: { value: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 'system', label: 'System', icon: 'phone-portrait-outline' },
+  { value: 'light', label: 'Light', icon: 'sunny-outline' },
+  { value: 'dark', label: 'Dark', icon: 'moon-outline' },
+];
+
+/** A three-way exclusive choice, styled as radio rows — the same shape
+ * checkout uses for its payment method list, since this is that same kind
+ * of choice: pick one, not a switch to flip. */
+function ThemeToggle() {
+  const { colors, radius, spacing, preference, setPreference } = useTheme();
+
+  return (
+    <View
+      style={{
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        overflow: 'hidden',
+      }}
+    >
+      {THEME_OPTIONS.map((option, index) => {
+        const selected = option.value === preference;
+        return (
+          <View key={option.value}>
+            {index > 0 ? <Divider /> : null}
+            <Pressable
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              onPress={() => {
+                tapFeedback();
+                setPreference(option.value);
+              }}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.md,
+                minHeight: HIT_SIZE + 8,
+                paddingHorizontal: spacing.lg,
+                backgroundColor: pressed ? colors.surfaceMuted : 'transparent',
+              })}
+            >
+              <Ionicons
+                name={option.icon}
+                size={20}
+                color={selected ? colors.primary : colors.textMuted}
+              />
+              <Text variant="label" style={{ flex: 1, color: selected ? colors.primary : colors.text }}>
+                {option.label}
+              </Text>
+              <Ionicons
+                name={selected ? 'radio-button-on' : 'radio-button-off'}
+                size={20}
+                color={selected ? colors.primary : colors.borderStrong}
+              />
+            </Pressable>
+          </View>
+        );
+      })}
+    </View>
+  );
 }

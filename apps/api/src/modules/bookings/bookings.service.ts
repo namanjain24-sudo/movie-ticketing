@@ -48,11 +48,19 @@ const bookingSelect = {
   confirmedAt: true,
   subtotalMinor: true,
   feeMinor: true,
+  addOnsMinor: true,
   discountMinor: true,
   totalMinor: true,
   promoCode: { select: { code: true } },
   currency: true,
   userId: true,
+  addOns: {
+    select: {
+      quantity: true,
+      unitPriceMinor: true,
+      concessionItem: { select: { id: true, name: true } },
+    },
+  },
   showSeats: {
     select: {
       id: true,
@@ -94,6 +102,7 @@ function toDto(row: NonNullable<BookingRow>): Booking {
     confirmedAt: row.confirmedAt?.toISOString() ?? null,
     subtotalMinor: row.subtotalMinor,
     feeMinor: row.feeMinor,
+    addOnsMinor: row.addOnsMinor,
     discountMinor: row.discountMinor,
     promoCode: row.promoCode?.code ?? null,
     totalMinor: row.totalMinor,
@@ -104,6 +113,12 @@ function toDto(row: NonNullable<BookingRow>): Booking {
       number: ss.seat.number,
       tier: ss.seat.tier as SeatTier,
       priceMinor: ss.priceMinor,
+    })),
+    addOns: row.addOns.map((a) => ({
+      itemId: a.concessionItem.id,
+      name: a.concessionItem.name,
+      quantity: a.quantity,
+      unitPriceMinor: a.unitPriceMinor,
     })),
     showtime: {
       id: row.showtime.id,

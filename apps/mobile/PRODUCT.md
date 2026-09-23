@@ -25,9 +25,12 @@ the user may background the app mid-checkout.
 - **Availability is a band, not a number.** The API sends `PLENTY`/`FILLING`/
   `ALMOST_FULL`/`SOLD_OUT` on purpose. Rendering "4 left" would invent precision
   that was only true one request ago.
-- **No invented data.** There are no ratings, review counts, or trailers in this
-  system. The app shows certification, runtime, languages, genres, formats,
-  prices and availability, because those are what actually exist.
+- **No invented data.** There are no trailers in this system, and ratings are
+  never a fabricated number — they're computed live from reviews users
+  actually submit, one review per person, editable not stackable. The app
+  shows certification, runtime, languages, genres, formats, prices,
+  availability and those real ratings, because those are what actually
+  exist.
 
 ## Constraints
 

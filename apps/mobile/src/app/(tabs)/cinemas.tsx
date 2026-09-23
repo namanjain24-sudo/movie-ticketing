@@ -310,7 +310,7 @@ function Chip({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
+        gap: spacing.xs,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         borderRadius: radius.full,

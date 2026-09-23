@@ -20,9 +20,9 @@ export function Badge({ label, tone = 'neutral', variant = 'soft', style }: Badg
   const fill: Record<BadgeTone, string> = {
     neutral: colors.surfaceMuted,
     primary: isDark ? colors.surfaceMuted : colors.primaryMuted,
-    success: isDark ? colors.surfaceMuted : '#DCF5E3',
-    warning: isDark ? colors.surfaceMuted : '#FDF0D5',
-    onImage: 'rgba(0,0,0,0.55)',
+    success: isDark ? colors.surfaceMuted : colors.successMuted,
+    warning: isDark ? colors.surfaceMuted : colors.warningMuted,
+    onImage: colors.onImageScrim,
   };
 
   const ink: Record<BadgeTone, string> = {
@@ -30,7 +30,7 @@ export function Badge({ label, tone = 'neutral', variant = 'soft', style }: Badg
     primary: colors.primary,
     success: colors.success,
     warning: colors.warning,
-    onImage: '#FFFFFF',
+    onImage: colors.onImage,
   };
 
   return (

@@ -3,7 +3,8 @@ import { ActivityIndicator, View } from 'react-native';
 import { ApiRequestError } from '../api/client';
 import { config } from '../lib/config';
 import { useTheme } from '../theme';
-import { Button, Text } from './ui';
+import { Button } from './ui/button';
+import { Text } from './ui/text';
 
 /** Centred spinner for a screen whose data has not arrived yet. */
 export function LoadingState({ label }: { label?: string }) {
@@ -65,7 +66,7 @@ export function ErrorState({
             borderRadius: radius.md,
             paddingHorizontal: spacing.md,
             paddingVertical: spacing.sm,
-            gap: 2,
+            gap: spacing['2xs'],
             alignSelf: 'stretch',
           }}
         >

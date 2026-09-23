@@ -67,6 +67,7 @@ export async function listMovies(params: {
       languages: true,
       genres: true,
       releaseDate: true,
+      isNowShowing: true,
     },
   });
 
@@ -96,6 +97,7 @@ export async function getMovie(idOrSlug: string): Promise<MovieDetail> {
       languages: true,
       genres: true,
       releaseDate: true,
+      isNowShowing: true,
     },
   });
   if (!movie) throw HttpError.notFound('That movie is not showing');

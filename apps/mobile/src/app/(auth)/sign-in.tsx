@@ -4,8 +4,8 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
-import { ApiRequestError } from '../../api/client';
 import { Button, Text, TextField } from '../../components/ui';
+import { authErrorMessage } from '../../features/auth/auth-error';
 import { AuthScaffold } from '../../features/auth/auth-scaffold';
 import { useAuthStore } from '../../features/auth/auth-store';
 import { useTheme } from '../../theme';
@@ -31,9 +31,7 @@ export default function SignIn() {
       await signIn(values.email, values.password);
       router.replace('/(tabs)');
     } catch (err) {
-      setFormError(
-        err instanceof ApiRequestError ? err.message : 'Could not sign in. Please try again.',
-      );
+      setFormError(authErrorMessage(err, 'Could not sign in. Please try again.'));
     }
   });
 

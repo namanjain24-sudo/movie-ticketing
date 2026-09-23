@@ -28,6 +28,7 @@ paymentsRouter.post('/checkout', authenticate, validateBody(checkoutSchema), asy
         holdId: req.body.holdId,
         method: req.body.method,
         promoCode: req.body.promoCode,
+        addOns: req.body.addOns,
         idempotencyKey: key,
       }),
     }),

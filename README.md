@@ -274,14 +274,23 @@ would mount. On the 2,080-seat IMAX that is 633 mounted seat views instead of
 both themes, one accent (`#F84464`) reserved for the action that commits money,
 poster-forward browsing, and a seat map grouped into priced tier sections.
 Recorded in [`apps/mobile/DESIGN.md`](apps/mobile/DESIGN.md), with product truth
-in [`apps/mobile/PRODUCT.md`](apps/mobile/PRODUCT.md). There are no ratings or
-review counts anywhere in the UI, because there are none in the system.
+in [`apps/mobile/PRODUCT.md`](apps/mobile/PRODUCT.md). Ratings and review
+counts are real, not invented: they're computed live from the reviews users
+actually submit (`PUT /v1/movies/:idOrSlug/reviews/me`), never a fabricated
+number.
 
-**Next.** The Skia renderer and its performance pass on a real budget Android
-phone — the grid is row-virtualised React Native views today, which is correct
-but has not been measured at 2,080 seats; the WebSocket channel that turns the
-existing seat-delta publisher into live availability; a rendered QR on the
-ticket, whose payload is already there; a bookings tab; the operator dashboard.
+**Next.** A measured performance pass on the seat map on a real budget Android
+phone — the grid is row- and column-virtualised React Native views today
+(633 mounted cells on the 2,080-seat IMAX), which is correct but has not been
+measured on-device; a Skia renderer is on the table only if that measurement
+shows the RN-views approach falling short, since it would mean leaving Expo
+Go for a dev-client build. A repeatable method for that measurement — dev-only
+frame-timing and mounted-cell-count instrumentation, off by default — is in
+[`docs/seatmap-performance.md`](docs/seatmap-performance.md). Also
+outstanding: the WebSocket channel that turns the existing seat-delta
+publisher into live availability, and the operator dashboard. The rendered QR
+ticket and the bookings tab, both previously listed here, are done — see
+"Done, app" above.
 
 **Known limits.** The clean 5,000-user run has not been done: the generator and
 the server share one laptop, whose accept queue caps at 128 connections. That

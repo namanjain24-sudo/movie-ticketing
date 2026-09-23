@@ -2,15 +2,23 @@ import { SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Alert, Platform, ScrollView, Share, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { bookingApi } from '../../api/booking';
 import { ErrorState, LoadingState } from '../../components/query-state';
 import { Badge, Button, Text } from '../../components/ui';
+import {
+  cancelShowtimeReminder,
+  requestNotificationPermissionIfUnasked,
+  scheduleShowtimeReminder,
+} from '../../features/notifications/notifications';
 import { formatMonthDay, formatTime } from '../../lib/format';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
+import { gradients, scannerBackground, scannerInk } from '../../theme/tokens';
 
 export default function BookingTicket() {
   const { reference } = useLocalSearchParams<{ reference: string }>();
@@ -40,6 +48,7 @@ export default function BookingTicket() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bookings });
       void booking.refetch();
       void quote.refetch();
+      if (bookingId) void cancelShowtimeReminder(bookingId);
       notify(
         'Booking cancelled',
         `${formatMoney(result.refundMinor, result.currency)} goes back to your original payment method. ` +
@@ -52,6 +61,17 @@ export default function BookingTicket() {
         error instanceof Error ? error.message : 'Please try again in a moment.',
       ),
   });
+
+  // Re-runs on every refetch, not just the first confirmation — harmless,
+  // since both calls are idempotent (same notification identifier, and the
+  // OS itself remembers whether permission was already asked for).
+  useEffect(() => {
+    const data = booking.data;
+    if (data?.status !== 'CONFIRMED') return;
+    void requestNotificationPermissionIfUnasked().then(() => {
+      void scheduleShowtimeReminder(data);
+    });
+  }, [booking.data]);
 
   if (booking.isPending) return <LoadingState label="Loading your ticket" />;
 
@@ -81,7 +101,24 @@ export default function BookingTicket() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ alignItems: 'center', gap: spacing.sm }}>
-          <Ionicons name="checkmark-circle" size={52} color={colors.success} />
+          {cancelled ? (
+            <Ionicons name="checkmark-circle" size={52} color={colors.success} />
+          ) : (
+            // The one gold moment in the app, spent here per DESIGN.md's
+            // gradient token: this is the "won ticket" it was made for.
+            <LinearGradient
+              colors={gradients.gold}
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="checkmark" size={34} color={colors.onImage} />
+            </LinearGradient>
+          )}
           <Text variant="title">Booking confirmed</Text>
           <Text tone="muted" align="center">
             Show this at the counter or scan it at the gate.
@@ -134,14 +171,14 @@ export default function BookingTicket() {
               style={{
                 padding: spacing.md,
                 borderRadius: radius.md,
-                backgroundColor: '#FFFFFF',
+                backgroundColor: scannerBackground,
               }}
             >
               <QRCode
                 value={ticket.qrPayload}
                 size={168}
-                backgroundColor="#FFFFFF"
-                color="#000000"
+                backgroundColor={scannerBackground}
+                color={scannerInk}
               />
             </View>
             <Text variant="caption" tone="muted" align="center">

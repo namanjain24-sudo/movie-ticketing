@@ -15,7 +15,8 @@ export async function resetDb(): Promise<void> {
     TRUNCATE TABLE
       "WebhookEvent", "IdempotencyRecord", "Payment", "ShowSeat", "Booking",
       "Hold", "ShowtimeTierPrice", "Showtime", "Seat", "Screen", "Cinema",
-      "Review", "WatchlistItem", "PromoCode", "Movie", "RefreshToken", "User"
+      "Review", "WatchlistItem", "PromoCode", "ConcessionItem", "Movie",
+      "RefreshToken", "User"
     RESTART IDENTITY CASCADE
   `);
 }

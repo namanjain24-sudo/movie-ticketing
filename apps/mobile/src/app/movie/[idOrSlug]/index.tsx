@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Share, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { catalogApi } from '../../../api/catalog';
@@ -19,7 +19,14 @@ import {
   type ShowtimeFilter,
 } from '../../../features/catalog/showtime-filters';
 import { AVAILABILITY_LABELS, availabilityColor } from '../../../features/catalog/availability';
-import { formatRuntime, upcomingDays } from '../../../lib/format';
+import {
+  cancelReleaseCheck,
+  isReleaseCheckScheduled,
+  requestNotificationPermissionIfUnasked,
+  scheduleReleaseCheck,
+} from '../../../features/notifications/notifications';
+import { formatMonthDay, formatRuntime, upcomingDays } from '../../../lib/format';
+import { successFeedback, tapFeedback } from '../../../lib/haptics';
 import { openDirections } from '../../../lib/maps';
 import { queryKeys } from '../../../lib/query-client';
 import { useWatchlist } from '../../../features/watchlist/use-watchlist';
@@ -41,12 +48,23 @@ export default function MovieDetail() {
   const [date, setDate] = useState(days[0].value);
   const [filter, setFilter] = useState<ShowtimeFilter>({});
   const [synopsisOpen, setSynopsisOpen] = useState(false);
+  const [notifyRequested, setNotifyRequested] = useState(false);
 
   const movie = useQuery({
     queryKey: queryKeys.movie(idOrSlug),
     queryFn: () => catalogApi.movie(idOrSlug),
     enabled: Boolean(idOrSlug),
   });
+
+  // The scheduled-notification list is the only record of this toggle's
+  // state — there is no backend field for it (see `scheduleReleaseCheck`'s
+  // own comment on why not) — so it has to be read back on load rather than
+  // assumed off.
+  useEffect(() => {
+    const id = movie.data?.id;
+    if (!id || movie.data?.isNowShowing) return;
+    void isReleaseCheckScheduled(id).then(setNotifyRequested);
+  }, [movie.data?.id, movie.data?.isNowShowing]);
 
   // Showtimes key off the movie's id, not the slug in the URL, so the cache
   // holds one entry per movie however the screen was reached.
@@ -133,7 +151,7 @@ export default function MovieDetail() {
               backgroundColor: 'rgba(0,0,0,0.45)',
             }}
           >
-            <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={22} color={colors.onImage} />
           </Pressable>
         </View>
 
@@ -270,11 +288,36 @@ export default function MovieDetail() {
               label="Rate"
               onPress={() => router.push(`/movie/${idOrSlug}/reviews`)}
             />
+            {film.isNowShowing ? null : (
+              <ActionButton
+                icon={notifyRequested ? 'notifications' : 'notifications-outline'}
+                label={notifyRequested ? 'Notified' : 'Notify me'}
+                onPress={() => {
+                  // Not optimistic: `attempt()` inside the notifications
+                  // module swallows failures, so the only honest way to know
+                  // whether this actually took is to ask the OS again after,
+                  // rather than assume the toggle succeeded.
+                  if (notifyRequested) {
+                    tapFeedback();
+                    void cancelReleaseCheck(film.id).then(() =>
+                      isReleaseCheckScheduled(film.id).then(setNotifyRequested),
+                    );
+                  } else {
+                    successFeedback();
+                    void requestNotificationPermissionIfUnasked()
+                      .then(() => scheduleReleaseCheck(film))
+                      .then(() => isReleaseCheckScheduled(film.id))
+                      .then(setNotifyRequested);
+                  }
+                }}
+              />
+            )}
           </View>
         </View>
 
         <View style={{ height: 8, backgroundColor: colors.surfaceSunken }} />
 
+        {film.isNowShowing ? (
         <View style={{ paddingVertical: spacing.lg, gap: spacing.lg }}>
           <Text variant="heading" style={{ paddingHorizontal: spacing.lg }}>
             Choose a showtime
@@ -344,7 +387,7 @@ export default function MovieDetail() {
                       accessibilityLabel={`${cinema.name}, ${cinema.address}. Open this cinema`}
                       onPress={() => router.push(`/cinema/${cinema.slug}`)}
                       hitSlop={4}
-                      style={{ flex: 1, gap: 2 }}
+                      style={{ flex: 1, gap: spacing['2xs'] }}
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                         <Text variant="label" numberOfLines={1} style={{ flexShrink: 1 }}>
@@ -395,7 +438,31 @@ export default function MovieDetail() {
             )}
           </View>
         </View>
+        ) : (
+          <ComingSoonPanel releaseDate={film.releaseDate} />
+        )}
       </ScrollView>
+    </View>
+  );
+}
+
+/**
+ * Stands in for the showtime section on a film that has none yet — there is
+ * never anything for `DateStrip`/`ShowtimeFilters` to show a coming-soon
+ * film, so this replaces the whole block rather than rendering it empty.
+ */
+function ComingSoonPanel({ releaseDate }: { releaseDate: string }) {
+  const { colors, spacing } = useTheme();
+  return (
+    <View style={{ padding: spacing.lg, alignItems: 'center', gap: spacing.xs }}>
+      <Ionicons name="calendar-outline" size={28} color={colors.textMuted} />
+      <Text variant="heading" align="center">
+        Not yet on sale
+      </Text>
+      <Text tone="muted" align="center">
+        Releases {formatMonthDay(releaseDate)}. Tap Notify me above and this app will nudge you to
+        check back.
+      </Text>
     </View>
   );
 }

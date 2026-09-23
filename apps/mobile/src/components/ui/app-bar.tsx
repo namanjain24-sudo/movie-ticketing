@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
+import { ChromeSurface } from './chrome-surface';
 import { Text } from './text';
 
 /**
@@ -47,9 +48,8 @@ export function AppBar({
   );
 
   return (
-    <View
+    <ChromeSurface
       style={{
-        backgroundColor: colors.chrome,
         paddingTop: insets.top + spacing.sm,
         paddingBottom: spacing.md,
         paddingHorizontal: spacing.lg,
@@ -86,6 +86,6 @@ export function AppBar({
       </View>
 
       {actions}
-    </View>
+    </ChromeSurface>
   );
 }

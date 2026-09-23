@@ -32,7 +32,9 @@ const palette = {
   white: '#FFFFFF',
 
   green500: '#1EA043',
+  green100: '#DCF5E3',
   amber500: '#E8A317',
+  amber100: '#FDF0D5',
 
   // Accent pair. The app's one gesture towards the future is light: a cinema
   // is a dark room with a projector in it, so the accents behave like emitted
@@ -63,9 +65,18 @@ export type ColorName =
   | 'onChrome'
   | 'onChromeMuted'
   | 'success'
+  | 'successMuted'
   | 'warning'
+  | 'warningMuted'
   | 'danger'
   | 'dangerMuted'
+  // A poster or still is never theme-tinted, so text laid over one needs a
+  // colour that doesn't flip with light/dark — same idea as `onChrome`, for
+  // photos instead of the chrome bar.
+  | 'onImage'
+  | 'onImageMuted'
+  | 'onImageScrim'
+  | 'onImageSurface'
   // Seat map, where a seat's meaning must survive being 24px wide.
   | 'seatFree'
   | 'seatFreeBorder'
@@ -105,7 +116,9 @@ export const lightColors: Colors = {
   onChromeMuted: palette.ink300,
 
   success: palette.green500,
+  successMuted: palette.green100,
   warning: palette.amber500,
+  warningMuted: palette.amber100,
   danger: palette.red600,
   dangerMuted: palette.red100,
 
@@ -118,6 +131,11 @@ export const lightColors: Colors = {
   accentMuted: '#EFECFF',
   glass: 'rgba(255,255,255,0.72)',
   glassBorder: 'rgba(16,16,21,0.08)',
+
+  onImage: palette.white,
+  onImageMuted: 'rgba(255,255,255,0.72)',
+  onImageScrim: 'rgba(0,0,0,0.55)',
+  onImageSurface: palette.chrome900,
 };
 
 export const darkColors: Colors = {
@@ -142,7 +160,9 @@ export const darkColors: Colors = {
   onChromeMuted: palette.ink400,
 
   success: palette.green500,
+  successMuted: palette.ink700,
   warning: palette.amber500,
+  warningMuted: palette.ink700,
   danger: palette.red400,
   dangerMuted: palette.ink700,
 
@@ -155,7 +175,20 @@ export const darkColors: Colors = {
   accentMuted: 'rgba(123,91,255,0.18)',
   glass: 'rgba(28,28,38,0.72)',
   glassBorder: 'rgba(255,255,255,0.10)',
+
+  onImage: palette.white,
+  onImageMuted: 'rgba(255,255,255,0.72)',
+  onImageScrim: 'rgba(0,0,0,0.55)',
+  onImageSurface: palette.chrome900,
 };
+
+/**
+ * A QR code needs real black-on-white contrast to scan reliably, independent
+ * of theme — dark mode does not get a dark quiet zone. These are the only two
+ * colours in the app that deliberately do not come from `Colors`.
+ */
+export const scannerBackground = palette.white;
+export const scannerInk = palette.ink900;
 
 /**
  * Gradients, as the two-stop arrays every gradient library wants.
@@ -181,6 +214,8 @@ export type GradientName = keyof typeof gradients;
 
 /** A 4pt scale. Anything not on it is a mistake, not a design decision. */
 export const spacing = {
+  /** Only for a caption tight under its own title — never between two rows. */
+  '2xs': 2,
   xs: 4,
   sm: 8,
   md: 12,

@@ -1,6 +1,6 @@
 import { SEAT_TIER_LABELS, formatMoney, type SeatMap, type SeatMapSeat } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   ZoomIn,
@@ -13,7 +13,8 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../components/ui';
 import { useTheme, type Colors } from '../../theme';
-import { gradients } from '../../theme/tokens';
+import { gradients, spacing } from '../../theme/tokens';
+import { logMountedSeatCount, startSeatmapPerfLog } from './perf-log';
 import type { SeatRenderStatus, SeatRow } from './use-seat-selection';
 
 /**
@@ -222,7 +223,7 @@ export function ScreenCurve() {
           }}
         />
       </View>
-      <Text variant="overline" tone="muted" style={{ marginTop: 2 }}>
+      <Text variant="overline" tone="muted" style={{ marginTop: spacing['2xs'] }}>
         SCREEN THIS WAY
       </Text>
     </View>
@@ -322,6 +323,12 @@ export function SeatGrid({
   const firstColumn = Math.max(0, firstVisible - COLUMN_BUFFER);
   const lastColumn = firstVisible + columnsInView + COLUMN_BUFFER;
 
+  useEffect(startSeatmapPerfLog, []);
+  useEffect(() => {
+    const visibleRows = Math.ceil((frame.height || 600) / SEAT_PITCH);
+    logMountedSeatCount(visibleRows, lastColumn - firstColumn);
+  }, [frame.height, firstColumn, lastColumn]);
+
   const renderItem = useCallback(
     ({ item }: { item: GridItem }) => {
       if (item.kind === 'tier') {
@@ -390,5 +397,5 @@ export function SeatGrid({
 const styles = StyleSheet.create({
   row: { height: SEAT_PITCH, justifyContent: 'center' },
   label: { position: 'absolute', left: 0, width: ROW_LABEL_WIDTH },
-  tier: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  tier: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });
