@@ -18,6 +18,7 @@ import {
 } from '../../features/catalog/genre-filter';
 import { MovieCard } from '../../features/catalog/movie-card';
 import { SectionHeader } from '../../features/catalog/section-header';
+import { useRecentlyViewed } from '../../features/catalog/use-recently-viewed';
 import { promosApi } from '../../api/promos';
 import { OffersRail } from '../../features/promos/offers-rail';
 import { RecentSearchChips } from '../../features/search/recent-search-chips';
@@ -42,6 +43,7 @@ export default function NowShowing() {
   const [genre, setGenre] = useState<string | undefined>(undefined);
   const [language, setLanguage] = useState<string | undefined>(undefined);
   const recentSearches = useRecentSearches(STORAGE_KEYS.recentFilmSearches);
+  const recentlyViewed = useRecentlyViewed();
 
   // Cities are effectively static, so they outlive the default stale time and
   // never flash the picker while a movie list refetches.
@@ -147,6 +149,22 @@ export default function NowShowing() {
 
       {!searching && !narrowed && offers.data && offers.data.length > 0 ? (
         <OffersRail offers={offers.data} />
+      ) : null}
+
+      {!searching && !narrowed && recentlyViewed.movies.length > 0 ? (
+        <View style={{ gap: spacing.md }}>
+          <SectionHeader title="Recently viewed" />
+          <FlatList
+            data={recentlyViewed.movies}
+            horizontal
+            keyExtractor={(movie) => movie.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg }}
+            renderItem={({ item }) => (
+              <MovieCard movie={item} width={130} onPress={() => open(item)} />
+            )}
+          />
+        </View>
       ) : null}
 
       {all.length > 0 ? (

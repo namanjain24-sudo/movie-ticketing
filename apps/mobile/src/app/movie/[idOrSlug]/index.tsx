@@ -19,6 +19,8 @@ import { EmptyState, ErrorState, LoadingState } from '../../../components/query-
 import { Badge, Card, Poster, RatingStars, Skeleton, Text } from '../../../components/ui';
 import { DateStrip } from '../../../features/catalog/date-strip';
 import { ShowtimeChip } from '../../../features/catalog/showtime-chip';
+import { SimilarMoviesRail } from '../../../features/catalog/similar-movies-rail';
+import { useRecentlyViewed } from '../../../features/catalog/use-recently-viewed';
 import {
   ShowtimeFilters,
   applyFilter,
@@ -49,6 +51,7 @@ export default function MovieDetail() {
   const router = useRouter();
   const { colors, radius, spacing, elevation } = useTheme();
   const watchlist = useWatchlist();
+  const { record: recordViewed } = useRecentlyViewed();
   const insets = useSafeAreaInsets();
 
   // The backdrop's one authored moment: it stretches on the overscroll bounce
@@ -95,6 +98,10 @@ export default function MovieDetail() {
     if (!id || movie.data?.isNowShowing) return;
     void isReleaseCheckScheduled(id).then(setNotifyRequested);
   }, [movie.data?.id, movie.data?.isNowShowing]);
+
+  useEffect(() => {
+    if (movie.data) recordViewed(movie.data);
+  }, [movie.data, recordViewed]);
 
   // Showtimes key off the movie's id, not the slug in the URL, so the cache
   // holds one entry per movie however the screen was reached.
@@ -356,129 +363,135 @@ export default function MovieDetail() {
         <View style={{ height: 8, backgroundColor: colors.surfaceSunken }} />
 
         {film.isNowShowing ? (
-        <View style={{ paddingVertical: spacing.lg, gap: spacing.lg }}>
-          <Text variant="heading" style={{ paddingHorizontal: spacing.lg }}>
-            Choose a showtime
-          </Text>
+          <View style={{ paddingVertical: spacing.lg, gap: spacing.lg }}>
+            <Text variant="heading" style={{ paddingHorizontal: spacing.lg }}>
+              Choose a showtime
+            </Text>
 
-          <DateStrip
-            days={days}
-            value={date}
-            onChange={(next) => {
-              setDate(next);
-              // Another day offers other formats; a stale filter would read as
-              // "no screenings" when there are plenty.
-              setFilter({});
-            }}
-          />
-
-          {showtimes.data ? (
-            <ShowtimeFilters
-              {...filterOptions(showtimes.data)}
-              value={filter}
-              onChange={setFilter}
+            <DateStrip
+              days={days}
+              value={date}
+              onChange={(next) => {
+                setDate(next);
+                // Another day offers other formats; a stale filter would read as
+                // "no screenings" when there are plenty.
+                setFilter({});
+              }}
             />
-          ) : null}
 
-          <View style={{ paddingHorizontal: spacing.lg }}>
-            <Legend />
-          </View>
+            {showtimes.data ? (
+              <ShowtimeFilters
+                {...filterOptions(showtimes.data)}
+                value={filter}
+                onChange={setFilter}
+              />
+            ) : null}
 
-          <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
-            {showtimes.isPending ? (
-              <>
-                <Skeleton style={{ height: 128, borderRadius: 14 }} />
-                <Skeleton style={{ height: 128, borderRadius: 14 }} />
-              </>
-            ) : showtimes.isError ? (
-              <ErrorState
-                error={showtimes.error}
-                title="Could not load showtimes"
-                onRetry={() => void showtimes.refetch()}
-              />
-            ) : visible.length === 0 ? (
-              <EmptyState
-                title={
-                  showtimes.data.length === 0
-                    ? 'No screenings that day'
-                    : 'Nothing matches those filters'
-                }
-                message={
-                  showtimes.data.length === 0
-                    ? 'Try another date from the strip above.'
-                    : 'Clear a filter to see the rest of the day.'
-                }
-                action={
-                  showtimes.data.length > 0
-                    ? { label: 'Clear filters', onPress: () => setFilter({}) }
-                    : undefined
-                }
-              />
-            ) : (
-              visible.map(({ cinema, showtimes: slots }) => (
-                <Card key={cinema.id} style={{ gap: spacing.md }}>
-                  {/* The venue block is a link now that a venue is a place:
+            <View style={{ paddingHorizontal: spacing.lg }}>
+              <Legend />
+            </View>
+
+            <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
+              {showtimes.isPending ? (
+                <>
+                  <Skeleton style={{ height: 128, borderRadius: 14 }} />
+                  <Skeleton style={{ height: 128, borderRadius: 14 }} />
+                </>
+              ) : showtimes.isError ? (
+                <ErrorState
+                  error={showtimes.error}
+                  title="Could not load showtimes"
+                  onRetry={() => void showtimes.refetch()}
+                />
+              ) : visible.length === 0 ? (
+                <EmptyState
+                  title={
+                    showtimes.data.length === 0
+                      ? 'No screenings that day'
+                      : 'Nothing matches those filters'
+                  }
+                  message={
+                    showtimes.data.length === 0
+                      ? 'Try another date from the strip above.'
+                      : 'Clear a filter to see the rest of the day.'
+                  }
+                  action={
+                    showtimes.data.length > 0
+                      ? { label: 'Clear filters', onPress: () => setFilter({}) }
+                      : undefined
+                  }
+                />
+              ) : (
+                visible.map(({ cinema, showtimes: slots }) => (
+                  <Card key={cinema.id} style={{ gap: spacing.md }}>
+                    {/* The venue block is a link now that a venue is a place:
                       it has a map, a phone number and the rest of its week. */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`${cinema.name}, ${cinema.address}. Open this cinema`}
-                      onPress={() => router.push(`/cinema/${cinema.slug}`)}
-                      hitSlop={4}
-                      style={{ flex: 1, gap: spacing['2xs'] }}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                        <Text variant="label" numberOfLines={1} style={{ flexShrink: 1 }}>
-                          {cinema.name}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${cinema.name}, ${cinema.address}. Open this cinema`}
+                        onPress={() => router.push(`/cinema/${cinema.slug}`)}
+                        hitSlop={4}
+                        style={{ flex: 1, gap: spacing['2xs'] }}
+                      >
+                        <View
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+                        >
+                          <Text variant="label" numberOfLines={1} style={{ flexShrink: 1 }}>
+                            {cinema.name}
+                          </Text>
+                          <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
+                        </View>
+                        <Text variant="caption" tone="muted" numberOfLines={1}>
+                          {cinema.address}
                         </Text>
-                        <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
-                      </View>
-                      <Text variant="caption" tone="muted" numberOfLines={1}>
-                        {cinema.address}
-                      </Text>
-                    </Pressable>
+                      </Pressable>
 
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Directions to ${cinema.name}`}
-                      onPress={() =>
-                        void openDirections({
-                          latitude: cinema.latitude,
-                          longitude: cinema.longitude,
-                          label: cinema.name,
-                        })
-                      }
-                      hitSlop={8}
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: radius.full,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: colors.surfaceMuted,
-                      }}
-                    >
-                      <Ionicons name="navigate-outline" size={16} color={colors.accent} />
-                    </Pressable>
-                  </View>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                    {slots.map((slot) => (
-                      <ShowtimeChip
-                        key={slot.id}
-                        showtime={slot}
-                        closed={slot.closed}
-                        onPress={() => router.push(`/showtime/${slot.id}`)}
-                      />
-                    ))}
-                  </View>
-                </Card>
-              ))
-            )}
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Directions to ${cinema.name}`}
+                        onPress={() =>
+                          void openDirections({
+                            latitude: cinema.latitude,
+                            longitude: cinema.longitude,
+                            label: cinema.name,
+                          })
+                        }
+                        hitSlop={8}
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: radius.full,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: colors.surfaceMuted,
+                        }}
+                      >
+                        <Ionicons name="navigate-outline" size={16} color={colors.accent} />
+                      </Pressable>
+                    </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                      {slots.map((slot) => (
+                        <ShowtimeChip
+                          key={slot.id}
+                          showtime={slot}
+                          closed={slot.closed}
+                          onPress={() => router.push(`/showtime/${slot.id}`)}
+                        />
+                      ))}
+                    </View>
+                  </Card>
+                ))
+              )}
+            </View>
           </View>
-        </View>
         ) : (
           <ComingSoonPanel releaseDate={film.releaseDate} />
         )}
+
+        <View style={{ height: 8, backgroundColor: colors.surfaceSunken }} />
+
+        <SimilarMoviesRail film={film} onSelect={(movie) => router.push(`/movie/${movie.slug}`)} />
       </Animated.ScrollView>
     </View>
   );

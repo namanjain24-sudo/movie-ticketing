@@ -2,7 +2,7 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../../app';
 import { prisma } from '../../db';
-import { resetDb } from '../../test/helpers';
+import { createShowtime, resetDb } from '../../test/helpers';
 import { distanceKm } from './catalog.service';
 
 const app = createApp();
@@ -136,5 +136,77 @@ describe('cinema directory', () => {
     const res = await request(app).get('/v1/cinemas/near-one').expect(200);
     expect(res.body).toMatchObject({ name: 'Near Cinema', brand: 'PVR', amenities: ['IMAX'] });
     await request(app).get('/v1/cinemas/no-such-venue').expect(404);
+  });
+});
+
+describe('listShowtimes', () => {
+  beforeEach(resetDb);
+
+  it("includes the film each showtime belongs to, not just the cinema's", async () => {
+    const { showtimeId, movieId, movieSlug } = await createShowtime();
+    const movie = await prisma.movie.findUniqueOrThrow({ where: { id: movieId } });
+
+    const res = await request(app).get('/v1/showtimes?city=Testville').expect(200);
+    const showtime = res.body.cinemas[0].showtimes.find((s: { id: string }) => s.id === showtimeId);
+
+    expect(showtime.movie).toMatchObject({
+      id: movieId,
+      slug: movieSlug,
+      title: movie.title,
+      posterUrl: movie.posterUrl,
+    });
+  });
+
+  // A cinema-wide listing (no `movieId` filter) is exactly the case a client
+  // cannot render correctly without a movie on every showtime: two different
+  // films can share the same venue and day, and only the movie field tells
+  // them apart.
+  it('tells two films at the same cinema apart', async () => {
+    const first = await createShowtime({ startsInMinutes: 120 });
+    const screen = await prisma.screen.findUniqueOrThrow({
+      where: { id: first.screenId },
+      select: { cinemaId: true },
+    });
+    const secondMovie = await prisma.movie.create({
+      data: {
+        slug: 'second-film',
+        title: 'Second Film',
+        synopsis: 'A different film sharing the same screen.',
+        posterUrl: 'https://example.test/second-poster.png',
+        durationMins: 100,
+        certification: 'U',
+        languages: ['Hindi'],
+        genres: ['Comedy'],
+        releaseDate: new Date(),
+      },
+    });
+    const secondShowtime = await prisma.showtime.create({
+      data: {
+        movieId: secondMovie.id,
+        screenId: first.screenId,
+        startsAt: new Date(Date.now() + 300 * 60_000),
+        endsAt: new Date(Date.now() + 450 * 60_000),
+        salesCloseAt: new Date(Date.now() + 290 * 60_000),
+        format: 'TWO_D',
+        language: 'Hindi',
+        tierPrices: { create: [{ tier: 'STANDARD', priceMinor: 20_000 }] },
+      },
+    });
+
+    const res = await request(app).get('/v1/showtimes?city=Testville').expect(200);
+    const cinema = res.body.cinemas.find(
+      (c: { cinema: { id: string } }) => c.cinema.id === screen.cinemaId,
+    );
+    const titles = cinema.showtimes.map((s: { id: string; movie: { title: string } }) => [
+      s.id,
+      s.movie.title,
+    ]);
+
+    expect(titles).toEqual(
+      expect.arrayContaining([
+        [first.showtimeId, 'Test Movie'],
+        [secondShowtime.id, 'Second Film'],
+      ]),
+    );
   });
 });

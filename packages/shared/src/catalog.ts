@@ -106,6 +106,12 @@ export const showtimeSummarySchema = z.object({
   salesCloseAt: z.string(),
   fromPriceMinor: z.number().int(),
   availability: availabilityBandSchema,
+  /**
+   * A listing grouped by cinema (no `movieId` filter) can hold showtimes for
+   * several different films at once, so the film has to travel with each
+   * showtime rather than being assumed from the request.
+   */
+  movie: z.object({ id: z.string(), slug: z.string(), title: z.string(), posterUrl: z.string() }),
 });
 export type ShowtimeSummary = z.infer<typeof showtimeSummarySchema>;
 

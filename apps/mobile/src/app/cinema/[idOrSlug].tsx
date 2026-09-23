@@ -1,4 +1,3 @@
-import { SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,11 +6,12 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { catalogApi } from '../../api/catalog';
 import { cinemasApi } from '../../api/cinemas';
 import { ErrorState, LoadingState } from '../../components/query-state';
-import { AppBar, Button, Text } from '../../components/ui';
+import { AppBar, Button, Poster, Text } from '../../components/ui';
 import { CinemaMap } from '../../features/cinemas/cinema-map';
 import { DateStrip } from '../../features/catalog/date-strip';
-import { AVAILABILITY_LABELS, availabilityColor } from '../../features/catalog/availability';
-import { formatTime, toDateKey, upcomingDays } from '../../lib/format';
+import { groupByMovie } from '../../features/catalog/group-by-movie';
+import { ShowtimeChip } from '../../features/catalog/showtime-chip';
+import { toDateKey, upcomingDays } from '../../lib/format';
 import { callNumber, openDirections, openPlace } from '../../lib/maps';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
@@ -24,7 +24,7 @@ const MAP_HEIGHT = 200;
 export default function CinemaScreen() {
   const { idOrSlug } = useLocalSearchParams<{ idOrSlug: string }>();
   const router = useRouter();
-  const { colors, radius, spacing, elevation } = useTheme();
+  const { colors, radius, spacing } = useTheme();
 
   const days = useMemo(() => upcomingDays(DAYS), []);
   const [date, setDate] = useState(() => toDateKey(new Date()));
@@ -48,6 +48,19 @@ export default function CinemaScreen() {
     queryKey: queryKeys.showtimes({ city, date }),
     queryFn: () => catalogApi.showtimes({ city, date }),
     enabled: Boolean(city),
+    // Today's list includes screenings that have already started, because the
+    // API returns a whole day. Marking them here keeps the clock read out of
+    // render, where it would be an impure call.
+    select: (cinemas) => {
+      const now = Date.now();
+      return cinemas.map((entry) => ({
+        ...entry,
+        showtimes: entry.showtimes.map((slot) => ({
+          ...slot,
+          closed: new Date(slot.salesCloseAt).getTime() <= now,
+        })),
+      }));
+    },
   });
 
   const here = showtimes.data?.find((entry) => entry.cinema.id === cinema.data?.id);
@@ -165,58 +178,40 @@ export default function CinemaScreen() {
               <Text tone="muted">Nothing scheduled here on this day.</Text>
             </View>
           ) : (
-            <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}>
-              {here.showtimes.map((show) => {
-                const soldOut = show.availability === 'SOLD_OUT';
-                return (
+            <View style={{ paddingHorizontal: spacing.lg, gap: spacing.xl }}>
+              {groupByMovie(here.showtimes).map(({ movie, showtimes: slots }) => (
+                <View key={movie.id} style={{ gap: spacing.sm }}>
                   <Pressable
-                    key={show.id}
                     accessibilityRole="button"
-                    accessibilityState={{ disabled: soldOut }}
-                    accessibilityLabel={`${formatTime(show.startsAt)}, ${
-                      SHOW_FORMAT_LABELS[show.format]
-                    }, ${show.language}, ${AVAILABILITY_LABELS[show.availability]}`}
-                    disabled={soldOut}
-                    onPress={() => router.push(`/showtime/${show.id}`)}
-                    style={({ pressed }) => [
-                      {
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: spacing.md,
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
-                        borderWidth: 1,
-                        borderRadius: radius.md,
-                        paddingHorizontal: spacing.lg,
-                        paddingVertical: spacing.md,
-                        opacity: soldOut ? 0.5 : pressed ? 0.8 : 1,
-                      },
-                      elevation.card,
-                    ]}
+                    accessibilityLabel={`${movie.title}. Open this film`}
+                    onPress={() => router.push(`/movie/${movie.slug}`)}
+                    hitSlop={4}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
                   >
-                    <View style={{ gap: 2 }}>
-                      <Text variant="heading" numeric>
-                        {formatTime(show.startsAt)}
-                      </Text>
-                      <Text variant="caption" tone="muted">
-                        {SHOW_FORMAT_LABELS[show.format]} · {show.language}
-                      </Text>
-                    </View>
-
-                    <View style={{ flex: 1, alignItems: 'flex-end', gap: 2 }}>
-                      <Text variant="label" numeric>
-                        {formatMoney(show.fromPriceMinor, show.currency)}
-                      </Text>
-                      <Text
-                        variant="caption"
-                        style={{ color: availabilityColor(show.availability, colors) }}
-                      >
-                        {AVAILABILITY_LABELS[show.availability]}
-                      </Text>
-                    </View>
+                    <Poster
+                      uri={movie.posterUrl}
+                      title={movie.title}
+                      rounded={radius.sm}
+                      style={{ width: 32, aspectRatio: 2 / 3 }}
+                    />
+                    <Text variant="label" numberOfLines={1} style={{ flex: 1 }}>
+                      {movie.title}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
                   </Pressable>
-                );
-              })}
+
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                    {slots.map((show) => (
+                      <ShowtimeChip
+                        key={show.id}
+                        showtime={show}
+                        closed={show.closed}
+                        onPress={() => router.push(`/showtime/${show.id}`)}
+                      />
+                    ))}
+                  </View>
+                </View>
+              ))}
             </View>
           )}
         </View>
