@@ -7,6 +7,7 @@ import { bookingApi } from '../../api/booking';
 import { EmptyState, ErrorState } from '../../components/query-state';
 import { AppBar, Skeleton, Text } from '../../components/ui';
 import { BookingCard } from '../../features/bookings/booking-card';
+import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
 
@@ -39,7 +40,10 @@ export default function Bookings() {
             key={value}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
-            onPress={() => setTab(value)}
+            onPress={() => {
+              if (value !== tab) tapFeedback();
+              setTab(value);
+            }}
             style={{
               flex: 1,
               alignItems: 'center',

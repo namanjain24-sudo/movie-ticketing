@@ -64,6 +64,9 @@ export type ColorName =
   | 'chrome'
   | 'onChrome'
   | 'onChromeMuted'
+  /** An inactive pill or control sitting on the chrome bar itself — never a
+   * page surface, so it doesn't flip with light/dark like `surfaceMuted`. */
+  | 'chromeSurface'
   | 'success'
   | 'successMuted'
   | 'warning'
@@ -114,6 +117,7 @@ export const lightColors: Colors = {
   chrome: palette.chrome700,
   onChrome: palette.white,
   onChromeMuted: palette.ink300,
+  chromeSurface: 'rgba(255,255,255,0.14)',
 
   success: palette.green500,
   successMuted: palette.green100,
@@ -158,6 +162,7 @@ export const darkColors: Colors = {
   chrome: palette.chrome900,
   onChrome: palette.white,
   onChromeMuted: palette.ink400,
+  chromeSurface: 'rgba(255,255,255,0.14)',
 
   success: palette.green500,
   successMuted: palette.ink700,

@@ -37,6 +37,7 @@ function RootNavigator() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
+          animation: 'slide_from_right',
         }}
       >
         <Stack.Screen name="index" />
@@ -51,8 +52,10 @@ function RootNavigator() {
         {/* Both carry their own dark AppBar, so the stack header stays off. */}
         <Stack.Screen name="showtime/[id]" />
         <Stack.Screen name="checkout/[holdId]" />
-        {/* No header: a confirmed ticket has nowhere to go back to. */}
-        <Stack.Screen name="booking/[reference]" />
+        {/* No header and no back button: a confirmed ticket has nowhere to go
+            back to, so it rises into place rather than sliding in from the
+            side like a screen you could return from. */}
+        <Stack.Screen name="booking/[reference]" options={{ animation: 'fade_from_bottom' }} />
         <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Not found' }} />
       </Stack>
     </>

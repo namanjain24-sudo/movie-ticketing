@@ -3,7 +3,9 @@ import { formatMoney } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View } from 'react-native';
 import { Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
 import { callNumber, formatDistance, openDirections } from '../../lib/maps';
+import { AnimatedPressable, usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
@@ -19,6 +21,7 @@ export function CinemaCard({
 }) {
   const { colors, radius, spacing, elevation } = useTheme();
   const distance = formatDistance(cinema.distanceKm);
+  const press = usePressScale();
 
   const place = {
     latitude: cinema.latitude,
@@ -27,13 +30,18 @@ export function CinemaCard({
   };
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={`${cinema.name}, ${cinema.address}${
         distance ? `, ${distance} away` : ''
       }`}
-      onPress={onPress}
-      style={({ pressed }) => [
+      onPress={() => {
+        tapFeedback();
+        onPress();
+      }}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      style={[
         {
           backgroundColor: colors.surface,
           borderColor: colors.border,
@@ -41,9 +49,9 @@ export function CinemaCard({
           borderRadius: radius.lg,
           padding: spacing.lg,
           gap: spacing.md,
-          opacity: pressed ? 0.8 : 1,
         },
         elevation.card,
+        press.style,
       ]}
     >
       <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
@@ -147,7 +155,7 @@ export function CinemaCard({
           />
         ) : null}
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
