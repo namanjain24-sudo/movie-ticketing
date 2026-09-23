@@ -20,7 +20,10 @@ import { MovieCard } from '../../features/catalog/movie-card';
 import { SectionHeader } from '../../features/catalog/section-header';
 import { promosApi } from '../../api/promos';
 import { OffersRail } from '../../features/promos/offers-rail';
+import { RecentSearchChips } from '../../features/search/recent-search-chips';
+import { useRecentSearches } from '../../features/search/use-recent-searches';
 import { queryKeys } from '../../lib/query-client';
+import { STORAGE_KEYS } from '../../lib/storage';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
@@ -35,8 +38,10 @@ export default function NowShowing() {
   const [city, setCity] = useState<string | undefined>(undefined);
   const [cityOpen, setCityOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [genre, setGenre] = useState<string | undefined>(undefined);
   const [language, setLanguage] = useState<string | undefined>(undefined);
+  const recentSearches = useRecentSearches(STORAGE_KEYS.recentFilmSearches);
 
   // Cities are effectively static, so they outlive the default stale time and
   // never flash the picker while a movie list refetches.
@@ -104,6 +109,9 @@ export default function NowShowing() {
           <TextInput
             value={search}
             onChangeText={setSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            onSubmitEditing={() => recentSearches.record(search)}
             placeholder="Search for a film"
             placeholderTextColor={colors.textMuted}
             returnKeyType="search"
@@ -123,6 +131,17 @@ export default function NowShowing() {
           ) : null}
         </View>
       </View>
+
+      {searchFocused && !search ? (
+        <RecentSearchChips
+          recent={recentSearches.recent}
+          onSelect={(query) => {
+            setSearch(query);
+            recentSearches.record(query);
+          }}
+          onClear={recentSearches.clear}
+        />
+      ) : null}
 
       {featured.length > 0 ? <FeaturedRail movies={featured} onSelect={open} /> : null}
 
