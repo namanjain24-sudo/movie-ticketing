@@ -1,8 +1,8 @@
-# Movie ticketing platform
+# Boxoffice
 
-A booking system built around two claims, both of which have evidence in this
-repo: **it provably never oversells**, and the seat map is built to hold 60fps
-with two thousand seats on a mid-range Android phone.
+A movie ticketing platform built around two claims, both of which have
+evidence in this repo: **it provably never oversells**, and the seat map is
+built to hold 60fps with two thousand seats on a mid-range Android phone.
 
 React Native (Expo) · React · Node/TypeScript · Postgres · Redis
 
