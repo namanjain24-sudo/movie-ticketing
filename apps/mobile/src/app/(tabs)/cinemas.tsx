@@ -13,6 +13,7 @@ import { CinemaMap } from '../../features/cinemas/cinema-map';
 import { useUserLocation } from '../../features/cinemas/use-location';
 import { RecentSearchChips } from '../../features/search/recent-search-chips';
 import { useRecentSearches } from '../../features/search/use-recent-searches';
+import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
 import { STORAGE_KEYS } from '../../lib/storage';
 import { useTheme } from '../../theme';
@@ -238,7 +239,7 @@ export default function Cinemas() {
               paddingHorizontal: spacing.md,
               paddingVertical: 6,
               borderRadius: radius.full,
-              backgroundColor: mapOpen ? colors.primary : 'rgba(255,255,255,0.14)',
+              backgroundColor: mapOpen ? colors.primary : colors.chromeSurface,
             }}
           >
             <Ionicons name={mapOpen ? 'list' : 'map-outline'} size={15} color={colors.onChrome} />
@@ -325,7 +326,10 @@ function Chip({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: active, busy }}
-      onPress={onPress}
+      onPress={() => {
+        tapFeedback();
+        onPress();
+      }}
       style={{
         flexDirection: 'row',
         alignItems: 'center',

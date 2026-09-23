@@ -1,22 +1,15 @@
 import type { MovieSummary } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import { View } from 'react-native';
 import { Poster, Text } from '../../components/ui';
 import { formatMonthDay, formatRuntime } from '../../lib/format';
+import { AnimatedPressable, usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
 import { SaveHeart } from '../watchlist/save-heart';
 
 /** Every poster in the catalogue is 2:3, and so is the box that holds it. */
 const POSTER_RATIO = 2 / 3;
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function MovieCard({
   movie,
@@ -32,17 +25,7 @@ export function MovieCard({
   onPress: () => void;
 }) {
   const { colors, radius, spacing, elevation } = useTheme();
-
-  /**
-   * The card dips under the thumb and springs back. A spring rather than a
-   * timing curve because the finger is a physical thing and the card should
-   * answer like one — and on the release, the overshoot is the whole tell that
-   * the tap registered.
-   */
-  const pressed = useSharedValue(0);
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 - pressed.value * 0.035 }],
-  }));
+  const press = usePressScale();
 
   const rated = movie.rating.average !== null && movie.rating.count > 0;
 
@@ -55,13 +38,9 @@ export function MovieCard({
         rated ? `. Rated ${movie.rating.average} out of 5 from ${movie.rating.count} reviews` : ''
       }`}
       onPress={onPress}
-      onPressIn={() => {
-        pressed.value = withTiming(1, { duration: 90 });
-      }}
-      onPressOut={() => {
-        pressed.value = withSpring(0, { damping: 14, stiffness: 320 });
-      }}
-      style={[{ width, flex: width ? undefined : 1, gap: spacing.sm }, cardStyle]}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      style={[{ width, flex: width ? undefined : 1, gap: spacing.sm }, press.style]}
     >
       <View>
         <Poster

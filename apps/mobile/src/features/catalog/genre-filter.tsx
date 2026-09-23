@@ -1,6 +1,7 @@
 import type { MovieSummary } from '@app/shared';
 import { Pressable, ScrollView } from 'react-native';
 import { Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 
 /** Genres the current list actually contains, most common first. */
@@ -57,7 +58,10 @@ export function GenreFilter({
       key={label}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      onPress={onPress}
+      onPress={() => {
+        if (!selected) tapFeedback();
+        onPress();
+      }}
       style={({ pressed }) => ({
         paddingVertical: spacing.xs + 2,
         paddingHorizontal: spacing.md,

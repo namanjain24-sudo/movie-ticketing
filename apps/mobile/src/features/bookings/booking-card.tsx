@@ -1,8 +1,10 @@
 import { SHOW_FORMAT_LABELS, formatMoney, type Booking } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { Badge, Poster, Text } from '../../components/ui';
 import { formatMonthDay, formatTime } from '../../lib/format';
+import { tapFeedback } from '../../lib/haptics';
+import { AnimatedPressable, usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
 
 /**
@@ -13,17 +15,23 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress: (
   const { colors, radius, spacing, elevation } = useTheme();
   const { showtime } = booking;
   const cancelled = booking.status === 'CANCELLED' || booking.status === 'FAILED';
+  const press = usePressScale();
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={`${showtime.movie.title}, ${formatMonthDay(
         showtime.startsAt,
       )} at ${formatTime(showtime.startsAt)}, seats ${booking.seats
         .map((s) => `${s.rowLabel}${s.number}`)
         .join(', ')}. Reference ${booking.reference}`}
-      onPress={onPress}
-      style={({ pressed }) => [
+      onPress={() => {
+        tapFeedback();
+        onPress();
+      }}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      style={[
         {
           flexDirection: 'row',
           gap: spacing.md,
@@ -32,9 +40,10 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress: (
           backgroundColor: colors.surface,
           borderWidth: 1,
           borderColor: colors.border,
-          opacity: pressed ? 0.8 : cancelled ? 0.6 : 1,
+          opacity: cancelled ? 0.6 : 1,
         },
         elevation.card,
+        press.style,
       ]}
     >
       <Poster
@@ -77,6 +86,6 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress: (
           </Text>
         </View>
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 }

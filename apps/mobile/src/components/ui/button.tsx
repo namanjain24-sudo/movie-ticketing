@@ -1,11 +1,12 @@
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
   View,
   type PressableProps,
   type ViewStyle,
 } from 'react-native';
+import { tapFeedback } from '../../lib/haptics';
+import { AnimatedPressable, usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 import { Text } from './text';
@@ -47,6 +48,7 @@ export function Button({
 }: ButtonProps) {
   const { colors, radius, spacing } = useTheme();
   const isDisabled = disabled || loading;
+  const press = usePressScale();
 
   const background: Record<Variant, string> = {
     primary: colors.primary,
@@ -64,15 +66,28 @@ export function Button({
         : 'default';
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityState={{ disabled: Boolean(isDisabled), busy: loading }}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      {...rest}
+      onPressIn={(e) => {
+        if (!isDisabled) press.onPressIn();
+        rest.onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        press.onPressOut();
+        rest.onPressOut?.(e);
+      }}
+      onPress={(e) => {
+        if (!isDisabled) tapFeedback();
+        rest.onPress?.(e);
+      }}
+      style={({ pressed: isPressed }: { pressed: boolean }) => [
         styles.base,
         {
           backgroundColor:
-            pressed && variant === 'primary' ? colors.primaryPressed : background[variant],
+            isPressed && variant === 'primary' ? colors.primaryPressed : background[variant],
           borderRadius: radius.md,
           paddingHorizontal: spacing.lg,
           minHeight: HEIGHT[size],
@@ -81,9 +96,9 @@ export function Button({
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
           opacity: isDisabled ? 0.45 : 1,
         },
+        press.style,
         style,
       ]}
-      {...rest}
     >
       <View style={styles.content}>
         {loading ? (
@@ -101,7 +116,7 @@ export function Button({
           </Text>
         )}
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
