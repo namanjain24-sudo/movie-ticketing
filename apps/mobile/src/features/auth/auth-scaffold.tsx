@@ -44,9 +44,12 @@ export function AuthScaffold({
             paddingTop: insets.top + spacing['2xl'],
             paddingHorizontal: spacing.lg,
             paddingBottom: spacing['2xl'],
-            gap: spacing.lg,
+            gap: spacing.xl,
           }}
         >
+          <Text variant="overline" style={{ color: colors.onChromeMuted, letterSpacing: 3 }}>
+            BOXOFFICE
+          </Text>
           <SeatMotif />
           <View style={{ gap: spacing.xs }}>
             <Text variant="display" tone="onChrome">
@@ -84,45 +87,34 @@ export function AuthScaffold({
  * set.
  */
 function SeatMotif() {
-  const { colors, radius, spacing } = useTheme();
+  const { colors, radius } = useTheme();
   const seats = [0, 1, 2, 3, 4];
 
   return (
-    <View style={{ gap: spacing.sm }}>
-      <View
-        style={{
-          width: 92,
-          height: 3,
-          borderRadius: 2,
-          backgroundColor: colors.onChromeMuted,
-          opacity: 0.5,
-        }}
-      />
-      <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-        {seats.map((i) => {
-          const chosen = i === 2;
-          return (
-            <View
-              key={i}
-              style={{
-                width: 22,
-                height: 22,
-                borderTopLeftRadius: radius.sm,
-                borderTopRightRadius: radius.sm,
-                borderBottomLeftRadius: 3,
-                borderBottomRightRadius: 3,
-                borderWidth: 1.5,
-                borderColor: chosen ? colors.primary : colors.onChromeMuted,
-                backgroundColor: chosen ? colors.primary : 'transparent',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {chosen ? <Ionicons name="checkmark" size={13} color={colors.onPrimary} /> : null}
-            </View>
-          );
-        })}
-      </View>
+    <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+      {seats.map((i) => {
+        const chosen = i === 2;
+        return (
+          <View
+            key={i}
+            style={{
+              width: 22,
+              height: 22,
+              borderTopLeftRadius: radius.sm,
+              borderTopRightRadius: radius.sm,
+              borderBottomLeftRadius: 3,
+              borderBottomRightRadius: 3,
+              borderWidth: 1.5,
+              borderColor: chosen ? colors.primary : colors.onChromeMuted,
+              backgroundColor: chosen ? colors.primary : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {chosen ? <Ionicons name="checkmark" size={13} color={colors.onPrimary} /> : null}
+          </View>
+        );
+      })}
     </View>
   );
 }
