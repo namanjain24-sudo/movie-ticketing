@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { RatingStars, Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 
 /**
@@ -73,7 +74,10 @@ export function RatingBreakdown({
               // A bar with no reviews behind it filters to an empty list, which
               // is a worse answer than not being pressable.
               disabled={row.count === 0}
-              onPress={() => onFilter(active ? undefined : row.rating)}
+              onPress={() => {
+                tapFeedback();
+                onFilter(active ? undefined : row.rating);
+              }}
               hitSlop={4}
               style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
             >

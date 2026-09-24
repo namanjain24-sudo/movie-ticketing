@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 
 export function RecentSearchChips({
@@ -22,19 +23,30 @@ export function RecentSearchChips({
         <Text variant="caption" tone="muted">
           Recent searches
         </Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Clear recent searches" onPress={onClear}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Clear recent searches"
+          onPress={onClear}
+        >
           <Text variant="caption" tone="primary">
             Clear
           </Text>
         </Pressable>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing.sm }}
+      >
         {recent.map((query) => (
           <Pressable
             key={query}
             accessibilityRole="button"
             accessibilityLabel={`Search again for ${query}`}
-            onPress={() => onSelect(query)}
+            onPress={() => {
+              tapFeedback();
+              onSelect(query);
+            }}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
