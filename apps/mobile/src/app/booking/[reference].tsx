@@ -17,7 +17,9 @@ import {
   scheduleShowtimeReminder,
 } from '../../features/notifications/notifications';
 import { formatMonthDay, formatTime } from '../../lib/format';
+import { notify } from '../../lib/notify';
 import { queryKeys } from '../../lib/query-client';
+import { shareLink } from '../../lib/share-link';
 import { useTheme } from '../../theme';
 import { gradients, scannerBackground, scannerInk } from '../../theme/tokens';
 
@@ -304,7 +306,7 @@ export default function BookingTicket() {
                   `${showtime.movie.title} · ${formatMonthDay(showtime.startsAt)}, ` +
                   `${formatTime(showtime.startsAt)}\n${showtime.cinema.name}, ${showtime.screen.name}\n` +
                   `Seats ${ticket.seats.map((s) => `${s.rowLabel}${s.number}`).join(', ')}\n` +
-                  `Booking ${ticket.reference}`,
+                  `Booking ${ticket.reference}\n${shareLink(`/booking/${ticket.reference}`)}`,
               })
             }
           />
@@ -392,12 +394,4 @@ function confirmCancel(refund: string, fee: string, onConfirm: () => void) {
     { text: 'Keep booking', style: 'cancel' },
     { text: 'Cancel booking', style: 'destructive', onPress: onConfirm },
   ]);
-}
-
-function notify(title: string, body: string) {
-  if (Platform.OS === 'web') {
-    globalThis.alert(`${title}\n\n${body}`);
-    return;
-  }
-  Alert.alert(title, body);
 }

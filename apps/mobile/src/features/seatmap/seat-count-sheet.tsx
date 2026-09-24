@@ -1,6 +1,8 @@
 import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
+import { AnimatedPressable, usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
 
 /**
@@ -78,26 +80,7 @@ export function SeatCountSheet({
             }}
           >
             {options.map((count) => (
-              <Pressable
-                key={count}
-                accessibilityRole="button"
-                accessibilityLabel={`${count} seat${count === 1 ? '' : 's'}`}
-                onPress={() => onSelect(count)}
-                style={({ pressed }) => ({
-                  width: 54,
-                  height: 54,
-                  borderRadius: 27,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  backgroundColor: pressed ? colors.primary : colors.surface,
-                })}
-              >
-                <Text variant="heading" numeric>
-                  {count}
-                </Text>
-              </Pressable>
+              <CountButton key={count} count={count} onSelect={onSelect} />
             ))}
           </View>
 
@@ -105,5 +88,40 @@ export function SeatCountSheet({
         </Pressable>
       </Pressable>
     </Modal>
+  );
+}
+
+function CountButton({ count, onSelect }: { count: number; onSelect: (count: number) => void }) {
+  const { colors } = useTheme();
+  const press = usePressScale();
+
+  return (
+    <AnimatedPressable
+      accessibilityRole="button"
+      accessibilityLabel={`${count} seat${count === 1 ? '' : 's'}`}
+      onPress={() => {
+        tapFeedback();
+        onSelect(count);
+      }}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      style={[
+        {
+          width: 54,
+          height: 54,
+          borderRadius: 27,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+        },
+        press.style,
+      ]}
+    >
+      <Text variant="heading" numeric>
+        {count}
+      </Text>
+    </AnimatedPressable>
   );
 }

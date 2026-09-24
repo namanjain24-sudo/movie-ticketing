@@ -38,3 +38,42 @@ jest.mock('react-native-maps', () => {
     PROVIDER_DEFAULT: undefined,
   };
 });
+
+/**
+ * `ReanimatedSwipeable` measures the row natively to work out swipe
+ * thresholds, which never resolves under Jest — a test that mounts one hangs
+ * rather than fails. The gesture itself is the library's own concern, already
+ * covered by its own test suite; what an app test needs is the row's content
+ * and its revealed actions, so the mock renders both, permanently "open",
+ * with a real ref shape for any `swipeableRef.current?.close()` call.
+ */
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const { View } = require('react-native');
+  const React = require('react');
+  const progress = { value: 1 };
+  const MockSwipeable = React.forwardRef(({ children, renderRightActions }, ref) => {
+    React.useImperativeHandle(ref, () => ({
+      close: jest.fn(),
+      openLeft: jest.fn(),
+      openRight: jest.fn(),
+      reset: jest.fn(),
+    }));
+    return React.createElement(
+      View,
+      null,
+      children,
+      renderRightActions ? renderRightActions(progress, progress) : null,
+    );
+  });
+  MockSwipeable.displayName = 'ReanimatedSwipeable';
+  return { __esModule: true, default: MockSwipeable };
+});
+
+/**
+ * `createURL` reads the app's scheme from the native manifest via
+ * expo-constants, which does not exist under Jest. A test only needs a
+ * deterministic string back, not the real scheme resolution.
+ */
+jest.mock('expo-linking', () => ({
+  createURL: (path) => `mobileapp://${path.replace(/^\//, '')}`,
+}));
