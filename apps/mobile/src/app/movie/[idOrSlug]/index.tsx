@@ -38,6 +38,7 @@ import { formatMonthDay, formatRuntime, upcomingDays } from '../../../lib/format
 import { successFeedback, tapFeedback } from '../../../lib/haptics';
 import { openDirections } from '../../../lib/maps';
 import { queryKeys } from '../../../lib/query-client';
+import { shareLink } from '../../../lib/share-link';
 import { useWatchlist } from '../../../features/watchlist/use-watchlist';
 import { useTheme } from '../../../theme';
 import { HIT_SIZE } from '../../../theme/tokens';
@@ -319,7 +320,7 @@ export default function MovieDetail() {
                     film.rating.average !== null
                       ? `, rated ${film.rating.average.toFixed(1)}/5`
                       : ''
-                  }. Book it in the app.`,
+                  }. Book it in the app: ${shareLink(`/movie/${film.slug}`)}`,
                 })
               }
             />

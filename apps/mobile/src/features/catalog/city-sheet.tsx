@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
@@ -90,6 +91,7 @@ export function CitySheet({
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   onPress={() => {
+                    if (!selected) tapFeedback();
                     onChange(city);
                     onClose();
                   }}
