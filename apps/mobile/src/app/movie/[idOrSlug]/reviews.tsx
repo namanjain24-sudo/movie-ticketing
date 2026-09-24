@@ -14,7 +14,7 @@ import { useAuth } from '../../../features/auth/auth-provider';
 import { RatingBreakdown } from '../../../features/reviews/rating-breakdown';
 import { ReviewCard } from '../../../features/reviews/review-card';
 import { ReviewComposer } from '../../../features/reviews/review-composer';
-import { successFeedback } from '../../../lib/haptics';
+import { successFeedback, tapFeedback } from '../../../lib/haptics';
 import { queryKeys } from '../../../lib/query-client';
 import { useTheme } from '../../../theme';
 
@@ -131,7 +131,10 @@ export default function ReviewsScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Clear the ${starFilter} star filter`}
-              onPress={() => setStarFilter(undefined)}
+              onPress={() => {
+                tapFeedback();
+                setStarFilter(undefined);
+              }}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -156,7 +159,10 @@ export default function ReviewsScreen() {
                 key={option}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
-                onPress={() => setSort(option)}
+                onPress={() => {
+                  if (!active) tapFeedback();
+                  setSort(option);
+                }}
                 style={{
                   paddingHorizontal: spacing.md,
                   paddingVertical: spacing.sm,

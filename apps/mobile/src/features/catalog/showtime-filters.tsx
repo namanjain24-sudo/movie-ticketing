@@ -1,6 +1,7 @@
 import { SHOW_FORMAT_LABELS, type ShowtimeSummary, type ShowFormat } from '@app/shared';
 import { Pressable, ScrollView } from 'react-native';
 import { Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 
 export type ShowtimeFilter = { format?: ShowFormat; language?: string };
@@ -66,7 +67,10 @@ export function ShowtimeFilters({
       key={key}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      onPress={onPress}
+      onPress={() => {
+        if (!selected) tapFeedback();
+        onPress();
+      }}
       style={({ pressed }) => ({
         paddingVertical: spacing.xs + 2,
         paddingHorizontal: spacing.md,

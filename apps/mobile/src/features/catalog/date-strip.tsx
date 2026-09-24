@@ -1,5 +1,6 @@
 import { Pressable, ScrollView } from 'react-native';
 import { Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
 import type { CalendarDay } from '../../lib/format';
 import { useTheme } from '../../theme';
 
@@ -29,7 +30,10 @@ export function DateStrip({
             accessibilityRole="button"
             accessibilityState={{ selected }}
             accessibilityLabel={day.isToday ? 'Today' : `${day.weekday} ${day.day}`}
-            onPress={() => onChange(day.value)}
+            onPress={() => {
+              if (!selected) tapFeedback();
+              onChange(day.value);
+            }}
             style={({ pressed }) => ({
               width: 56,
               paddingVertical: spacing.sm,

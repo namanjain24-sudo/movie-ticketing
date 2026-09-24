@@ -3,6 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { Button, Card, Text } from '../../components/ui';
+import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
@@ -119,6 +120,7 @@ export function PromoBox({
               accessibilityRole="button"
               accessibilityLabel={`Use code ${offer.code}. ${offer.description}`}
               onPress={() => {
+                tapFeedback();
                 setCode(offer.code);
                 onApply(offer.code);
               }}
