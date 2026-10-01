@@ -78,6 +78,12 @@ function load() {
   if (e.CHAOS_CONTROLS_ENABLED && e.NODE_ENV === 'production') {
     throw new Error('CHAOS_CONTROLS_ENABLED must never be true in production');
   }
+  if (e.NODE_ENV === 'production' && e.CORS_ORIGINS.trim() === '') {
+    // Empty origins means the cors() call below falls back to reflecting
+    // whatever Origin header the request sent, which combined with
+    // credentials: true would let any site make authenticated requests.
+    throw new Error('CORS_ORIGINS must be set in production');
+  }
   return {
     ...e,
     isProduction: e.NODE_ENV === 'production',
