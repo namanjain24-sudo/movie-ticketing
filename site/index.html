@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boxoffice: the seat map that never oversells</title>
+    <meta
+      name="description"
+      content="A movie ticketing app for Indian multiplexes, built around one proven claim: it never oversells a seat. Ten load tests up to 5,000 concurrent users, zero oversells, zero double charges."
+    />
+    <meta name="theme-color" content="#0b0c0f" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0c0f'/%3E%3Ctext x='16' y='22' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='17' font-weight='800' fill='%23f5f5f7' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E"
+    />
+    <meta property="og:title" content="Boxoffice: the seat map that never oversells" />
+    <meta
+      property="og:description"
+      content="Zero oversells across ten load tests at up to 5,000 concurrent users against a fixed 300-seat inventory. The full proof is public."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <nav class="site-nav" id="siteNav">
+      <div class="wrap">
+        <a class="brand" href="#top">
+          <span class="brand-mark" aria-hidden="true">B</span>
+          Boxoffice
+        </a>
+        <ul class="nav-links">
+          <li><a href="#how-it-works">How it works</a></li>
+          <li><a href="#proof">The proof</a></li>
+          <li><a href="#honesty">No invented data</a></li>
+        </ul>
+        <div class="nav-cta">
+          <a
+            class="btn btn-ghost btn-sm"
+            href="https://github.com/namanjain24-sudo/movie-ticketing"
+            target="_blank"
+            rel="noopener"
+            >Follow the build</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <main id="main">
+      <header class="hero" id="top">
+        <div class="wrap">
+          <div class="hero-copy">
+            <h1 class="reveal">Built so a seat can&rsquo;t be sold twice.</h1>
+            <p class="reveal">
+              Real seat map, real hold timer, real availability. Proven
+              across ten load tests up to five thousand concurrent bookings.
+            </p>
+            <div class="hero-actions reveal">
+              <a
+                class="btn btn-primary"
+                href="https://github.com/namanjain24-sudo/movie-ticketing"
+                target="_blank"
+                rel="noopener"
+                >Follow the build</a
+              >
+              <a class="btn btn-ghost" href="#how-it-works">See how it works</a>
+            </div>
+          </div>
+
+          <div class="hero-visual reveal">
+            <div
+              class="seat-demo-card"
+              role="group"
+              aria-label="Interactive seat map preview"
+            >
+              <div class="screen-arc" aria-hidden="true"></div>
+
+              <p class="tier-label">
+                <span>Executive</span>
+                <span class="price tabular">&#8377;320</span>
+              </p>
+              <div class="seat-row" data-row="executive"></div>
+
+              <p class="tier-label">
+                <span>Standard</span>
+                <span class="price tabular">&#8377;220</span>
+              </p>
+              <div class="seat-row" data-row="standard-1"></div>
+              <div class="seat-row" data-row="standard-2"></div>
+
+              <div class="demo-footer">
+                <ul class="legend">
+                  <li><span class="legend-dot available" aria-hidden="true"></span>Available</li>
+                  <li><span class="legend-dot selected" aria-hidden="true"></span>Selected</li>
+                  <li><span class="legend-dot sold" aria-hidden="true"></span>Sold out</li>
+                </ul>
+                <p class="hold-timer tabular" id="holdTimer" aria-live="polite">
+                  Pick a seat to start a hold.
+                </p>
+              </div>
+              <p class="demo-caption">A simplified preview of the real seat map.</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="proof" id="proof">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <h2>The proof</h2>
+            <p>
+              Ten load tests, up to five thousand people booking the same
+              three hundred seats at once. The verdict comes from an
+              invariant script reading the database after each run, not from
+              the load generator.
+            </p>
+          </div>
+
+          <div class="stat-grid reveal">
+            <div class="stat-tile is-feature">
+              <p class="stat-value tabular">0</p>
+              <p class="stat-label">Oversells across every run</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value tabular">0</p>
+              <p class="stat-label">Double charges</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value tabular">0</p>
+              <p class="stat-label">Orphaned holds</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value tabular">0</p>
+              <p class="stat-label">Invariant violations</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value tabular">58&nbsp;ms</p>
+              <p class="stat-label">Hold p99 at 1,000 concurrent users</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value tabular">25&nbsp;ms</p>
+              <p class="stat-label">Hold p99 at 500 concurrent users</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value tabular">7 / 7</p>
+              <p class="stat-label">Chaos scenarios survived</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value tabular">5,000</p>
+              <p class="stat-label">Peak concurrent virtual users tested</p>
+            </div>
+          </div>
+
+          <p class="proof-footer reveal">
+            Full load-test and chaos-engineering reports, including the runs
+            that failed and what was wrong, are public on
+            <a
+              href="https://github.com/namanjain24-sudo/movie-ticketing/blob/main/docs/load-testing.md"
+              target="_blank"
+              rel="noopener"
+              >GitHub</a
+            >.
+          </p>
+        </div>
+      </section>
+
+      <section id="how-it-works">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <h2>Five screens, one hand</h2>
+            <p>
+              Built for one hand, a phone held at arm&rsquo;s length, often
+              in a dim room, often minutes before the show.
+            </p>
+          </div>
+
+          <div class="steps reveal">
+            <article class="step">
+              <h3>Browse</h3>
+              <p>
+                See what&rsquo;s actually playing, with real certification,
+                runtime, and language. No trailers, because none exist in
+                this system.
+              </p>
+            </article>
+            <article class="step">
+              <h3>Pick seats</h3>
+              <p>Choose by price tier first, position second, same as the counter.</p>
+            </article>
+            <article class="step">
+              <h3>Hold</h3>
+              <p>
+                Seats lock for five minutes the moment you choose them.
+                Nobody else can take them while you decide.
+              </p>
+            </article>
+            <article class="step">
+              <h3>Pay</h3>
+              <p>
+                Pay against the clock. If the hold expires first, you were
+                never charged.
+              </p>
+            </article>
+            <article class="step">
+              <h3>Ticket</h3>
+              <p>A ticket that was never oversold, waiting at the gate.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="honesty" id="honesty">
+        <div class="wrap">
+          <div class="section-head reveal" style="grid-column: 1 / -1; max-width: 100%;">
+            <h2>No invented data</h2>
+          </div>
+
+          <div class="honesty-col reveal">
+            <div class="band-swatch" aria-hidden="true">
+              <span style="background: var(--plenty)"></span>
+              <span style="background: var(--filling)"></span>
+              <span style="background: var(--almost-full)"></span>
+              <span style="background: var(--sold-out)"></span>
+            </div>
+            <h3>Availability is a band, not a countdown</h3>
+            <p>
+              Plenty, filling, almost full, or sold out. Never a number that
+              was only true one request ago.
+            </p>
+          </div>
+
+          <div class="honesty-col reveal">
+            <h3>Ratings are computed live</h3>
+            <p>
+              Every rating comes from real reviews, one per person, editable
+              and never stackable. Nothing is fabricated to look fuller than
+              it is.
+            </p>
+          </div>
+
+          <div class="honesty-col reveal">
+            <h3>Time comes from the server</h3>
+            <p>
+              Every countdown is anchored to server time, never the device
+              clock, so a hold means exactly what it says.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing">
+        <div class="wrap">
+          <h2 class="reveal">
+            Watching a seat map hold under five thousand people at once is
+            more convincing than reading about it.
+          </h2>
+          <p class="reveal">
+            The code, the load tests, and the chaos runs are public.
+          </p>
+          <a
+            class="btn btn-primary reveal"
+            href="https://github.com/namanjain24-sudo/movie-ticketing"
+            target="_blank"
+            rel="noopener"
+            >Follow the build</a
+          >
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          <div class="footer-brand">
+            <span class="brand-mark" aria-hidden="true">B</span>
+            Boxoffice
+          </div>
+          <p class="footer-tagline">A movie ticketing app for Indian multiplexes.</p>
+        </div>
+        <ul class="footer-links">
+          <li>
+            <a
+              href="https://github.com/namanjain24-sudo/movie-ticketing"
+              target="_blank"
+              rel="noopener"
+              >GitHub</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://github.com/namanjain24-sudo/movie-ticketing/blob/main/docs/architecture.md"
+              target="_blank"
+              rel="noopener"
+              >Architecture</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://github.com/namanjain24-sudo/movie-ticketing/blob/main/docs/load-testing.md"
+              target="_blank"
+              rel="noopener"
+              >Load tests</a
+            >
+          </li>
+        </ul>
+        <p class="footer-meta">&copy; 2026 Boxoffice. Built in the open.</p>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
