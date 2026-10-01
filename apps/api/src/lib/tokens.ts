@@ -22,11 +22,15 @@ export function signRefreshToken(userId: string): { token: string; jti: string; 
 }
 
 export function verifyAccessToken(token: string) {
-  return accessTokenClaimsSchema.parse(jwt.verify(token, env.JWT_ACCESS_SECRET));
+  return accessTokenClaimsSchema.parse(
+    jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }),
+  );
 }
 
 export function verifyRefreshToken(token: string) {
-  return refreshTokenClaimsSchema.parse(jwt.verify(token, env.JWT_REFRESH_SECRET));
+  return refreshTokenClaimsSchema.parse(
+    jwt.verify(token, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }),
+  );
 }
 
 /** Refresh tokens are stored hashed, so a database dump cannot be replayed. */

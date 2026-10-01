@@ -1,4 +1,4 @@
-import { createHash, createHmac } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type {
   Booking,
   BookingList,
@@ -37,8 +37,18 @@ function qrPayload(input: { reference: string; showtimeId: string; seatCount: nu
 export function verifyQrPayload(payload: string): boolean {
   const [reference, showtimeId, seatCount, signature] = payload.split('|');
   if (!reference || !showtimeId || !seatCount || !signature) return false;
-  return qrPayload({ reference, showtimeId, seatCount: Number(seatCount) }).endsWith(signature);
+
+  const expected = qrPayload({ reference, showtimeId, seatCount: Number(seatCount) })
+    .split('|')
+    .at(-1)!;
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  // Length must match before timingSafeEqual, which throws on mismatched
+  // buffer sizes rather than reporting a clean "not equal".
+  return a.length === b.length && timingSafeEqual(a, b);
 }
+
+export const __testing = { qrPayload };
 
 const bookingSelect = {
   id: true,
