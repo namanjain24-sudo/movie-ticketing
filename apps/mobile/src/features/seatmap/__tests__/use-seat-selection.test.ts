@@ -245,4 +245,31 @@ describe('useSeatSelection', () => {
       expect(result.current.selectedIds).toEqual(['a2']);
     });
   });
+
+  it('greys out a selected seat when a map refetch shows someone else took it', async () => {
+    // Regression: the seat map must never lie. A seat the user tapped but has
+    // not yet held can be lost to another booking; a refetch (e.g.
+    // refetchOnWindowFocus) reporting it SOLD must drop out of the selection
+    // on its own, not wait for the user to find out at "Proceed to pay".
+    const { result, rerender } = await renderHook(
+      ({ map }: { map: SeatMap }) => useSeatSelection(map),
+      { initialProps: { map: buildMap([A1, A2]) } },
+    );
+
+    await act(async () => {
+      result.current.toggle(A1);
+    });
+    expect(result.current.selectedIds).toEqual(['a1']);
+
+    const refreshed = buildMap([seat({ ...A1, status: 'SOLD' }), A2]);
+    await act(async () => {
+      rerender({ map: refreshed });
+    });
+
+    expect(result.current.selectedIds).toEqual([]);
+    expect(result.current.subtotalMinor).toBe(0);
+    // The seat's real status renders through, rather than a generic
+    // "unavailable" that would hide whether it was sold or just held.
+    expect(result.current.statusOf(refreshed.seats[0]!)).toBe('SOLD');
+  });
 });

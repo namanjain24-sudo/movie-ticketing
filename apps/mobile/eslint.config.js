@@ -12,4 +12,12 @@ module.exports = defineConfig([
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    // Runs under Jest, not Expo's test-file glob, so it needs the jest global
+    // declared explicitly.
+    files: ['jest.setup.js'],
+    languageOptions: {
+      globals: { jest: 'readonly' },
+    },
+  },
 ]);
