@@ -121,6 +121,21 @@ describe('holds', () => {
     expect(res.body.error.code).toBe(ERROR_CODES.IDEMPOTENCY_KEY_REUSED);
   });
 
+  it('never hands one user the result of another user reusing the same key', async () => {
+    // The key is `@app/mobile`'s own Math.random()-based string, not a
+    // cryptographic UUID, and nothing stops a client from hand-crafting the
+    // header, so the server is the only thing standing between two users who
+    // submit the same literal key (even with matching bodies) and one of
+    // them getting handed the other's hold.
+    const key = idempotencyKey('cross-user');
+    const seats = show.showSeatIds.slice(0, 1);
+    const aliceHold = await hold(alice, seats, key).expect(201);
+
+    const res = await hold(bob, seats, key).expect(422);
+    expect(res.body.error.code).toBe(ERROR_CODES.IDEMPOTENCY_KEY_REUSED);
+    expect(res.body.id).not.toBe(aliceHold.body.id);
+  });
+
   it('requires an idempotency key', async () => {
     await request(app)
       .post(`/v1/showtimes/${show.showtimeId}/holds`)

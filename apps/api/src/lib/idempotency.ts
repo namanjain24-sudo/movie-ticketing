@@ -71,7 +71,16 @@ export async function withIdempotency<T>(params: {
     // rollback removed it. Telling the client to retry is honest and safe.
     if (!existing) throw HttpError.requestInProgress();
 
-    if (existing.requestHash !== requestHash || existing.scope !== scope) {
+    // userId is checked here, not just in the claim's WHERE clause: the
+    // unique constraint is on `key` alone (see schema.prisma), so two users
+    // who happened to send the same literal key string would otherwise have
+    // the second one read, and on a matching requestHash even be handed, the
+    // first user's booking or payment result.
+    if (
+      existing.requestHash !== requestHash ||
+      existing.scope !== scope ||
+      existing.userId !== userId
+    ) {
       throw HttpError.idempotencyKeyReused();
     }
     if (existing.state === 'COMPLETED') {
