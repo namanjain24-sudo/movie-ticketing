@@ -44,9 +44,22 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
     return index;
   }, [map]);
 
+  /**
+   * The seat map never lies: `selected` only records which ids the user has
+   * tapped, it is not proof those seats are still selectable. Every place
+   * below that turns `selected` into something rendered or totalled re-checks
+   * the seat's live status (from `map`, via `seat.status` where a fresh seat
+   * object is already in hand, or via `seatsById` otherwise) rather than
+   * trusting the tap history alone. That is what lets a seat the user picked
+   * grey out in place the moment a refetch reports someone else took it
+   * (`refetchOnWindowFocus`, see PRODUCT.md), with no extra state to keep in
+   * sync and no risk of a stale id lingering past a seat's true status.
+   * `taken`, below, is the complementary case: a seat a hold attempt just
+   * told us is gone, before the map itself has caught up.
+   */
   const statusOf = useCallback(
     (seat: SeatMapSeat): SeatRenderStatus => {
-      if (selected.has(seat.id)) return 'SELECTED';
+      if (selected.has(seat.id) && SELECTABLE.includes(seat.status)) return 'SELECTED';
       if (taken.has(seat.id)) return 'UNAVAILABLE';
       return seat.status;
     },
@@ -60,6 +73,23 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
   const serverMax = map?.maxSeatsPerBooking ?? 0;
   const maxSeats = partySize ? Math.min(partySize, serverMax) : serverMax;
 
+  /**
+   * The authoritative selection: tapped ids, filtered down to the ones whose
+   * seat is still selectable right now. A seat that went stale (sold to
+   * someone else since the last map refetch) drops out on its own, with
+   * nothing elsewhere needing to notice the map changed.
+   */
+  const selectedSeats = useMemo(
+    () =>
+      [...selected]
+        .map((id) => seatsById.get(id))
+        .filter(
+          (seat): seat is SeatMapSeat => seat !== undefined && SELECTABLE.includes(seat.status),
+        )
+        .sort((a, b) => a.y - b.y || a.x - b.x),
+    [selected, seatsById],
+  );
+
   /** Returns whether the tap was taken, so the caller can match the feedback. */
   const toggle = useCallback(
     (seat: SeatMapSeat): boolean => {
@@ -72,8 +102,8 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
 
       // Decided here rather than inside the updater, which React may run more
       // than once and which must stay free of side effects.
-      const alreadySelected = selected.has(seat.id);
-      if (!alreadySelected && selected.size >= maxSeats) {
+      const alreadySelected = selected.has(seat.id) && SELECTABLE.includes(seat.status);
+      if (!alreadySelected && selectedSeats.length >= maxSeats) {
         setRejection('LIMIT');
         return false;
       }
@@ -86,7 +116,7 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
       });
       return true;
     },
-    [maxSeats, taken, selected],
+    [maxSeats, taken, selected, selectedSeats],
   );
 
   /**
@@ -125,15 +155,6 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
     setRejection(null);
   }, []);
 
-  const selectedSeats = useMemo(
-    () =>
-      [...selected]
-        .map((id) => seatsById.get(id))
-        .filter((seat): seat is SeatMapSeat => seat !== undefined)
-        .sort((a, b) => a.y - b.y || a.x - b.x),
-    [selected, seatsById],
-  );
-
   const subtotalMinor = selectedSeats.reduce((sum, seat) => sum + seat.priceMinor, 0);
 
   return {
@@ -144,10 +165,10 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
     clear,
     markUnavailable,
     selectedSeats,
-    selectedIds: [...selected],
+    selectedIds: selectedSeats.map((seat) => seat.id),
     subtotalMinor,
     maxSeats,
-    atLimit: selected.size >= maxSeats,
+    atLimit: selectedSeats.length >= maxSeats,
     rejection,
     dismissRejection: useCallback(() => setRejection(null), []),
   };

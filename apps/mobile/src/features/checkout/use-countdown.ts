@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 /**
  * Counts down to a server-issued deadline.
@@ -9,17 +9,28 @@ import { useEffect, useRef, useState } from 'react';
  * server's own `serverTime` is compared against the local clock once, and that
  * offset is applied to every tick. Only the *elapsed* local time is used after
  * that, which is accurate even when the absolute time is not.
+ *
+ * `useLayoutEffect`, not `useEffect`, computes the first tick. This hook is
+ * called again the instant `hold.data` resolves, going from
+ * `expiresAt === undefined` to a real deadline in one render. A plain
+ * `useEffect` commits that render (with `remainingMs` still at its old
+ * default) and paints it before the effect corrects it, so the screen flashes
+ * "expired" for a frame on a hold that is perfectly valid. A layout effect
+ * runs before the screen paints, so the correction lands in the same frame.
  */
 export function useCountdown(expiresAt: string | undefined, serverTime: string | undefined) {
   const offsetRef = useRef(0);
   const [remainingMs, setRemainingMs] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!serverTime) return;
-    offsetRef.current = new Date(serverTime).getTime() - Date.now();
+    const captureOffset = () => {
+      offsetRef.current = new Date(serverTime).getTime() - Date.now();
+    };
+    captureOffset();
   }, [serverTime]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!expiresAt) return;
 
     const deadline = new Date(expiresAt).getTime();

@@ -98,4 +98,45 @@ describe('useCountdown', () => {
     expect(result.current.hasExpired).toBe(false);
     expect(result.current.label).toBe('0:00');
   });
+
+  it('settles on an unexpired hold once a query resolves from no data', async () => {
+    // A query that starts with no data and then resolves with a fresh
+    // five-minute hold must settle on "not expired", not get stuck reporting
+    // the stale default from before expiresAt existed. (The single rendered
+    // frame this hook is built to avoid, where remainingMs briefly reads 0
+    // before the layout effect corrects it, commits before paint and is not
+    // observable through this test harness; see the comment on the hook.)
+    setDeviceClock(SERVER_NOW);
+    const { result, rerender } = await renderHook(
+      ({ expiresAt, serverTime }: { expiresAt?: string; serverTime?: string }) =>
+        useCountdown(expiresAt, serverTime),
+      { initialProps: {} },
+    );
+
+    expect(result.current.hasExpired).toBe(false);
+
+    await act(async () => {
+      rerender({ expiresAt: EXPIRES_AT, serverTime: SERVER_NOW });
+    });
+
+    expect(result.current.hasExpired).toBe(false);
+    expect(result.current.label).toBe('5:00');
+  });
+
+  it('still applies the clock-skew offset when a query resolves from no data', async () => {
+    // Same transition, with a device clock that disagrees with the server.
+    setDeviceClock('2026-09-13T12:02:00.000Z');
+    const { result, rerender } = await renderHook(
+      ({ expiresAt, serverTime }: { expiresAt?: string; serverTime?: string }) =>
+        useCountdown(expiresAt, serverTime),
+      { initialProps: {} },
+    );
+
+    await act(async () => {
+      rerender({ expiresAt: EXPIRES_AT, serverTime: SERVER_NOW });
+    });
+
+    expect(result.current.hasExpired).toBe(false);
+    expect(result.current.label).toBe('5:00');
+  });
 });
