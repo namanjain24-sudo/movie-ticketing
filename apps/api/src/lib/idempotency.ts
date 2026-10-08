@@ -37,7 +37,7 @@ export function requireIdempotencyKey(req: Request): string {
 }
 
 /** Stable hash of the request, so key reuse with a different body is caught. */
-function hashRequest(value: unknown): string {
+export function hashRequest(value: unknown): string {
   return createHash('sha256').update(canonicalJson(value)).digest('hex');
 }
 
@@ -144,6 +144,8 @@ async function claim(input: {
       WHERE "IdempotencyRecord"."state" = 'IN_FLIGHT'
         AND "IdempotencyRecord"."createdAt" < ${staleBefore}
         AND "IdempotencyRecord"."requestHash" = ${input.requestHash}
+        AND "IdempotencyRecord"."scope" = ${input.scope}
+        AND "IdempotencyRecord"."userId" = ${input.userId}
     RETURNING "key"
   `;
 

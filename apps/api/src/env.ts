@@ -78,19 +78,22 @@ function load() {
   if (e.CHAOS_CONTROLS_ENABLED && e.NODE_ENV === 'production') {
     throw new Error('CHAOS_CONTROLS_ENABLED must never be true in production');
   }
-  if (e.NODE_ENV === 'production' && e.CORS_ORIGINS.trim() === '') {
-    // Empty origins means the cors() call below falls back to reflecting
-    // whatever Origin header the request sent, which combined with
-    // credentials: true would let any site make authenticated requests.
+  const corsOrigins = e.CORS_ORIGINS.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (e.NODE_ENV === 'production' && corsOrigins.length === 0) {
+    // Zero parsed origins means the cors() call below falls back to
+    // reflecting whatever Origin header the request sent, which combined
+    // with credentials: true would let any site make authenticated requests.
+    // Checked on the parsed list, not the raw string: a value like "," or "
+    // " is non-empty text but parses to no real origin.
     throw new Error('CORS_ORIGINS must be set in production');
   }
   return {
     ...e,
     isProduction: e.NODE_ENV === 'production',
     isTest: e.NODE_ENV === 'test',
-    corsOrigins: e.CORS_ORIGINS.split(',')
-      .map((o) => o.trim())
-      .filter(Boolean),
+    corsOrigins,
   };
 }
 
