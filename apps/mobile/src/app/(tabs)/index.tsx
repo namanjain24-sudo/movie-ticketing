@@ -25,6 +25,7 @@ import { RecentSearchChips } from '../../features/search/recent-search-chips';
 import { useRecentSearches } from '../../features/search/use-recent-searches';
 import { queryKeys } from '../../lib/query-client';
 import { STORAGE_KEYS } from '../../lib/storage';
+import { useDebouncedValue } from '../../lib/use-debounced-value';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
@@ -54,7 +55,16 @@ export default function NowShowing() {
   });
 
   const trimmed = search.trim();
-  const query = useMemo(() => ({ city, ...(trimmed ? { search: trimmed } : {}) }), [city, trimmed]);
+  // Debounced before it reaches the query key: `movies.isPending` goes true
+  // for any queryKey react-query hasn't cached yet, and the screen swaps to
+  // HomeSkeleton while pending — which would unmount the still-focused search
+  // input, and with it whatever the user was about to type next, on every
+  // single keystroke without this.
+  const debouncedSearch = useDebouncedValue(trimmed, 300);
+  const query = useMemo(
+    () => ({ city, ...(debouncedSearch ? { search: debouncedSearch } : {}) }),
+    [city, debouncedSearch],
+  );
 
   const movies = useQuery({
     queryKey: queryKeys.movies(query),

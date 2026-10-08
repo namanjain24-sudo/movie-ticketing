@@ -101,8 +101,10 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
       }
 
       // Decided here rather than inside the updater, which React may run more
-      // than once and which must stay free of side effects.
-      const alreadySelected = selected.has(seat.id) && SELECTABLE.includes(seat.status);
+      // than once and which must stay free of side effects. The seat is
+      // already known selectable at this point (the guard above returned
+      // otherwise), so only membership in `selected` is in question.
+      const alreadySelected = selected.has(seat.id);
       if (!alreadySelected && selectedSeats.length >= maxSeats) {
         setRejection('LIMIT');
         return false;
@@ -116,7 +118,10 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
       });
       return true;
     },
-    [maxSeats, taken, selected, selectedSeats],
+    // selectedSeats.length, not selectedSeats itself: the array gets a new
+    // identity on every map refetch (even one that changes nothing the user
+    // selected), and that must not recreate `toggle` on every seat's onPress.
+    [maxSeats, taken, selected, selectedSeats.length],
   );
 
   /**

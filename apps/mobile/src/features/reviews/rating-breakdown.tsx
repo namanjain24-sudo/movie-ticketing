@@ -75,7 +75,7 @@ export function RatingBreakdown({
               // is a worse answer than not being pressable.
               disabled={row.count === 0}
               onPress={() => {
-                tapFeedback();
+                if (!active) tapFeedback();
                 onFilter(active ? undefined : row.rating);
               }}
               hitSlop={4}

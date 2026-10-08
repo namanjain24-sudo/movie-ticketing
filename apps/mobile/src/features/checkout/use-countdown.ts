@@ -24,10 +24,7 @@ export function useCountdown(expiresAt: string | undefined, serverTime: string |
 
   useLayoutEffect(() => {
     if (!serverTime) return;
-    const captureOffset = () => {
-      offsetRef.current = new Date(serverTime).getTime() - Date.now();
-    };
-    captureOffset();
+    offsetRef.current = new Date(serverTime).getTime() - Date.now();
   }, [serverTime]);
 
   useLayoutEffect(() => {
