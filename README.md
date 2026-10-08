@@ -92,8 +92,10 @@ npm run dev                                 # API on :4000, Expo on :8081
 ```
 
 `docker compose up -d` still works if you would rather containerise the two
-services; it publishes Redis on 6380 and a second, tmpfs-backed Postgres on
-5434, so adjust `REDIS_URL` and `apps/api/vitest.config.ts` to match.
+services; it publishes the dev Postgres on 5433 (a common local port conflicts
+with a native install on 5432), Redis on 6380, and a second, tmpfs-backed test
+Postgres on 5434. Adjust `DATABASE_URL` and `REDIS_URL` in `apps/api/.env` to
+match; the test database port is already wired into `vitest.config.ts`.
 
 Generate the secrets with `openssl rand -base64 48`. The API refuses to start
 with a missing or short secret, on purpose.

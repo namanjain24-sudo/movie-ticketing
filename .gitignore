@@ -33,6 +33,7 @@ apps/mobile/android/
 *.db-journal
 *.sqlite
 *.sqlite3
+*.rdb
 
 # logs
 *.log
