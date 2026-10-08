@@ -40,9 +40,27 @@ describe('verifyQrPayload', () => {
     // Every prefix of the real signature, including empty, must fail: only
     // an exact, full-length match may pass.
     for (let len = 0; len < realSignature.length; len++) {
-      const guess = realSignature.slice(realSignature.length - len);
+      const guess = realSignature.slice(0, len);
       expect(verifyQrPayload(`${reference}|${showtimeId}|${seatCount}|${guess}`)).toBe(false);
     }
+  });
+
+  it('rejects a same-length signature that does not match', () => {
+    const payload = __testing.qrPayload({
+      reference: 'BOX123',
+      showtimeId: 'show-1',
+      seatCount: 2,
+    });
+    const [reference, showtimeId, seatCount, realSignature = ''] = payload.split('|');
+    // Same length as the real signature, so this is the one case the length
+    // guard cannot reject on its own — it must fall through to the actual
+    // constant-time content comparison.
+    const forged = realSignature
+      .split('')
+      .map((c) => (c === 'A' ? 'B' : 'A'))
+      .join('');
+    expect(forged).toHaveLength(realSignature.length);
+    expect(verifyQrPayload(`${reference}|${showtimeId}|${seatCount}|${forged}`)).toBe(false);
   });
 
   it('rejects a payload for a different booking', () => {

@@ -1,6 +1,7 @@
-import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomInt } from 'node:crypto';
 import { env } from '../../env';
 import { logger } from '../../logger';
+import { constantTimeEqual } from '../../lib/crypto';
 
 /**
  * The gateway boundary. Everything the booking system knows about payments is
@@ -180,12 +181,7 @@ export const mockGateway: PaymentGateway = {
 
   parseWebhook(rawBody, signature) {
     if (!signature) return null;
-    const expected = Buffer.from(sign(rawBody));
-    const received = Buffer.from(signature);
-    // Constant-time, and length-checked first because timingSafeEqual throws
-    // on a length mismatch.
-    if (expected.length !== received.length) return null;
-    if (!timingSafeEqual(expected, received)) return null;
+    if (!constantTimeEqual(signature, sign(rawBody))) return null;
     try {
       return JSON.parse(rawBody.toString('utf8')) as GatewayWebhookEvent;
     } catch {

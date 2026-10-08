@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import type {
   Booking,
   BookingList,
@@ -12,6 +12,7 @@ import { prisma } from '../../db';
 import { env } from '../../env';
 import { refundableMinor } from '../promos/promos.service';
 import { HttpError } from '../../http/errors';
+import { constantTimeEqual } from '../../lib/crypto';
 import { dbNow, withTxRetry } from '../../lib/tx';
 import { logger } from '../../logger';
 import { gateway } from '../payments/gateway';
@@ -41,11 +42,7 @@ export function verifyQrPayload(payload: string): boolean {
   const expected = qrPayload({ reference, showtimeId, seatCount: Number(seatCount) })
     .split('|')
     .at(-1)!;
-  const a = Buffer.from(signature);
-  const b = Buffer.from(expected);
-  // Length must match before timingSafeEqual, which throws on mismatched
-  // buffer sizes rather than reporting a clean "not equal".
-  return a.length === b.length && timingSafeEqual(a, b);
+  return constantTimeEqual(signature, expected);
 }
 
 export const __testing = { qrPayload };
