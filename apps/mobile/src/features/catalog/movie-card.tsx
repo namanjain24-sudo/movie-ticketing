@@ -30,19 +30,26 @@ export function MovieCard({
   const rated = movie.rating.average !== null && movie.rating.count > 0;
 
   return (
-    <AnimatedPressable
-      accessibilityRole="button"
-      accessibilityLabel={`${movie.title}. ${movie.certification}, ${formatRuntime(
-        movie.durationMins,
-      )}, ${movie.genres.join(', ')}${
-        rated ? `. Rated ${movie.rating.average} out of 5 from ${movie.rating.count} reviews` : ''
-      }`}
-      onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-      style={[{ width, flex: width ? undefined : 1, gap: spacing.sm }, press.style]}
-    >
-      <View>
+    // SaveHeart is a sibling here, not a descendant of the card's Pressable:
+    // on web a Pressable with accessibilityRole="button" renders as a real
+    // <button>, and a <button> nested inside another <button> is invalid
+    // HTML that React warns about and browsers handle inconsistently (the
+    // inner tap can get swallowed by the outer one). Sitting it outside the
+    // Pressable but still inside this same relatively-positioned wrapper
+    // keeps its absolute top-right placement on the poster unchanged.
+    <View style={{ width, flex: width ? undefined : 1 }}>
+      <AnimatedPressable
+        accessibilityRole="button"
+        accessibilityLabel={`${movie.title}. ${movie.certification}, ${formatRuntime(
+          movie.durationMins,
+        )}, ${movie.genres.join(', ')}${
+          rated ? `. Rated ${movie.rating.average} out of 5 from ${movie.rating.count} reviews` : ''
+        }`}
+        onPress={onPress}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
+        style={[{ gap: spacing.sm }, press.style]}
+      >
         <Poster
           uri={movie.posterUrl}
           title={movie.title}
@@ -75,27 +82,28 @@ export function MovieCard({
             ) : null
           }
         />
-        <SaveHeart movie={movie} />
-      </View>
 
-      <View style={{ gap: spacing['2xs'] }}>
-        <Text variant="label" numberOfLines={1}>
-          {movie.title}
-        </Text>
-        <Text variant="caption" tone="muted" numberOfLines={1}>
-          {movie.genres.slice(0, 2).join(' · ')}
-        </Text>
-        <Text
-          variant="caption"
-          tone={releaseNote ? 'primary' : 'muted'}
-          numberOfLines={1}
-          numeric={releaseNote}
-        >
-          {releaseNote
-            ? `Releases ${formatMonthDay(movie.releaseDate)}`
-            : `${movie.certification} · ${formatRuntime(movie.durationMins)}`}
-        </Text>
-      </View>
-    </AnimatedPressable>
+        <View style={{ gap: spacing['2xs'] }}>
+          <Text variant="label" numberOfLines={1}>
+            {movie.title}
+          </Text>
+          <Text variant="caption" tone="muted" numberOfLines={1}>
+            {movie.genres.slice(0, 2).join(' · ')}
+          </Text>
+          <Text
+            variant="caption"
+            tone={releaseNote ? 'primary' : 'muted'}
+            numberOfLines={1}
+            numeric={releaseNote}
+          >
+            {releaseNote
+              ? `Releases ${formatMonthDay(movie.releaseDate)}`
+              : `${movie.certification} · ${formatRuntime(movie.durationMins)}`}
+          </Text>
+        </View>
+      </AnimatedPressable>
+
+      <SaveHeart movie={movie} />
+    </View>
   );
 }

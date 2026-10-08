@@ -30,17 +30,13 @@ export function CinemaCard({
   };
 
   return (
-    <AnimatedPressable
-      accessibilityRole="button"
-      accessibilityLabel={`${cinema.name}, ${cinema.address}${
-        distance ? `, ${distance} away` : ''
-      }`}
-      onPress={() => {
-        tapFeedback();
-        onPress();
-      }}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
+    // The footer's IconActions are siblings of the card's Pressable, not
+    // descendants of it: on web a Pressable with accessibilityRole="button"
+    // renders as a real <button>, and a <button> nested inside another
+    // <button> is invalid HTML — the comment below about these "not being
+    // wrapped in the card's own press target" used to be true only in intent,
+    // since they were still mounted inside it.
+    <View
       style={[
         {
           backgroundColor: colors.surface,
@@ -51,78 +47,91 @@ export function CinemaCard({
           gap: spacing.md,
         },
         elevation.card,
-        press.style,
       ]}
     >
-      <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
-        <View style={{ flex: 1, gap: spacing['2xs'] }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Text variant="overline" tone="primary">
-              {cinema.brand.toUpperCase()}
-            </Text>
-            {distance ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing['2xs'] }}>
-                <Ionicons name="navigate" size={11} color={colors.accent} />
-                <Text variant="caption" numeric style={{ color: colors.accent }}>
-                  {distance}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-
-          <Text variant="heading" numberOfLines={2}>
-            {cinema.name}
-          </Text>
-          <Text variant="caption" tone="muted" numberOfLines={2}>
-            {cinema.address}
-          </Text>
-        </View>
-
-        {cinema.fromPriceMinor !== null ? (
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text variant="overline" tone="muted">
-              FROM
-            </Text>
-            <Text variant="heading" numeric>
-              {formatMoney(cinema.fromPriceMinor, 'INR')}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-
-      {cinema.amenities.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
-          {cinema.amenities.slice(0, AMENITY_LIMIT).map((amenity) => (
-            <View
-              key={amenity}
-              style={{
-                paddingHorizontal: spacing.sm,
-                paddingVertical: 3,
-                borderRadius: radius.full,
-                backgroundColor: colors.surfaceMuted,
-              }}
-            >
-              <Text variant="caption" tone="muted">
-                {amenity}
+      <AnimatedPressable
+        accessibilityRole="button"
+        accessibilityLabel={`${cinema.name}, ${cinema.address}${
+          distance ? `, ${distance} away` : ''
+        }`}
+        onPress={() => {
+          tapFeedback();
+          onPress();
+        }}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
+        style={[{ gap: spacing.md }, press.style]}
+      >
+        <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, gap: spacing['2xs'] }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Text variant="overline" tone="primary">
+                {cinema.brand.toUpperCase()}
               </Text>
+              {distance ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing['2xs'] }}>
+                  <Ionicons name="navigate" size={11} color={colors.accent} />
+                  <Text variant="caption" numeric style={{ color: colors.accent }}>
+                    {distance}
+                  </Text>
+                </View>
+              ) : null}
             </View>
-          ))}
-          {cinema.amenities.length > AMENITY_LIMIT ? (
-            <View
-              style={{
-                paddingHorizontal: spacing.sm,
-                paddingVertical: 3,
-                borderRadius: radius.full,
-                backgroundColor: colors.surfaceMuted,
-              }}
-            >
-              <Text variant="caption" tone="muted" numeric>
-                +{cinema.amenities.length - AMENITY_LIMIT}
+
+            <Text variant="heading" numberOfLines={2}>
+              {cinema.name}
+            </Text>
+            <Text variant="caption" tone="muted" numberOfLines={2}>
+              {cinema.address}
+            </Text>
+          </View>
+
+          {cinema.fromPriceMinor !== null ? (
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text variant="overline" tone="muted">
+                FROM
+              </Text>
+              <Text variant="heading" numeric>
+                {formatMoney(cinema.fromPriceMinor, 'INR')}
               </Text>
             </View>
           ) : null}
         </View>
-      ) : null}
+
+        {cinema.amenities.length > 0 ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+            {cinema.amenities.slice(0, AMENITY_LIMIT).map((amenity) => (
+              <View
+                key={amenity}
+                style={{
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: 3,
+                  borderRadius: radius.full,
+                  backgroundColor: colors.surfaceMuted,
+                }}
+              >
+                <Text variant="caption" tone="muted">
+                  {amenity}
+                </Text>
+              </View>
+            ))}
+            {cinema.amenities.length > AMENITY_LIMIT ? (
+              <View
+                style={{
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: 3,
+                  borderRadius: radius.full,
+                  backgroundColor: colors.surfaceMuted,
+                }}
+              >
+                <Text variant="caption" tone="muted" numeric>
+                  +{cinema.amenities.length - AMENITY_LIMIT}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+      </AnimatedPressable>
 
       <View
         style={{
@@ -139,9 +148,9 @@ export function CinemaCard({
           {cinema.nowShowingCount > 0 ? ` · ${cinema.nowShowingCount} films on` : ' · nothing on'}
         </Text>
 
-        {/* Deliberately not wrapped in the card's own press target: these go
-            somewhere else entirely, and a tap that opens Google Maps when the
-            user meant to open the cinema is a bad surprise. */}
+        {/* Siblings of the card's Pressable, not children: these go somewhere
+            else entirely, and a tap that opens Google Maps when the user
+            meant to open the cinema is a bad surprise. */}
         <IconAction
           icon="navigate-outline"
           label={`Directions to ${cinema.name}`}
@@ -155,7 +164,7 @@ export function CinemaCard({
           />
         ) : null}
       </View>
-    </AnimatedPressable>
+    </View>
   );
 }
 
