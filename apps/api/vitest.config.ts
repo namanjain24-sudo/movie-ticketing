@@ -19,9 +19,9 @@ export default defineConfig({
       // timezone pinned on the connection: Prisma's DateTime is `timestamp`
       // without time zone, and a non-UTC session shifts every value it round trips.
       DATABASE_URL:
-        'postgresql://ticketing:ticketing@localhost:5432/ticketing_test?options=-c%20timezone%3DUTC',
+        'postgresql://ticketing:ticketing@localhost:5434/ticketing_test?options=-c%20timezone%3DUTC',
       DATABASE_POOL_MAX: '40',
-      REDIS_URL: 'redis://localhost:6379',
+      REDIS_URL: 'redis://localhost:6380',
       SWEEPER_ENABLED: 'false',
       MOCK_PAYMENT_FAILURE_RATE: '0',
       MOCK_PAYMENT_LATENCY_MS: '0',
