@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -49,6 +50,13 @@ export function Button({
   const { colors, radius, spacing } = useTheme();
   const isDisabled = disabled || loading;
   const press = usePressScale();
+  // Tracked separately from `press` (the Reanimated scale) because the
+  // colour swap below has to live in a plain style object: `AnimatedPressable`
+  // is `Animated.createAnimatedComponent(Pressable)`, and Reanimated's
+  // wrapper does not evaluate Pressable's usual `style={(state) => ...}`
+  // render-prop form — it silently drops it, which on web left every button
+  // in the app with no background and a collapsed, text-only height.
+  const [isPressed, setIsPressed] = useState(false);
 
   const background: Record<Variant, string> = {
     primary: colors.primary,
@@ -60,7 +68,7 @@ export function Button({
   // accent is how the accent stops meaning "this is the thing you press".
   const labelTone =
     variant === 'primary' || variant === 'danger'
-      ? 'inverse'
+      ? 'onPrimary'
       : variant === 'ghost' && destructive
         ? 'danger'
         : 'default';
@@ -72,18 +80,22 @@ export function Button({
       disabled={isDisabled}
       {...rest}
       onPressIn={(e) => {
-        if (!isDisabled) press.onPressIn();
+        if (!isDisabled) {
+          press.onPressIn();
+          setIsPressed(true);
+        }
         rest.onPressIn?.(e);
       }}
       onPressOut={(e) => {
         press.onPressOut();
+        setIsPressed(false);
         rest.onPressOut?.(e);
       }}
       onPress={(e) => {
         if (!isDisabled) tapFeedback();
         rest.onPress?.(e);
       }}
-      style={({ pressed: isPressed }: { pressed: boolean }) => [
+      style={[
         styles.base,
         {
           backgroundColor:
@@ -103,7 +115,7 @@ export function Button({
       <View style={styles.content}>
         {loading ? (
           <ActivityIndicator
-            color={labelTone === 'inverse' ? colors.onPrimary : colors.text}
+            color={labelTone === 'onPrimary' ? colors.onPrimary : colors.text}
             size="small"
           />
         ) : (

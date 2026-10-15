@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '../components/error-boundary';
 import { AuthProvider, useAuth } from '../features/auth/auth-provider';
 import { installNotificationHandler } from '../features/notifications/notifications';
+import { OnboardingProvider, useOnboarding } from '../features/onboarding/onboarding-provider';
 import { queryClient } from '../lib/query-client';
 import { ThemeProvider, useTheme } from '../theme';
 
@@ -19,12 +20,14 @@ installNotificationHandler();
 function RootNavigator() {
   const { isReady } = useAuth();
   const { colors, isDark, themeReady } = useTheme();
-  const ready = isReady && themeReady;
+  const onboarding = useOnboarding();
+  const ready = isReady && themeReady && onboarding.ready;
 
   useEffect(() => {
-    // Hold the splash until the stored session and the stored theme
-    // preference have both been read, so the user never sees the sign-in
-    // screen — or the wrong theme — flash before landing on the app.
+    // Hold the splash until the stored session, the stored theme preference
+    // and whether the intro has been seen have all been read, so the user
+    // never sees the sign-in screen — or the intro, or the wrong theme —
+    // flash before landing on the right one.
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
 
@@ -41,6 +44,8 @@ function RootNavigator() {
         }}
       >
         <Stack.Screen name="index" />
+        {/* Fades rather than sliding: there is no screen behind it to slide off of. */}
+        <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         {/* Owns a back button over its backdrop, so it keeps the header off. */}
@@ -70,7 +75,9 @@ export default function RootLayout() {
           <ErrorBoundary>
             <QueryClientProvider client={queryClient}>
               <AuthProvider>
-                <RootNavigator />
+                <OnboardingProvider>
+                  <RootNavigator />
+                </OnboardingProvider>
               </AuthProvider>
             </QueryClientProvider>
           </ErrorBoundary>
