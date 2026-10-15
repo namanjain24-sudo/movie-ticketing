@@ -99,4 +99,29 @@ describe('BookingCard', () => {
     const message = (Share.share as jest.Mock).mock.calls[0][0].message as string;
     expect(message).toMatch(/booking\/BX1234/);
   });
+
+  it('offers Book again instead of Calendar/Share when the caller supplies onRebook', async () => {
+    const onRebook = jest.fn();
+    const onPress = jest.fn();
+    const { getByLabelText, queryByLabelText } = await render(
+      <BookingCard booking={booking()} onPress={onPress} onRebook={onRebook} />,
+    );
+
+    expect(queryByLabelText('Calendar')).toBeNull();
+    expect(queryByLabelText('Share')).toBeNull();
+
+    await userEvent.press(getByLabelText('Book again'));
+    expect(onRebook).toHaveBeenCalledTimes(1);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('offers Book again even for a cancelled past booking', async () => {
+    const onRebook = jest.fn();
+    const { getByLabelText } = await render(
+      <BookingCard booking={booking({ status: 'CANCELLED' })} onPress={jest.fn()} onRebook={onRebook} />,
+    );
+
+    await userEvent.press(getByLabelText('Book again'));
+    expect(onRebook).toHaveBeenCalledTimes(1);
+  });
 });
