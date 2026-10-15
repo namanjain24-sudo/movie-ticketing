@@ -1,6 +1,7 @@
 import type { Booking, MovieSummary } from '@app/shared';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { recordNotificationHistory } from './history';
 import { holdNudgeTime, releaseCheckTime, showtimeReminderTime } from './scheduling';
 
 /**
@@ -55,18 +56,16 @@ const holdNudgeId = (holdId: string) => `hold-nudge-${holdId}`;
 export async function scheduleShowtimeReminder(booking: Booking) {
   const fireAt = showtimeReminderTime(booking.showtime.startsAt);
   if (!fireAt) return;
-  await attempt(
-    () =>
-      Notifications.scheduleNotificationAsync({
-        identifier: showtimeReminderId(booking.id),
-        content: {
-          title: `${booking.showtime.movie.title} starts soon`,
-          body: `Doors at ${booking.showtime.cinema.name}. Head out in time.`,
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
-      }),
-    undefined,
-  );
+  const title = `${booking.showtime.movie.title} starts soon`;
+  const body = `Doors at ${booking.showtime.cinema.name}. Head out in time.`;
+  await attempt(async () => {
+    await Notifications.scheduleNotificationAsync({
+      identifier: showtimeReminderId(booking.id),
+      content: { title, body },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
+    });
+    await recordNotificationHistory({ id: showtimeReminderId(booking.id), kind: 'showtime-reminder', title, body });
+  }, undefined);
 }
 
 /** Cancelling an identifier that was never scheduled is a harmless no-op. */
@@ -88,18 +87,16 @@ export async function cancelShowtimeReminder(bookingId: string) {
 export async function scheduleHoldExpiryNudge(holdId: string, expiresAt: string, serverTime: string) {
   const fireAt = holdNudgeTime(expiresAt, serverTime);
   if (!fireAt) return;
-  await attempt(
-    () =>
-      Notifications.scheduleNotificationAsync({
-        identifier: holdNudgeId(holdId),
-        content: {
-          title: 'Your seats are about to be released',
-          body: 'Come back and finish paying before the hold runs out.',
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
-      }),
-    undefined,
-  );
+  const title = 'Your seats are about to be released';
+  const body = 'Come back and finish paying before the hold runs out.';
+  await attempt(async () => {
+    await Notifications.scheduleNotificationAsync({
+      identifier: holdNudgeId(holdId),
+      content: { title, body },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
+    });
+    await recordNotificationHistory({ id: holdNudgeId(holdId), kind: 'hold-nudge', title, body });
+  }, undefined);
 }
 
 export async function cancelHoldExpiryNudge(holdId: string) {
@@ -118,18 +115,16 @@ const releaseCheckId = (movieId: string) => `release-check-${movieId}`;
 export async function scheduleReleaseCheck(movie: Pick<MovieSummary, 'id' | 'title' | 'releaseDate'>) {
   const fireAt = releaseCheckTime(movie.releaseDate);
   if (!fireAt) return;
-  await attempt(
-    () =>
-      Notifications.scheduleNotificationAsync({
-        identifier: releaseCheckId(movie.id),
-        content: {
-          title: `${movie.title} may be booking now`,
-          body: 'Open the app to check for showtimes.',
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
-      }),
-    undefined,
-  );
+  const title = `${movie.title} may be booking now`;
+  const body = 'Open the app to check for showtimes.';
+  await attempt(async () => {
+    await Notifications.scheduleNotificationAsync({
+      identifier: releaseCheckId(movie.id),
+      content: { title, body },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
+    });
+    await recordNotificationHistory({ id: releaseCheckId(movie.id), kind: 'release-check', title, body });
+  }, undefined);
 }
 
 export async function cancelReleaseCheck(movieId: string) {

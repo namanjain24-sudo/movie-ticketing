@@ -53,4 +53,5 @@ export const STORAGE_KEYS = {
   recentCinemaSearches: 'search.recentCinemas',
   recentlyViewedFilms: 'catalog.recentlyViewed',
   onboardingSeen: 'onboarding.seen',
+  notificationHistory: 'notifications.history',
 } as const;
