@@ -1,4 +1,4 @@
-import { SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
+import { POINT_VALUE_MINOR, SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -107,6 +107,10 @@ export default function BookingTicket() {
   const ticket = booking.data;
   const { showtime } = ticket;
   const cancelled = ticket.status === 'CANCELLED' || ticket.status === 'FAILED';
+  // `discountMinor` is the two folded together; the points portion is exact
+  // (pointsRedeemed is in the same minor units a promo discount is), so
+  // whatever is left over is the promo code's share.
+  const promoPortionMinor = ticket.discountMinor - ticket.pointsRedeemed * POINT_VALUE_MINOR;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -235,7 +239,7 @@ export default function BookingTicket() {
           </Text>
         </View>
 
-        {ticket.discountMinor > 0 ? (
+        {promoPortionMinor > 0 ? (
           <View
             style={{
               flexDirection: 'row',
@@ -245,7 +249,39 @@ export default function BookingTicket() {
           >
             <Text tone="muted">Saved with {ticket.promoCode ?? 'a promo code'}</Text>
             <Text variant="label" numeric style={{ color: colors.success }}>
-              {formatMoney(ticket.discountMinor, ticket.currency)}
+              {formatMoney(promoPortionMinor, ticket.currency)}
+            </Text>
+          </View>
+        ) : null}
+
+        {ticket.pointsRedeemed > 0 ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              paddingHorizontal: spacing.xs,
+            }}
+          >
+            <Text tone="muted">
+              Redeemed {ticket.pointsRedeemed} point{ticket.pointsRedeemed === 1 ? '' : 's'}
+            </Text>
+            <Text variant="label" numeric style={{ color: colors.success }}>
+              {formatMoney(ticket.pointsRedeemed * POINT_VALUE_MINOR, ticket.currency)}
+            </Text>
+          </View>
+        ) : null}
+
+        {!cancelled && ticket.pointsEarned > 0 ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              paddingHorizontal: spacing.xs,
+            }}
+          >
+            <Text tone="muted">Points earned</Text>
+            <Text variant="label" numeric style={{ color: colors.accent }}>
+              +{ticket.pointsEarned}
             </Text>
           </View>
         ) : null}

@@ -14,6 +14,7 @@ import { catalogRouter } from './modules/catalog/catalog.routes';
 import { reviewsRouter } from './modules/reviews/reviews.routes';
 import { holdsRouter } from './modules/holds/holds.routes';
 import { promosRouter } from './modules/promos/promos.routes';
+import { loyaltyRouter } from './modules/loyalty/loyalty.routes';
 import { concessionsRouter } from './modules/concessions/concessions.routes';
 import { paymentsRouter } from './modules/payments/payments.routes';
 import { bookingsRouter } from './modules/bookings/bookings.routes';
@@ -80,6 +81,7 @@ export function createApp(): Express {
   app.use('/v1', reviewsRouter);
   app.use('/v1', holdsRouter);
   app.use('/v1', promosRouter);
+  app.use('/v1', loyaltyRouter);
   app.use('/v1', concessionsRouter);
   app.use('/v1', paymentsRouter);
   app.use('/v1/bookings', bookingsRouter);

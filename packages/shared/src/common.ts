@@ -50,6 +50,8 @@ export const ERROR_CODES = {
   NOT_CANCELLABLE: 'NOT_CANCELLABLE',
   /// A promo code cannot be used here. `details.reason` says why.
   PROMO_INVALID: 'PROMO_INVALID',
+  /// A points redemption cannot be made here. `details.reason` says why.
+  LOYALTY_INVALID: 'LOYALTY_INVALID',
 } as const;
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 

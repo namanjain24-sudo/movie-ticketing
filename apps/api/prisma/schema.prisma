@@ -27,6 +27,7 @@ model User {
   bookings      Booking[]
   reviews       Review[]
   watchlist     WatchlistItem[]
+  loyaltyLedger LoyaltyLedger[]
 
   @@index([email])
 }
@@ -415,6 +416,11 @@ model Booking {
   /// code was used. `totalMinor = subtotalMinor + feeMinor + addOnsMinor -
   /// discountMinor`, which the invariant script asserts against the database.
   discountMinor Int           @default(0)
+  /// How many loyalty points were spent, folded into `discountMinor` above at
+  /// the rate `loyalty.service.ts` fixes. Purely informational — the money
+  /// effect already lives in `discountMinor`, so `booking-totals` in
+  /// verify-invariants.ts needs no separate accounting for it.
+  pointsRedeemed Int          @default(0)
   totalMinor    Int
   promoCodeId   String?
   promoCode     PromoCode?    @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
@@ -425,9 +431,11 @@ model Booking {
   cancelledAt   DateTime?
   failureReason String?
 
-  showSeats ShowSeat[]
-  payments  Payment[]
-  addOns    BookingAddOn[]
+  showSeats     ShowSeat[]
+  payments      Payment[]
+  addOns        BookingAddOn[]
+  loyaltyLedger LoyaltyLedger[]
+  splitShares   BookingSplitShare[]
 
   @@index([userId, status])
   @@index([showtimeId, status])
@@ -467,6 +475,61 @@ model Payment {
 
   @@index([bookingId, status])
   @@index([status, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Loyalty and group booking
+// ---------------------------------------------------------------------------
+
+enum LoyaltyReason {
+  /// Awarded when a booking is confirmed.
+  EARNED
+  /// Spent at checkout, folded into that booking's `discountMinor`.
+  REDEEMED
+  /// A REDEEMED entry's points handed back because the booking that spent
+  /// them never completed (hold expired before capture, or was cancelled).
+  REVERSED
+}
+
+/// A ledger, not a mutable counter — the same reasoning `promos.service.ts`
+/// gives for deriving redemption counts live rather than storing them: a
+/// balance that is only ever summed cannot drift from what actually
+/// happened, and every change carries its own reason and timestamp.
+model LoyaltyLedger {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Null for nothing booking-related (there is none today, but a future
+  /// manual adjustment would have no booking to point at).
+  bookingId String?
+  booking   Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  points    Int
+  reason    LoyaltyReason
+  createdAt DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@index([bookingId])
+}
+
+/// Who owes what on a booking someone else paid for in full. The organiser
+/// still makes the one real payment through the normal checkout flow — this
+/// is a tracker for splitting that cost with friends afterwards, not a second
+/// payment path, so it never touches `Payment` or the one-captured-payment
+/// guarantee `verify-invariants.ts` checks for.
+model BookingSplitShare {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  label       String
+  amountMinor Int
+  settled     Boolean  @default(false)
+  /// Display order, since shares are replaced as a whole list and have no
+  /// other natural ordering.
+  position    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([bookingId])
 }
 
 enum IdempotencyState {

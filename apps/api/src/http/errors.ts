@@ -1,4 +1,4 @@
-import { ERROR_CODES, type ErrorCode, type PromoReason } from '@app/shared';
+import { ERROR_CODES, type ErrorCode, type LoyaltyInvalidReason, type PromoReason } from '@app/shared';
 
 /**
  * The only error type route code should throw. Anything else that escapes a
@@ -67,6 +67,11 @@ export class HttpError extends Error {
   /** 422: the request was well formed, but this code cannot be applied to it. */
   static promoInvalid(reason: PromoReason, message: string) {
     return new HttpError(422, ERROR_CODES.PROMO_INVALID, message, { reason: [reason] });
+  }
+
+  /** 422: same shape as `promoInvalid`, for a points redemption that cannot go through. */
+  static loyaltyInvalid(reason: LoyaltyInvalidReason, message: string) {
+    return new HttpError(422, ERROR_CODES.LOYALTY_INVALID, message, { reason: [reason] });
   }
 
   static tooManySeats(max: number) {

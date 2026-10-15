@@ -98,6 +98,11 @@ export const checkoutSchema = z.object({
    * protect. Priced once, same as the promo code: a retry reuses the booking.
    */
   addOns: z.array(addOnLineSchema).max(20).optional(),
+  /**
+   * Loyalty points to spend, on top of any promo code — priced once, same
+   * rule as the code above.
+   */
+  pointsToRedeem: z.number().int().min(1).optional(),
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
@@ -157,6 +162,10 @@ export const bookingSchema = z.object({
   discountMinor: z.number().int(),
   /** The code that produced `discountMinor`, when one was used. */
   promoCode: z.string().nullable(),
+  /** How many points were spent on this booking, already folded into `discountMinor`. */
+  pointsRedeemed: z.number().int(),
+  /** Earned on confirmation, at the rate `loyalty.service.ts` fixes. Zero until then. */
+  pointsEarned: z.number().int(),
   totalMinor: z.number().int(),
   currency: z.string(),
   seats: z.array(heldSeatSchema),
@@ -266,3 +275,76 @@ export const promoOfferSchema = z.object({
   expiresAt: z.string().nullable(),
 });
 export type PromoOffer = z.infer<typeof promoOfferSchema>;
+
+// ---------------------------------------------------------------------------
+// Loyalty points
+// ---------------------------------------------------------------------------
+
+export const LOYALTY_REASONS = ['INSUFFICIENT_BALANCE', 'EXCEEDS_SUBTOTAL'] as const;
+export type LoyaltyInvalidReason = (typeof LOYALTY_REASONS)[number];
+
+/** 1 point = ₹1 off. Shared so the checkout screen can compute how many
+ * points a hold could use without a round trip, and agree with the server
+ * about what redeeming them is actually worth. */
+export const POINT_VALUE_MINOR = 100;
+
+export const loyaltyBalanceSchema = z.object({
+  balance: z.number().int(),
+});
+export type LoyaltyBalance = z.infer<typeof loyaltyBalanceSchema>;
+
+export const loyaltyRedeemSchema = z.object({
+  holdId: z.string().min(1),
+  points: z.number().int().min(1),
+});
+export type LoyaltyRedeemInput = z.infer<typeof loyaltyRedeemSchema>;
+
+/** What the checkout screen shows once a points spend has been checked against a hold. */
+export const loyaltyQuoteSchema = z.object({
+  points: z.number().int(),
+  subtotalMinor: z.number().int(),
+  feeMinor: z.number().int(),
+  discountMinor: z.number().int(),
+  totalMinor: z.number().int(),
+  currency: z.string(),
+});
+export type LoyaltyQuote = z.infer<typeof loyaltyQuoteSchema>;
+
+// ---------------------------------------------------------------------------
+// Split pay
+// ---------------------------------------------------------------------------
+
+export const bookingSplitShareInputSchema = z.object({
+  label: z.string().trim().min(1).max(60),
+  amountMinor: z.number().int().min(1),
+});
+export type BookingSplitShareInput = z.infer<typeof bookingSplitShareInputSchema>;
+
+/** Replaces the whole list at once — shares have no identity worth keeping
+ * across an edit, since "who's in" is exactly what's being changed. */
+export const setBookingSplitSchema = z.object({
+  shares: z.array(bookingSplitShareInputSchema).min(1).max(20),
+});
+export type SetBookingSplitInput = z.infer<typeof setBookingSplitSchema>;
+
+export const bookingSplitShareSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  amountMinor: z.number().int(),
+  settled: z.boolean(),
+  position: z.number().int(),
+});
+export type BookingSplitShare = z.infer<typeof bookingSplitShareSchema>;
+
+export const bookingSplitSchema = z.object({
+  bookingId: z.string(),
+  totalMinor: z.number().int(),
+  currency: z.string(),
+  shares: z.array(bookingSplitShareSchema),
+});
+export type BookingSplit = z.infer<typeof bookingSplitSchema>;
+
+export const toggleBookingSplitShareSchema = z.object({
+  settled: z.boolean(),
+});
+export type ToggleBookingSplitShareInput = z.infer<typeof toggleBookingSplitShareSchema>;

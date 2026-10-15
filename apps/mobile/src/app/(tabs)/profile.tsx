@@ -6,6 +6,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { authApi } from '../../api/auth';
 import { bookingApi } from '../../api/booking';
+import { loyaltyApi } from '../../api/loyalty';
 import { ErrorState, LoadingState } from '../../components/query-state';
 import { AppBar, Button, Text, TextField } from '../../components/ui';
 import { useWatchlist } from '../../features/watchlist/use-watchlist';
@@ -36,6 +37,10 @@ export default function Profile() {
   // after your own name.
   const bookings = useQuery({ queryKey: queryKeys.bookings, queryFn: bookingApi.bookings });
   const watchlist = useWatchlist();
+  const loyaltyBalance = useQuery({
+    queryKey: queryKeys.loyaltyBalance,
+    queryFn: loyaltyApi.balance,
+  });
 
   const save = useMutation({
     mutationFn: (nextName: string) => authApi.updateProfile({ name: nextName }),
@@ -140,11 +145,12 @@ export default function Profile() {
 
         <Animated.View
           entering={FadeInDown.delay(60).duration(280)}
-          style={{ flexDirection: 'row', gap: spacing.md }}
+          style={{ flexDirection: 'row', gap: spacing.sm }}
         >
           <Stat label="Upcoming" value={bookings.data?.upcoming.length} />
           <Stat label="Films seen" value={bookings.data?.past.length} />
           <Stat label="Saved" value={watchlist.movies?.length} />
+          <Stat label="Points" value={loyaltyBalance.data?.balance} />
         </Animated.View>
 
         <Animated.View
@@ -193,7 +199,8 @@ function Stat({ label, value }: { label: string; value?: number }) {
     <View
       style={{
         flex: 1,
-        padding: spacing.lg,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.sm,
         borderRadius: radius.lg,
         borderWidth: 1,
         borderColor: colors.border,
@@ -203,10 +210,10 @@ function Stat({ label, value }: { label: string; value?: number }) {
     >
       {/* An em dash until the count is known, rather than a zero that is a lie
           for as long as the request is in flight. */}
-      <Text variant="display" numeric>
+      <Text variant="heading" numeric>
         {value ?? '—'}
       </Text>
-      <Text variant="caption" tone="muted">
+      <Text variant="caption" tone="muted" numberOfLines={1}>
         {label}
       </Text>
     </View>
