@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
 import { cinemasApi } from '../../api/cinemas';
 import { EmptyState, ErrorState } from '../../components/query-state';
@@ -11,6 +11,7 @@ import { AppBar, Skeleton, Text } from '../../components/ui';
 import { CinemaCard } from '../../features/cinemas/cinema-card';
 import { CinemaMap } from '../../features/cinemas/cinema-map';
 import { useUserLocation } from '../../features/cinemas/use-location';
+import { SponsoredCard } from '../../features/promos/sponsored-card';
 import { RecentSearchChips } from '../../features/search/recent-search-chips';
 import { useRecentSearches } from '../../features/search/use-recent-searches';
 import { tapFeedback } from '../../lib/haptics';
@@ -179,6 +180,7 @@ export default function Cinemas() {
       {mapOpen && results.length > 0 ? (
         <Animated.View
           entering={FadeIn.duration(220)}
+          exiting={FadeOut.duration(160)}
           style={{
             height: MAP_PEEK_HEIGHT,
             marginHorizontal: spacing.lg,
@@ -261,8 +263,10 @@ export default function Cinemas() {
           data={results}
           keyExtractor={(cinema) => cinema.id}
           ListHeaderComponent={header}
-          renderItem={({ item }) => (
-            <CinemaCard cinema={item} onPress={() => router.push(`/cinema/${item.slug}`)} />
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}>
+              <CinemaCard cinema={item} onPress={() => router.push(`/cinema/${item.slug}`)} />
+            </Animated.View>
           )}
           contentContainerStyle={{
             paddingHorizontal: spacing.lg,
@@ -277,6 +281,18 @@ export default function Cinemas() {
               onRefresh={() => void cinemas.refetch()}
               tintColor={colors.primary}
             />
+          }
+          // One house-ad slot, at the foot of the list rather than between
+          // real results — this is a directory, not a feed.
+          ListFooterComponent={
+            results.length > 0 ? (
+              <SponsoredCard
+                icon="sparkles-outline"
+                title="Members save more"
+                body="New promo codes drop every week."
+                onPress={() => router.push('/(tabs)')}
+              />
+            ) : null
           }
           ListEmptyComponent={
             <EmptyState

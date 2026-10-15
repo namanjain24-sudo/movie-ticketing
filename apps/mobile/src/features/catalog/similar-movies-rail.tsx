@@ -1,7 +1,10 @@
 import type { MovieDetail, MovieSummary } from '@app/shared';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { FlatList, View } from 'react-native';
+import Animated, { FadeInRight } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
+import { SponsoredTile } from '../promos/sponsored-card';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
 import { MovieCard } from './movie-card';
@@ -35,6 +38,7 @@ export function SimilarMoviesRail({
   onSelect: (movie: MovieSummary) => void;
 }) {
   const { spacing } = useTheme();
+  const router = useRouter();
 
   // The same "everything on sale" query the home tab's unfiltered grid uses,
   // so a visit that started there already has this warm in cache.
@@ -55,9 +59,22 @@ export function SimilarMoviesRail({
         keyExtractor={(movie) => movie.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg }}
-        renderItem={({ item }) => (
-          <MovieCard movie={item} width={RAIL_CARD_WIDTH} onPress={() => onSelect(item)} />
+        renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInRight.delay(Math.min(index, 6) * 40).duration(260)}>
+            <MovieCard movie={item} width={RAIL_CARD_WIDTH} onPress={() => onSelect(item)} />
+          </Animated.View>
         )}
+        // The rail exists to hand the visit off, so the one sponsored tile
+        // sits at the very end of it rather than interrupting the films.
+        ListFooterComponent={
+          <SponsoredTile
+            width={RAIL_CARD_WIDTH}
+            icon="pricetag-outline"
+            title="This week's offers"
+            body="Promo codes, applied at checkout."
+            onPress={() => router.push('/(tabs)')}
+          />
+        }
       />
     </View>
   );

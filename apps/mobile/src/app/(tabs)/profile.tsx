@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { authApi } from '../../api/auth';
 import { bookingApi } from '../../api/booking';
 import { ErrorState, LoadingState } from '../../components/query-state';
@@ -68,7 +69,10 @@ export default function Profile() {
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.xl }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ alignItems: 'center', gap: spacing.md }}>
+        <Animated.View
+          entering={FadeInDown.duration(280)}
+          style={{ alignItems: 'center', gap: spacing.md }}
+        >
           <View
             style={{
               width: 76,
@@ -132,15 +136,19 @@ export default function Profile() {
               </Text>
             </View>
           )}
-        </View>
+        </Animated.View>
 
-        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+        <Animated.View
+          entering={FadeInDown.delay(60).duration(280)}
+          style={{ flexDirection: 'row', gap: spacing.md }}
+        >
           <Stat label="Upcoming" value={bookings.data?.upcoming.length} />
           <Stat label="Films seen" value={bookings.data?.past.length} />
           <Stat label="Saved" value={watchlist.movies?.length} />
-        </View>
+        </Animated.View>
 
-        <View
+        <Animated.View
+          entering={FadeInDown.delay(110).duration(280)}
           style={{
             borderRadius: radius.lg,
             borderWidth: 1,
@@ -158,12 +166,12 @@ export default function Profile() {
           <Row icon="heart-outline" label="Saved films" onPress={() => router.push('/watchlist')} />
           <Divider />
           <Row icon="film-outline" label="Browse films" onPress={() => router.push('/(tabs)')} />
-        </View>
+        </Animated.View>
 
-        <View style={{ gap: spacing.sm }}>
+        <Animated.View entering={FadeInDown.delay(160).duration(280)} style={{ gap: spacing.sm }}>
           <Text variant="heading">Appearance</Text>
           <ThemeToggle />
-        </View>
+        </Animated.View>
 
         <Button
           label="Sign out"

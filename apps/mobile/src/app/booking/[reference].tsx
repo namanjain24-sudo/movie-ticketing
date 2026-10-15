@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Alert, Platform, ScrollView, Share, View } from 'react-native';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { bookingApi } from '../../api/booking';
@@ -123,19 +124,24 @@ export default function BookingTicket() {
             <Ionicons name="checkmark-circle" size={52} color={colors.success} />
           ) : (
             // The one gold moment in the app, spent here per DESIGN.md's
-            // gradient token: this is the "won ticket" it was made for.
-            <LinearGradient
-              colors={gradients.gold}
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 32,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="checkmark" size={34} color={colors.onImage} />
-            </LinearGradient>
+            // gradient token: this is the "won ticket" it was made for. It
+            // earns the second authored spring in the app — the same
+            // vocabulary as the seatmap's selection — because this is the
+            // matching emotional beat, reward rather than choice.
+            <Animated.View entering={ZoomIn.springify().damping(12).mass(0.6)}>
+              <LinearGradient
+                colors={gradients.gold}
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="checkmark" size={34} color={colors.onImage} />
+              </LinearGradient>
+            </Animated.View>
           )}
           <Text variant="title">Booking confirmed</Text>
           <Text tone="muted" align="center">
@@ -143,8 +149,12 @@ export default function BookingTicket() {
           </Text>
         </View>
 
-        {/* A ticket, not a card: a stub, a torn edge, and a code. */}
-        <View style={[{ borderRadius: radius.lg, overflow: 'hidden' }, elevation.card]}>
+        {/* A ticket, not a card: a stub, a torn edge, and a code. Slides up
+            after the checkmark settles, as though it were just printed. */}
+        <Animated.View
+          entering={cancelled ? undefined : FadeInDown.delay(120).duration(360)}
+          style={[{ borderRadius: radius.lg, overflow: 'hidden' }, elevation.card]}
+        >
           <View style={{ backgroundColor: colors.surface, padding: spacing.lg, gap: spacing.sm }}>
             <Text variant="heading" numberOfLines={2}>
               {showtime.movie.title}
@@ -203,7 +213,7 @@ export default function BookingTicket() {
               Signed, so the gate can verify it without a connection.
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
         <View
           style={{
