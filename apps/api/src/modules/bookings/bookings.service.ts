@@ -2,6 +2,8 @@ import { createHash, createHmac } from 'node:crypto';
 import type {
   Booking,
   BookingList,
+  BookingSplit,
+  BookingSplitShareInput,
   Cancellation,
   CancellationQuote,
   SeatTier,
@@ -382,4 +384,118 @@ export async function quoteCancellation(params: {
     serverTime: now.toISOString(),
     reason,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Splitting the bill
+// ---------------------------------------------------------------------------
+
+/**
+ * Who owes what on a booking someone else paid for in full. The organiser
+ * still made the one real payment through the normal checkout flow above —
+ * this is a tracker for splitting that cost with friends afterwards, private
+ * to the organiser, since it is cost information between friends rather than
+ * anything the booking's own ticket needs to show.
+ */
+
+const splitSelect = {
+  id: true,
+  label: true,
+  amountMinor: true,
+  settled: true,
+  position: true,
+} satisfies Prisma.BookingSplitShareSelect;
+
+function toSplitDto(booking: {
+  id: string;
+  totalMinor: number;
+  currency: string;
+  splitShares: { id: string; label: string; amountMinor: number; settled: boolean; position: number }[];
+}): BookingSplit {
+  return {
+    bookingId: booking.id,
+    totalMinor: booking.totalMinor,
+    currency: booking.currency,
+    shares: booking.splitShares,
+  };
+}
+
+async function loadOwnedBooking(params: { userId: string; bookingId: string }) {
+  const booking = await prisma.booking.findUnique({
+    where: { id: params.bookingId },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      totalMinor: true,
+      currency: true,
+      splitShares: { select: splitSelect, orderBy: { position: 'asc' } },
+    },
+  });
+  // 404 rather than 403, so booking ids cannot be probed — same reasoning as
+  // getBooking above.
+  if (!booking || booking.userId !== params.userId) {
+    throw HttpError.notFound('That booking does not exist');
+  }
+  return booking;
+}
+
+export async function getSplit(params: { userId: string; bookingId: string }): Promise<BookingSplit> {
+  return toSplitDto(await loadOwnedBooking(params));
+}
+
+/**
+ * Replaces the whole share list at once — shares have no identity worth
+ * keeping across an edit, since "who's in and for how much" is exactly what
+ * an edit changes. The amounts must add up to exactly what was paid: a split
+ * that doesn't cover the whole bill, or claims more than it was, is the kind
+ * of invented number this codebase's "no invented data" rule is about.
+ */
+export async function setSplit(params: {
+  userId: string;
+  bookingId: string;
+  shares: BookingSplitShareInput[];
+}): Promise<BookingSplit> {
+  const booking = await loadOwnedBooking(params);
+  if (booking.status !== 'CONFIRMED') {
+    throw HttpError.conflict('Only a confirmed booking can be split');
+  }
+
+  const sum = params.shares.reduce((total, share) => total + share.amountMinor, 0);
+  if (sum !== booking.totalMinor) {
+    throw HttpError.badRequest('The shares must add up to exactly what the booking cost', {
+      totalMinor: [String(booking.totalMinor)],
+    });
+  }
+
+  await prisma.$transaction([
+    prisma.bookingSplitShare.deleteMany({ where: { bookingId: booking.id } }),
+    prisma.bookingSplitShare.createMany({
+      data: params.shares.map((share, index) => ({
+        bookingId: booking.id,
+        label: share.label,
+        amountMinor: share.amountMinor,
+        position: index,
+      })),
+    }),
+  ]);
+
+  return getSplit(params);
+}
+
+export async function toggleShareSettled(params: {
+  userId: string;
+  bookingId: string;
+  shareId: string;
+  settled: boolean;
+}): Promise<BookingSplit> {
+  const booking = await loadOwnedBooking(params);
+
+  const updated = await prisma.bookingSplitShare.updateMany({
+    where: { id: params.shareId, bookingId: booking.id },
+    data: { settled: params.settled },
+  });
+  if (updated.count === 0) throw HttpError.notFound('That share does not exist');
+
+  return getSplit(params);
 }
