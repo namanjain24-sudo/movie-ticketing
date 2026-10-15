@@ -2,7 +2,18 @@ import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'r
 import { useTheme } from '../../theme';
 import { NUMERIC, type TypographyVariant } from '../../theme/tokens';
 
-type Tone = 'default' | 'muted' | 'primary' | 'danger' | 'success' | 'inverse' | 'onChrome';
+type Tone =
+  | 'default'
+  | 'muted'
+  | 'primary'
+  | 'danger'
+  | 'success'
+  | 'inverse'
+  | 'onChrome'
+  /** Text sitting on a filled primary/danger surface — always white, in
+   * either theme, unlike `inverse` which flips with the theme for the
+   * opposite purpose (dark text on a light chip inside a dark screen). */
+  | 'onPrimary';
 
 export type TextProps = RNTextProps & {
   variant?: TypographyVariant;
@@ -30,6 +41,7 @@ export function Text({
     success: colors.success,
     inverse: colors.textInverse,
     onChrome: colors.onChrome,
+    onPrimary: colors.onPrimary,
   }[tone];
 
   return (

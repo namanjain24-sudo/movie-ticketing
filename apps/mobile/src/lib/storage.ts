@@ -52,4 +52,5 @@ export const STORAGE_KEYS = {
   recentFilmSearches: 'search.recentFilms',
   recentCinemaSearches: 'search.recentCinemas',
   recentlyViewedFilms: 'catalog.recentlyViewed',
+  onboardingSeen: 'onboarding.seen',
 } as const;

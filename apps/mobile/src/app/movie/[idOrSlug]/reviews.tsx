@@ -145,7 +145,7 @@ export default function ReviewsScreen() {
                 backgroundColor: colors.primary,
               }}
             >
-              <Text variant="label" tone="inverse" numeric>
+              <Text variant="label" tone="onPrimary" numeric>
                 {starFilter} star
               </Text>
               <Ionicons name="close" size={14} color={colors.onPrimary} />
