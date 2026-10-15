@@ -93,6 +93,11 @@ export default function Bookings() {
                 <BookingCard
                   booking={item}
                   onPress={() => router.push(`/booking/${item.reference}`)}
+                  onRebook={
+                    tab === 'past'
+                      ? () => router.push(`/movie/${item.showtime.movie.id}`)
+                      : undefined
+                  }
                 />
               </Animated.View>
             )}
