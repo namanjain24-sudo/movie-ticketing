@@ -1,6 +1,7 @@
 import { RATING_MAX, RATING_MIN, ratingLabel } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View, type ViewStyle } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
@@ -141,6 +142,7 @@ export function RatingInput({
       {Array.from({ length: RATING_MAX }, (_, i) => {
         const rating = i + RATING_MIN;
         const on = value !== null && rating <= value;
+        const star = <Ionicons name={on ? 'star' : 'star-outline'} size={size} color={on ? colors.warning : colors.borderStrong} />;
         return (
           <Pressable
             key={rating}
@@ -159,11 +161,16 @@ export function RatingInput({
               justifyContent: 'center',
             }}
           >
-            <Ionicons
-              name={on ? 'star' : 'star-outline'}
-              size={size}
-              color={on ? colors.warning : colors.borderStrong}
-            />
+            {/* Same vocabulary as the seatmap: only the newly-filled star
+                springs in, an unfilled one is a plain icon with no animation
+                state at all. */}
+            {on ? (
+              <Animated.View key="on" entering={ZoomIn.springify().damping(11).stiffness(220)}>
+                {star}
+              </Animated.View>
+            ) : (
+              star
+            )}
           </Pressable>
         );
       })}

@@ -35,8 +35,8 @@ export function SeatLegend() {
           <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             <View
               style={{
-                width: 13,
-                height: 13,
+                width: 16,
+                height: 16,
                 borderTopLeftRadius: radius.sm,
                 borderTopRightRadius: radius.sm,
                 borderBottomLeftRadius: 2,
