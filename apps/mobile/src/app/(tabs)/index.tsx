@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, TextInput, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
 import { EmptyState, ErrorState } from '../../components/query-state';
 import { AppBar, Skeleton } from '../../components/ui';
@@ -255,7 +256,16 @@ export default function NowShowing() {
         <FlatList
           data={shown}
           keyExtractor={(movie) => movie.id}
-          renderItem={({ item }) => <MovieCard movie={item} onPress={() => open(item)} />}
+          renderItem={({ item, index }) => (
+            <Animated.View
+              entering={FadeInDown.delay(Math.min(Math.floor(index / COLUMNS), 6) * 50).duration(
+                280,
+              )}
+              style={{ flex: 1 }}
+            >
+              <MovieCard movie={item} onPress={() => open(item)} />
+            </Animated.View>
+          )}
           numColumns={COLUMNS}
           columnWrapperStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg }}
           ListHeaderComponent={header}

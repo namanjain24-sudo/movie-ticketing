@@ -3,10 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { bookingApi } from '../../api/booking';
 import { EmptyState, ErrorState } from '../../components/query-state';
 import { AppBar, Skeleton, Text } from '../../components/ui';
 import { BookingCard } from '../../features/bookings/booking-card';
+import { SponsoredCard } from '../../features/promos/sponsored-card';
 import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
@@ -81,45 +83,65 @@ export default function Bookings() {
           onRetry={() => void bookings.refetch()}
         />
       ) : (
-        <FlatList
-          data={list}
-          keyExtractor={(booking) => booking.id}
-          ListHeaderComponent={header}
-          renderItem={({ item }) => (
-            <BookingCard booking={item} onPress={() => router.push(`/booking/${item.reference}`)} />
-          )}
-          contentContainerStyle={{
-            paddingHorizontal: spacing.lg,
-            paddingBottom: spacing['2xl'],
-            gap: spacing.md,
-          }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={bookings.isRefetching}
-              onRefresh={() => void bookings.refetch()}
-              tintColor={colors.primary}
-            />
-          }
-          ListEmptyComponent={
-            <View style={{ paddingTop: spacing.xl }}>
-              <EmptyState
-                icon="ticket-outline"
-                title={tab === 'upcoming' ? 'No upcoming tickets' : 'Nothing in your history yet'}
-                message={
-                  tab === 'upcoming'
-                    ? 'Book a film and your ticket will wait for you here.'
-                    : 'Films you have already seen will appear here.'
-                }
-                action={
-                  tab === 'upcoming'
-                    ? { label: 'Browse films', onPress: () => router.push('/(tabs)') }
-                    : undefined
-                }
+        <Animated.View key={tab} entering={FadeIn.duration(180)} style={{ flex: 1 }}>
+          <FlatList
+            data={list}
+            keyExtractor={(booking) => booking.id}
+            ListHeaderComponent={header}
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}>
+                <BookingCard
+                  booking={item}
+                  onPress={() => router.push(`/booking/${item.reference}`)}
+                />
+              </Animated.View>
+            )}
+            contentContainerStyle={{
+              paddingHorizontal: spacing.lg,
+              paddingBottom: spacing['2xl'],
+              gap: spacing.md,
+            }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={bookings.isRefetching}
+                onRefresh={() => void bookings.refetch()}
+                tintColor={colors.primary}
               />
-            </View>
-          }
-        />
+            }
+            // A rewatch prompt, and only here: upcoming holds live tickets,
+            // nothing to sell against; past is where "watch something else
+            // next" actually belongs.
+            ListFooterComponent={
+              tab === 'past' && list.length > 0 ? (
+                <SponsoredCard
+                  icon="film-outline"
+                  title="Missed one?"
+                  body="It's probably still playing somewhere nearby."
+                  onPress={() => router.push('/(tabs)')}
+                />
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={{ paddingTop: spacing.xl }}>
+                <EmptyState
+                  icon="ticket-outline"
+                  title={tab === 'upcoming' ? 'No upcoming tickets' : 'Nothing in your history yet'}
+                  message={
+                    tab === 'upcoming'
+                      ? 'Book a film and your ticket will wait for you here.'
+                      : 'Films you have already seen will appear here.'
+                  }
+                  action={
+                    tab === 'upcoming'
+                      ? { label: 'Browse films', onPress: () => router.push('/(tabs)') }
+                      : undefined
+                  }
+                />
+              </View>
+            }
+          />
+        </Animated.View>
       )}
     </View>
   );

@@ -22,7 +22,55 @@
     }).observe(sentinel);
   }
 
-  /* Scroll reveal for elements with .reveal */
+  /* Which nav link is "current", by which section fills the middle of the
+     viewport — the same sentinel-based approach as the scrolled state, just
+     one observer per section instead of a scroll listener doing the math. */
+  if (nav && 'IntersectionObserver' in window) {
+    var navLinks = nav.querySelectorAll('.nav-links a[href^="#"]');
+    var sectionObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          navLinks.forEach(function (link) {
+            link.classList.toggle(
+              'is-active',
+              link.getAttribute('href') === '#' + entry.target.id,
+            );
+          });
+        });
+      },
+      { rootMargin: '-45% 0px -50% 0px' },
+    );
+    navLinks.forEach(function (link) {
+      var id = link.getAttribute('href').slice(1);
+      var section = document.getElementById(id);
+      if (section) sectionObserver.observe(section);
+    });
+  }
+
+  /* A number counting up to its real value, not a fabricated one — it still
+     has to land on exactly what the stat tile says. */
+  function animateCount(el) {
+    var to = Number(el.getAttribute('data-count-to'));
+    if (!isFinite(to)) return;
+    if (prefersReducedMotion) {
+      el.textContent = to.toLocaleString('en-IN');
+      return;
+    }
+    var duration = 900;
+    var start = null;
+    function step(timestamp) {
+      if (start === null) start = timestamp;
+      var progress = Math.min((timestamp - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * to).toLocaleString('en-IN');
+      if (progress < 1) window.requestAnimationFrame(step);
+    }
+    window.requestAnimationFrame(step);
+  }
+
+  /* Scroll reveal for elements with .reveal, counting up any stat inside
+     the moment it reveals. */
   var revealEls = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window && !prefersReducedMotion) {
     var revealObserver = new IntersectionObserver(
@@ -30,6 +78,8 @@
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-visible');
+            var counter = entry.target.querySelector('[data-count-to]');
+            if (counter) animateCount(counter);
             revealObserver.unobserve(entry.target);
           }
         });
@@ -42,6 +92,8 @@
   } else {
     revealEls.forEach(function (el) {
       el.classList.add('is-visible');
+      var counter = el.querySelector('[data-count-to]');
+      if (counter) animateCount(counter);
     });
   }
 

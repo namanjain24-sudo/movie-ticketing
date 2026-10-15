@@ -225,12 +225,29 @@ a {
 }
 
 .nav-links a {
+  position: relative;
   text-decoration: none;
+  padding-bottom: 3px;
   transition: color 0.15s ease;
 }
 
 .nav-links a:hover {
   color: var(--text-primary);
+}
+
+.nav-links a.is-active {
+  color: var(--text-primary);
+}
+
+.nav-links a.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
 }
 
 .nav-cta {
@@ -288,6 +305,34 @@ section {
     opacity: 1;
     transform: none;
   }
+}
+
+/* Siblings that reveal as a group — a stat grid, a step row — stagger
+   instead of arriving in one flat flash. Capped at 8 so a long row doesn't
+   leave the last tile waiting on the first. */
+.stat-tile.reveal:nth-child(2),
+.step.reveal:nth-child(2) {
+  transition-delay: 70ms;
+}
+.stat-tile.reveal:nth-child(3),
+.step.reveal:nth-child(3) {
+  transition-delay: 140ms;
+}
+.stat-tile.reveal:nth-child(4),
+.step.reveal:nth-child(4) {
+  transition-delay: 210ms;
+}
+.stat-tile.reveal:nth-child(5) {
+  transition-delay: 280ms;
+}
+.stat-tile.reveal:nth-child(6) {
+  transition-delay: 350ms;
+}
+.stat-tile.reveal:nth-child(7) {
+  transition-delay: 420ms;
+}
+.stat-tile.reveal:nth-child(8) {
+  transition-delay: 490ms;
 }
 
 /* Hero */
@@ -582,6 +627,8 @@ section {
 
 .step-index {
   font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
   color: var(--text-tertiary);
   margin: 0 0 14px;
 }
@@ -605,6 +652,11 @@ section {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0;
+}
+
+.honesty .section-head {
+  grid-column: 1 / -1;
+  max-width: 100%;
 }
 
 .honesty-col {
@@ -640,6 +692,19 @@ section {
   width: 20px;
   height: 6px;
   border-radius: 3px;
+}
+
+.band-swatch .swatch-plenty {
+  background: var(--plenty);
+}
+.band-swatch .swatch-filling {
+  background: var(--filling);
+}
+.band-swatch .swatch-almost-full {
+  background: var(--almost-full);
+}
+.band-swatch .swatch-sold-out {
+  background: var(--sold-out);
 }
 
 @media (max-width: 760px) {
