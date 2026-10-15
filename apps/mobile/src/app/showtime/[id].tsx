@@ -1,8 +1,9 @@
 import { SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { bookingApi, seatConflictFrom } from '../../api/booking';
@@ -13,7 +14,8 @@ import { AppBar, Button, Text } from '../../components/ui';
 import { SeatLegend } from '../../features/seatmap/legend';
 import { findBestSeats } from '../../features/seatmap/best-seats';
 import { SeatCountSheet } from '../../features/seatmap/seat-count-sheet';
-import { ScreenCurve, SeatGrid } from '../../features/seatmap/seat-grid';
+import { ScreenCurve, SeatGrid, type SeatGridHandle } from '../../features/seatmap/seat-grid';
+import { SeatOverview } from '../../features/seatmap/seat-overview';
 import { useSeatSelection } from '../../features/seatmap/use-seat-selection';
 import { formatMonthDay, formatTime } from '../../lib/format';
 import { rejectFeedback, successFeedback, tapFeedback } from '../../lib/haptics';
@@ -29,6 +31,9 @@ export default function SeatMapScreen() {
   const [holdError, setHoldError] = useState<string | null>(null);
   const [partySize, setPartySize] = useState<number | undefined>(undefined);
   const [askedPartySize, setAskedPartySize] = useState(false);
+  const [overviewOpen, setOverviewOpen] = useState(false);
+  const [visibleRow, setVisibleRow] = useState<string | null>(null);
+  const gridRef = useRef<SeatGridHandle>(null);
 
   const seatMap = useQuery({
     queryKey: queryKeys.seatMap(id),
@@ -120,13 +125,23 @@ export default function SeatMapScreen() {
         subtitle={`${map.cinema.name} · ${map.screen.name}`}
         onBack={() => router.back()}
         actions={
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text variant="caption" tone="onChrome" numeric>
-              {formatMonthDay(map.startsAt)}
-            </Text>
-            <Text variant="caption" style={{ color: colors.onChromeMuted }} numeric>
-              {formatTime(map.startsAt)} · {SHOW_FORMAT_LABELS[map.format]}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See the whole screen's seating at a glance"
+              hitSlop={8}
+              onPress={() => setOverviewOpen(true)}
+            >
+              <Ionicons name="grid-outline" size={20} color={colors.onChrome} />
+            </Pressable>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text variant="caption" tone="onChrome" numeric>
+                {formatMonthDay(map.startsAt)}
+              </Text>
+              <Text variant="caption" style={{ color: colors.onChromeMuted }} numeric>
+                {formatTime(map.startsAt)} · {SHOW_FORMAT_LABELS[map.format]}
+              </Text>
+            </View>
           </View>
         }
       />
@@ -145,10 +160,30 @@ export default function SeatMapScreen() {
         {/* Outside the horizontal scroller: on a wide auditorium a centred
             label inside it would sit off-screen until the user panned. */}
         <ScreenCurve />
+        {visibleRow ? (
+          <View
+            style={{
+              position: 'absolute',
+              top: spacing.lg,
+              right: spacing.lg,
+              zIndex: 1,
+              paddingHorizontal: spacing.sm,
+              paddingVertical: 3,
+              borderRadius: 999,
+              backgroundColor: colors.surfaceMuted,
+            }}
+          >
+            <Text variant="caption" tone="muted">
+              Row {visibleRow}
+            </Text>
+          </View>
+        ) : null}
         <SeatGrid
+          ref={gridRef}
           rows={selection.rows}
           map={map}
           statusOf={selection.statusOf}
+          onVisibleRowChange={setVisibleRow}
           onPressSeat={(seat) => {
             setHoldError(null);
             // The rules live in the hook; the feedback follows what it decided,
@@ -159,6 +194,15 @@ export default function SeatMapScreen() {
           }}
         />
       </View>
+
+      <SeatOverview
+        visible={overviewOpen}
+        rows={selection.rows}
+        statusOf={selection.statusOf}
+        columnCount={map.screen.columnCount}
+        onClose={() => setOverviewOpen(false)}
+        onJumpToRow={(rowY) => gridRef.current?.scrollToRow(rowY)}
+      />
 
       <SeatLegend />
 

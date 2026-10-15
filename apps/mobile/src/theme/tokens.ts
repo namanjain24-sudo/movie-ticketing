@@ -156,7 +156,10 @@ export const darkColors: Colors = {
 
   primary: palette.red500,
   primaryPressed: palette.red400,
-  primaryMuted: palette.ink700,
+  // A translucent red tint rather than ink700: that flat grey is also
+  // `seatGone`'s fill, and a seat you are holding must never read as a seat
+  // that is gone. Mirrors `accentMuted`'s own dark-mode pattern below.
+  primaryMuted: 'rgba(248,68,100,0.18)',
   onPrimary: palette.white,
 
   chrome: palette.chrome900,
@@ -173,7 +176,9 @@ export const darkColors: Colors = {
 
   seatFree: 'transparent',
   seatFreeBorder: palette.green500,
-  seatGone: palette.ink700,
+  // ink600, not ink700: a sold-out block has to read as "blocked" against the
+  // ink900 screen behind it, and ink700 sat at under 1.3:1 contrast there.
+  seatGone: palette.ink600,
   scrim: 'rgba(0,0,0,0.6)',
 
   accent: palette.violet400,

@@ -1,10 +1,39 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { Redirect, Tabs } from 'expo-router';
+import { useEffect } from 'react';
+import type { ColorValue } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { bookingApi } from '../../api/booking';
 import { useAuth } from '../../features/auth/auth-provider';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
+
+const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
+
+/** A small settle on arrival, not a bounce on every render — keyed to the one
+ * moment that actually changed, which tab is focused. */
+function TabIcon({
+  name,
+  color,
+  size,
+  focused,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  color: ColorValue;
+  size: number;
+  focused: boolean;
+}) {
+  const scale = useSharedValue(focused ? 1 : 0.88);
+
+  useEffect(() => {
+    scale.value = withSpring(focused ? 1 : 0.88, { damping: 14, stiffness: 220 });
+  }, [focused, scale]);
+
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return <AnimatedIonicons name={name} color={color as string} size={size} style={style} />;
+}
 
 export default function TabsLayout() {
   const { isSignedIn } = useAuth();
@@ -40,7 +69,7 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={size} />
+            <TabIcon name={focused ? 'home' : 'home-outline'} color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -49,7 +78,12 @@ export default function TabsLayout() {
         options={{
           title: 'Cinemas',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'location' : 'location-outline'} color={color} size={size} />
+            <TabIcon
+              name={focused ? 'location' : 'location-outline'}
+              color={color}
+              size={size}
+              focused={focused}
+            />
           ),
         }}
       />
@@ -58,7 +92,12 @@ export default function TabsLayout() {
         options={{
           title: 'Tickets',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'ticket' : 'ticket-outline'} color={color} size={size} />
+            <TabIcon
+              name={focused ? 'ticket' : 'ticket-outline'}
+              color={color}
+              size={size}
+              focused={focused}
+            />
           ),
           tabBarBadge: upcomingCount > 0 ? upcomingCount : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.primary },
@@ -69,10 +108,11 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
+            <TabIcon
               name={focused ? 'person-circle' : 'person-circle-outline'}
               color={color}
               size={size}
+              focused={focused}
             />
           ),
         }}

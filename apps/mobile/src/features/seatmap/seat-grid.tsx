@@ -1,7 +1,16 @@
 import { SEAT_TIER_LABELS, formatMoney, type SeatMap, type SeatMapSeat } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { FlatList, Pressable, StyleSheet, View, type ViewToken } from 'react-native';
 import Animated, {
   ZoomIn,
   runOnJS,
@@ -22,8 +31,8 @@ import type { SeatRenderStatus, SeatRow } from './use-seat-selection';
  * report a known item height, which is what keeps scrolling smooth on a large
  * auditorium: nothing has to be laid out to know where it is.
  */
-export const SEAT_SIZE = 26;
-export const SEAT_GAP = 5;
+export const SEAT_SIZE = 28;
+export const SEAT_GAP = 6;
 export const SEAT_PITCH = SEAT_SIZE + SEAT_GAP;
 export const ROW_LABEL_WIDTH = 28;
 const TIER_HEADER_HEIGHT = 46;
@@ -113,6 +122,9 @@ const Seat = memo(function Seat({
       }${selectable ? '' : ', unavailable'}`}
       disabled={!selectable}
       onPress={() => onPress(seat)}
+      // A couple of px, not more: the 6px gap between seats leaves only so
+      // much room before this would start stealing a neighbor's own taps.
+      hitSlop={2}
       style={box}
     >
       {/*
@@ -230,28 +242,36 @@ export function ScreenCurve() {
   );
 }
 
-export function SeatGrid({
-  rows,
-  map,
-  statusOf,
-  onPressSeat,
-}: {
-  rows: SeatRow[];
-  map: SeatMap;
-  statusOf: (seat: SeatMapSeat) => SeatRenderStatus;
-  onPressSeat: (seat: SeatMapSeat) => void;
-}) {
+export type SeatGridHandle = {
+  /** Scrolls the row list so the named row's `y` sits at the top. */
+  scrollToRow: (rowY: number) => void;
+};
+
+export const SeatGrid = forwardRef<
+  SeatGridHandle,
+  {
+    rows: SeatRow[];
+    map: SeatMap;
+    statusOf: (seat: SeatMapSeat) => SeatRenderStatus;
+    onPressSeat: (seat: SeatMapSeat) => void;
+    /** Fed from the list's own viewability, for a "Row X" orientation chip. */
+    onVisibleRowChange?: (label: string) => void;
+  }
+>(function SeatGrid({ rows, map, statusOf, onPressSeat, onVisibleRowChange }, ref) {
   const { colors, spacing } = useTheme();
 
   /**
    * Rows are grouped into priced tier sections, because that is the order a
    * person actually decides in: budget first, position second. One pass over
    * every seat gives each row a short signature to memo against, which is far
-   * cheaper than re-rendering a two-thousand-seat map on every tap.
+   * cheaper than re-rendering a two-thousand-seat map on every tap. The same
+   * pass records which list index each row landed at, so a jump-to-row only
+   * has to look up a number rather than re-scan the list.
    */
-  const items = useMemo<GridItem[]>(() => {
+  const { items, rowItemIndex } = useMemo(() => {
     const priceOf = new Map(map.tiers.map((t) => [t.tier, t]));
     const out: GridItem[] = [];
+    const rowIndex = new Map<number, number>();
     let openTier: string | null = null;
 
     for (const row of rows) {
@@ -268,6 +288,7 @@ export function SeatGrid({
         openTier = tier;
       }
       const statuses = row.seats.map(statusOf);
+      rowIndex.set(row.y, out.length);
       out.push({
         kind: 'row',
         key: `row-${row.y}`,
@@ -276,7 +297,7 @@ export function SeatGrid({
         signature: statuses.join(''),
       });
     }
-    return out;
+    return { items: out, rowItemIndex: rowIndex };
   }, [rows, map, statusOf]);
 
   const offsets = useMemo(() => {
@@ -329,6 +350,39 @@ export function SeatGrid({
     logMountedSeatCount(visibleRows, lastColumn - firstColumn);
   }, [frame.height, firstColumn, lastColumn]);
 
+  const flatListRef = useRef<FlatList<GridItem>>(null);
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToRow: (rowY) => {
+        const index = rowItemIndex.get(rowY);
+        if (index === undefined) return;
+        flatListRef.current?.scrollToOffset({ offset: offsets.starts[index], animated: true });
+      },
+    }),
+    [rowItemIndex, offsets],
+  );
+
+  // Kept in a ref rather than a dependency of `onViewableItemsChanged`: that
+  // prop (and `viewabilityConfig`) must keep one identity for the life of the
+  // list, or FlatList throws. The callback itself can still read the latest
+  // `onVisibleRowChange` through the ref — set from an effect, never during
+  // render, since a ref write belongs outside the render phase.
+  const onVisibleRowChangeRef = useRef(onVisibleRowChange);
+  useEffect(() => {
+    onVisibleRowChangeRef.current = onVisibleRowChange;
+  }, [onVisibleRowChange]);
+  const [viewabilityConfig] = useState({ itemVisiblePercentThreshold: 0 });
+  const [onViewableItemsChanged] = useState(
+    () =>
+      ({ viewableItems }: { viewableItems: ViewToken<GridItem>[] }) => {
+        const firstRow = viewableItems.find((v) => v.item.kind === 'row');
+        if (firstRow && firstRow.item.kind === 'row') {
+          onVisibleRowChangeRef.current?.(firstRow.item.row.label);
+        }
+      },
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: GridItem }) => {
       if (item.kind === 'tier') {
@@ -373,6 +427,7 @@ export function SeatGrid({
     >
       <View style={{ width: contentWidth, height: frame.height || undefined }}>
         <FlatList
+          ref={flatListRef}
           style={{ flex: 1 }}
           data={items}
           keyExtractor={(item) => item.key}
@@ -388,11 +443,13 @@ export function SeatGrid({
           removeClippedSubviews
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: spacing.xl }}
+          viewabilityConfig={viewabilityConfig}
+          onViewableItemsChanged={onViewableItemsChanged}
         />
       </View>
     </Animated.ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: { height: SEAT_PITCH, justifyContent: 'center' },
