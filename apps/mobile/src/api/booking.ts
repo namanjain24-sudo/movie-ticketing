@@ -1,6 +1,8 @@
 import type {
   Booking,
   BookingList,
+  BookingSplit,
+  BookingSplitShareInput,
   Cancellation,
   CancellationQuote,
   CheckoutInput,
@@ -45,6 +47,20 @@ export const bookingApi = {
 
   bookingByReference: (reference: string) =>
     api.get<Booking>(`/v1/bookings/reference/${encodeURIComponent(reference)}`),
+
+  /** Private to the booking's owner — see bookings.routes.ts. */
+  getSplit: (bookingId: string) =>
+    api.get<BookingSplit>(`/v1/bookings/${encodeURIComponent(bookingId)}/split`),
+
+  /** Replaces the whole share list; the amounts must add up to the total. */
+  setSplit: (bookingId: string, shares: BookingSplitShareInput[]) =>
+    api.post<BookingSplit>(`/v1/bookings/${encodeURIComponent(bookingId)}/split`, { shares }),
+
+  toggleSplitShare: (bookingId: string, shareId: string, settled: boolean) =>
+    api.patch<BookingSplit>(
+      `/v1/bookings/${encodeURIComponent(bookingId)}/split/${encodeURIComponent(shareId)}`,
+      { settled },
+    ),
 };
 
 /**

@@ -2,16 +2,17 @@ import { POINT_VALUE_MINOR, SHOW_FORMAT_LABELS, formatMoney } from '@app/shared'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Alert, Platform, ScrollView, Share, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Share, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { bookingApi } from '../../api/booking';
 import { ErrorState, LoadingState } from '../../components/query-state';
-import { Badge, Button, Text } from '../../components/ui';
+import { Badge, Button, Card, Text } from '../../components/ui';
 import { addShowtimeToCalendar } from '../../lib/calendar';
+import { SplitBillSheet } from '../../features/bookings/split-bill-sheet';
 import {
   cancelShowtimeReminder,
   requestNotificationPermissionIfUnasked,
@@ -21,6 +22,7 @@ import { formatMonthDay, formatTime } from '../../lib/format';
 import { notify } from '../../lib/notify';
 import { queryKeys } from '../../lib/query-client';
 import { shareLink } from '../../lib/share-link';
+import { successFeedback, tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 import { gradients, scannerBackground, scannerInk } from '../../theme/tokens';
 
@@ -64,6 +66,36 @@ export default function BookingTicket() {
         'Could not cancel',
         error instanceof Error ? error.message : 'Please try again in a moment.',
       ),
+  });
+
+  const [splitSheetOpen, setSplitSheetOpen] = useState(false);
+
+  const split = useQuery({
+    queryKey: queryKeys.bookingSplit(bookingId ?? ''),
+    queryFn: () => bookingApi.getSplit(bookingId as string),
+    enabled: Boolean(bookingId) && booking.data?.status === 'CONFIRMED',
+  });
+
+  const [splitError, setSplitError] = useState<string | null>(null);
+  const saveSplit = useMutation({
+    mutationFn: (shares: Parameters<typeof bookingApi.setSplit>[1]) =>
+      bookingApi.setSplit(bookingId as string, shares),
+    onSuccess: (result) => {
+      setSplitError(null);
+      setSplitSheetOpen(false);
+      queryClient.setQueryData(queryKeys.bookingSplit(bookingId as string), result);
+      successFeedback();
+    },
+    onError: (error) =>
+      setSplitError(error instanceof Error ? error.message : 'Could not save that split.'),
+  });
+
+  const toggleShare = useMutation({
+    mutationFn: (params: { shareId: string; settled: boolean }) =>
+      bookingApi.toggleSplitShare(bookingId as string, params.shareId, params.settled),
+    onSuccess: (result) => {
+      queryClient.setQueryData(queryKeys.bookingSplit(bookingId as string), result);
+    },
   });
 
   const addToCalendar = useMutation({
@@ -333,6 +365,83 @@ export default function BookingTicket() {
         ) : null}
 
         {cancelled ? null : (
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <Ionicons name="people-outline" size={20} color={colors.accent} />
+              <View style={{ flex: 1 }}>
+                <Text variant="label">Split the bill</Text>
+                <Text variant="caption" tone="muted">
+                  {split.data && split.data.shares.length > 0
+                    ? `${split.data.shares.filter((s) => s.settled).length} of ${
+                        split.data.shares.length
+                      } paid you back`
+                    : 'Keep track of who owes you what.'}
+                </Text>
+              </View>
+              <Button
+                label={split.data && split.data.shares.length > 0 ? 'Edit' : 'Split'}
+                variant="secondary"
+                size="sm"
+                onPress={() => setSplitSheetOpen(true)}
+              />
+            </View>
+
+            {split.data && split.data.shares.length > 0 ? (
+              <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+                {split.data.shares.map((share) => (
+                  <Pressable
+                    key={share.id}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: share.settled }}
+                    accessibilityLabel={`${share.label}, ${formatMoney(share.amountMinor, ticket.currency)}${share.settled ? ', paid' : ', not paid'}`}
+                    onPress={() => {
+                      tapFeedback();
+                      toggleShare.mutate({ shareId: share.id, settled: !share.settled });
+                    }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
+                  >
+                    <Ionicons
+                      name={share.settled ? 'checkbox' : 'square-outline'}
+                      size={18}
+                      color={share.settled ? colors.success : colors.textMuted}
+                    />
+                    <Text
+                      variant="label"
+                      numberOfLines={1}
+                      style={{
+                        flex: 1,
+                        textDecorationLine: share.settled ? 'line-through' : 'none',
+                        color: share.settled ? colors.textMuted : colors.text,
+                      }}
+                    >
+                      {share.label}
+                    </Text>
+                    <Text variant="caption" numeric tone="muted">
+                      {formatMoney(share.amountMinor, ticket.currency)}
+                    </Text>
+                  </Pressable>
+                ))}
+                <Button
+                  label="Remind them"
+                  variant="ghost"
+                  onPress={() => {
+                    const lines = split.data.shares.map(
+                      (s) =>
+                        `${s.label}: ${formatMoney(s.amountMinor, ticket.currency)}${s.settled ? ' (paid)' : ''}`,
+                    );
+                    void Share.share({
+                      message:
+                        `Splitting ${showtime.movie.title}:\n${lines.join('\n')}\n` +
+                        shareLink(`/booking/${ticket.reference}`),
+                    });
+                  }}
+                />
+              </View>
+            ) : null}
+          </Card>
+        )}
+
+        {cancelled ? null : (
           <Button
             label="Add to calendar"
             variant="secondary"
@@ -364,6 +473,21 @@ export default function BookingTicket() {
           />
         </View>
       </ScrollView>
+
+      <SplitBillSheet
+        visible={splitSheetOpen}
+        totalMinor={ticket.totalMinor}
+        currency={ticket.currency}
+        initialLabels={
+          split.data && split.data.shares.length > 0
+            ? split.data.shares.map((s) => s.label)
+            : ['Me', '']
+        }
+        busy={saveSplit.isPending}
+        error={splitError}
+        onClose={() => setSplitSheetOpen(false)}
+        onSave={(shares) => saveSplit.mutate(shares)}
+      />
     </View>
   );
 }

@@ -46,6 +46,7 @@ export const queryKeys = {
   concessions: ['concessions'] as const,
   bookings: ['bookings'] as const,
   booking: (reference: string) => ['booking', reference] as const,
+  bookingSplit: (bookingId: string) => ['booking-split', bookingId] as const,
   cancellationQuote: (bookingId: string) => ['cancellation', bookingId] as const,
   hold: (holdId: string) => ['hold', holdId] as const,
   payment: (paymentId: string) => ['payment', paymentId] as const,

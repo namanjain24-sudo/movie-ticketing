@@ -1,6 +1,7 @@
 import { Router } from 'express';
+import { setBookingSplitSchema, toggleBookingSplitShareSchema } from '@app/shared';
 import { authenticate, requireUserId } from '../../middleware/authenticate';
-import { pathParam } from '../../http/validate';
+import { pathParam, validateBody } from '../../http/validate';
 import * as bookings from './bookings.service';
 
 export const bookingsRouter: Router = Router();
@@ -43,3 +44,40 @@ bookingsRouter.post('/:id/cancel', async (req, res) => {
     }),
   );
 });
+
+/** Private to the organiser — cost information between friends, not
+ * something the ticket itself needs to show. */
+bookingsRouter.get('/:id/split', async (req, res) => {
+  res.json(
+    await bookings.getSplit({ userId: requireUserId(req), bookingId: pathParam(req, 'id') }),
+  );
+});
+
+bookingsRouter.post(
+  '/:id/split',
+  validateBody(setBookingSplitSchema),
+  async (req, res) => {
+    res.json(
+      await bookings.setSplit({
+        userId: requireUserId(req),
+        bookingId: pathParam(req, 'id'),
+        shares: req.body.shares,
+      }),
+    );
+  },
+);
+
+bookingsRouter.patch(
+  '/:id/split/:shareId',
+  validateBody(toggleBookingSplitShareSchema),
+  async (req, res) => {
+    res.json(
+      await bookings.toggleShareSettled({
+        userId: requireUserId(req),
+        bookingId: pathParam(req, 'id'),
+        shareId: pathParam(req, 'shareId'),
+        settled: req.body.settled,
+      }),
+    );
+  },
+);
