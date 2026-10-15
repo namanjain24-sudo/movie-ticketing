@@ -171,6 +171,12 @@ export default function Profile() {
           <Divider />
           <Row icon="heart-outline" label="Saved films" onPress={() => router.push('/watchlist')} />
           <Divider />
+          <Row
+            icon="notifications-outline"
+            label="Notifications"
+            onPress={() => router.push('/notifications')}
+          />
+          <Divider />
           <Row icon="film-outline" label="Browse films" onPress={() => router.push('/(tabs)')} />
         </Animated.View>
 
@@ -225,7 +231,7 @@ function Row({
   label,
   onPress,
 }: {
-  icon: 'ticket-outline' | 'film-outline' | 'heart-outline';
+  icon: 'ticket-outline' | 'film-outline' | 'heart-outline' | 'notifications-outline';
   label: string;
   onPress: () => void;
 }) {
