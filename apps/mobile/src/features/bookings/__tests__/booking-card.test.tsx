@@ -21,6 +21,8 @@ const JAWAN: Booking = {
   addOnsMinor: 0,
   discountMinor: 0,
   promoCode: null,
+  pointsRedeemed: 0,
+  pointsEarned: 0,
   totalMinor: 53_000,
   currency: 'INR',
   seats: [{ showSeatId: 'ss_1', rowLabel: 'F', number: 12, tier: 'STANDARD', priceMinor: 25_000 }],

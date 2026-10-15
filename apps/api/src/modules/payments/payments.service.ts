@@ -9,6 +9,12 @@ import { dbNow, withTxRetry } from '../../lib/tx';
 import { logger } from '../../logger';
 import { addOnsTotal, priceAddOns, type PricedAddOn } from '../concessions/concessions.service';
 import { bookingFeeMinor, lockActiveHold } from '../holds/holds.service';
+import {
+  awardPoints,
+  evaluateRedemption,
+  recordRedemption,
+  reverseRedemption,
+} from '../loyalty/loyalty.service';
 import { evaluatePromo } from '../promos/promos.service';
 import { publishSeatDeltas } from '../realtime/seat-events';
 import { gateway, type GatewayWebhookEvent } from './gateway';
@@ -37,6 +43,8 @@ export interface CheckoutParams {
   /** Only read when this call creates the booking; see `checkoutSchema`. */
   promoCode?: string;
   addOns?: AddOnLine[];
+  /** Only read when this call creates the booking, same as `promoCode`. */
+  pointsToRedeem?: number;
   idempotencyKey: string;
 }
 
@@ -77,7 +85,22 @@ export async function checkout(params: CheckoutParams): Promise<CheckoutResult> 
               lock: true,
             })
           : null;
-        const discountMinor = applied?.discountMinor ?? 0;
+
+        // Same idea, under the user's own advisory lock rather than a promo
+        // row — see `evaluateRedemption`. Priced against whatever the promo
+        // above already took off, so a code and points together never buy
+        // more than the subtotal has to give.
+        const appliedPoints = params.pointsToRedeem
+          ? await evaluateRedemption(tx, {
+              userId: params.userId,
+              points: params.pointsToRedeem,
+              subtotalMinor: subtotalMinor - (applied?.discountMinor ?? 0),
+              feeMinor,
+              lock: true,
+            })
+          : null;
+
+        const discountMinor = (applied?.discountMinor ?? 0) + (appliedPoints?.discountMinor ?? 0);
 
         // Priced against the live catalogue, under the same transaction, so
         // an item going inactive between the checkout screen and the tap is
@@ -95,10 +118,19 @@ export async function checkout(params: CheckoutParams): Promise<CheckoutResult> 
           addOnsMinor,
           discountMinor,
           promoCodeId: applied?.promo.id ?? null,
+          pointsRedeemed: appliedPoints?.points ?? 0,
           totalMinor: subtotalMinor + feeMinor + addOnsMinor - discountMinor,
           showSeatIds: hold.seats.map((s) => s.id),
           addOns: pricedAddOns,
         });
+
+        if (appliedPoints) {
+          await recordRedemption(tx, {
+            userId: params.userId,
+            bookingId: booking.id,
+            points: appliedPoints.points,
+          });
+        }
       }
       const totalMinor = booking.totalMinor;
 
@@ -172,6 +204,7 @@ async function createBooking(
     addOnsMinor: number;
     discountMinor: number;
     promoCodeId: string | null;
+    pointsRedeemed: number;
     totalMinor: number;
     showSeatIds: string[];
     addOns: PricedAddOn[];
@@ -189,6 +222,7 @@ async function createBooking(
       addOnsMinor: input.addOnsMinor,
       discountMinor: input.discountMinor,
       promoCodeId: input.promoCodeId,
+      pointsRedeemed: input.pointsRedeemed,
       totalMinor: input.totalMinor,
       currency: input.currency,
       addOns: {
@@ -317,7 +351,17 @@ export async function confirmBooking(providerRef: string): Promise<void> {
           id: true,
           status: true,
           bookingId: true,
-          booking: { select: { id: true, status: true, holdId: true, showtimeId: true } },
+          booking: {
+            select: {
+              id: true,
+              status: true,
+              holdId: true,
+              showtimeId: true,
+              userId: true,
+              totalMinor: true,
+              pointsRedeemed: true,
+            },
+          },
         },
       });
       if (!payment) {
@@ -326,6 +370,13 @@ export async function confirmBooking(providerRef: string): Promise<void> {
       }
       if (payment.booking.status === 'CONFIRMED') return null; // Already done.
       if (payment.status === 'REFUNDED') return null;
+
+      // The sweeper can cancel a PENDING booking out from under a late
+      // webhook once its hold has expired — the failure branch below still
+      // needs to run even then, so the payment row itself reaches REFUNDED,
+      // but it must not reverse this booking's redeemed points a second time:
+      // the sweeper already did, the moment it cancelled the booking.
+      const alreadyCancelled = payment.booking.status !== 'PENDING';
 
       // Lock the seats this booking is claiming and re-check they are still
       // held. Between the gateway call and this callback the hold may have
@@ -362,6 +413,13 @@ export async function confirmBooking(providerRef: string): Promise<void> {
             cancelledAt: now,
           },
         });
+        if (!alreadyCancelled) {
+          await reverseRedemption(tx, {
+            userId: payment.booking.userId,
+            bookingId: payment.booking.id,
+            points: payment.booking.pointsRedeemed,
+          });
+        }
         logger.error(
           { providerRef, bookingId: payment.booking.id },
           'Capture arrived after hold expiry; payment marked for refund',
@@ -385,6 +443,11 @@ export async function confirmBooking(providerRef: string): Promise<void> {
       await tx.payment.update({
         where: { id: payment.id },
         data: { status: 'CAPTURED', capturedAt: now, authorizedAt: now },
+      });
+      await awardPoints(tx, {
+        userId: payment.booking.userId,
+        bookingId: payment.booking.id,
+        totalMinor: payment.booking.totalMinor,
       });
 
       return {

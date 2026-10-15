@@ -10,6 +10,7 @@ import type {
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../db';
 import { env } from '../../env';
+import { clawbackEarned, earnedPoints, reverseRedemption } from '../loyalty/loyalty.service';
 import { refundableMinor } from '../promos/promos.service';
 import { HttpError } from '../../http/errors';
 import { constantTimeEqual } from '../../lib/crypto';
@@ -57,6 +58,7 @@ const bookingSelect = {
   feeMinor: true,
   addOnsMinor: true,
   discountMinor: true,
+  pointsRedeemed: true,
   totalMinor: true,
   promoCode: { select: { code: true } },
   currency: true,
@@ -112,6 +114,11 @@ function toDto(row: NonNullable<BookingRow>): Booking {
     addOnsMinor: row.addOnsMinor,
     discountMinor: row.discountMinor,
     promoCode: row.promoCode?.code ?? null,
+    pointsRedeemed: row.pointsRedeemed,
+    // Pure function of `totalMinor`, same as the ledger entry `awardPoints`
+    // writes at confirmation — zero until then, since nothing has been
+    // awarded yet.
+    pointsEarned: row.status === 'CONFIRMED' ? earnedPoints(row.totalMinor) : 0,
     totalMinor: row.totalMinor,
     currency: row.currency,
     seats: row.showSeats.map((ss) => ({
@@ -224,6 +231,9 @@ export async function cancelBooking(params: {
           discountMinor: true,
           currency: true,
           showtimeId: true,
+          userId: true,
+          pointsRedeemed: true,
+          totalMinor: true,
           showtime: { select: { startsAt: true } },
           payments: { select: { id: true, status: true, providerRef: true } },
         },
@@ -252,6 +262,19 @@ export async function cancelBooking(params: {
       await tx.booking.update({
         where: { id: booking.id },
         data: { status: 'CANCELLED', cancelledAt: now },
+      });
+      await reverseRedemption(tx, {
+        userId: booking.userId,
+        bookingId: booking.id,
+        points: booking.pointsRedeemed,
+      });
+      // The booking was CONFIRMED (checked above), so it already earned
+      // points at that moment — a cancellation claws those back too, the
+      // same way a cancelled promo use stops being "live".
+      await clawbackEarned(tx, {
+        userId: booking.userId,
+        bookingId: booking.id,
+        totalMinor: booking.totalMinor,
       });
 
       const captured = booking.payments.find((p) => p.status === 'CAPTURED');

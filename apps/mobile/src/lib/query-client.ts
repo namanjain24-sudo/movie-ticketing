@@ -42,6 +42,7 @@ export const queryKeys = {
   seatMap: (showtimeId: string) => ['seatmap', showtimeId] as const,
   watchlist: ['watchlist'] as const,
   promoOffers: ['promo-offers'] as const,
+  loyaltyBalance: ['loyalty-balance'] as const,
   concessions: ['concessions'] as const,
   bookings: ['bookings'] as const,
   booking: (reference: string) => ['booking', reference] as const,

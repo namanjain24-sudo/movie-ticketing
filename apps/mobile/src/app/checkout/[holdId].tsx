@@ -1,4 +1,11 @@
-import { SEAT_TIER_LABELS, formatMoney, type CheckoutInput, type PromoQuote } from '@app/shared';
+import {
+  POINT_VALUE_MINOR,
+  SEAT_TIER_LABELS,
+  formatMoney,
+  type CheckoutInput,
+  type LoyaltyQuote,
+  type PromoQuote,
+} from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,11 +14,13 @@ import { AppState, Pressable, ScrollView, View, type AppStateStatus } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { bookingApi } from '../../api/booking';
 import { concessionsApi } from '../../api/concessions';
+import { loyaltyApi } from '../../api/loyalty';
 import { promosApi } from '../../api/promos';
 import { ApiRequestError } from '../../api/client';
 import { ErrorState, LoadingState } from '../../components/query-state';
 import { AppBar, Button, Card, Text } from '../../components/ui';
 import { ConcessionsBox } from '../../features/checkout/concessions-box';
+import { LoyaltyBox } from '../../features/checkout/loyalty-box';
 import { useCountdown } from '../../features/checkout/use-countdown';
 import {
   cancelHoldExpiryNudge,
@@ -52,6 +61,8 @@ export default function Checkout() {
   const [slowConfirm, setSlowConfirm] = useState(false);
   const [applied, setApplied] = useState<PromoQuote | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
+  const [pointsApplied, setPointsApplied] = useState<LoyaltyQuote | null>(null);
+  const [pointsError, setPointsError] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   /** Set once a booking exists: from then on the price is fixed, code or not. */
   const [priced, setPriced] = useState(false);
@@ -67,6 +78,11 @@ export default function Checkout() {
     queryKey: queryKeys.promoOffers,
     queryFn: promosApi.offers,
     staleTime: 5 * 60_000,
+  });
+
+  const loyaltyBalance = useQuery({
+    queryKey: queryKeys.loyaltyBalance,
+    queryFn: loyaltyApi.balance,
   });
 
   const concessions = useQuery({
@@ -94,6 +110,21 @@ export default function Checkout() {
       setApplied(null);
       setPromoError(
         error instanceof ApiRequestError ? error.message : 'Could not check that code right now.',
+      );
+    },
+  });
+
+  const checkPoints = useMutation({
+    mutationFn: (points: number) => loyaltyApi.quote({ holdId, points }),
+    onSuccess: (quote) => {
+      setPointsError(null);
+      setPointsApplied(quote);
+      successFeedback();
+    },
+    onError: (error) => {
+      setPointsApplied(null);
+      setPointsError(
+        error instanceof ApiRequestError ? error.message : 'Could not check your points right now.',
       );
     },
   });
@@ -172,6 +203,7 @@ export default function Checkout() {
           method,
           ...(applied ? { promoCode: applied.code } : {}),
           ...(addOnLines.length > 0 ? { addOns: addOnLines } : {}),
+          ...(pointsApplied ? { pointsToRedeem: pointsApplied.points } : {}),
         },
         keyRef.current,
       );
@@ -179,6 +211,7 @@ export default function Checkout() {
     onSuccess: (result) => {
       setPriced(true);
       setPaymentId(result.paymentId);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.loyaltyBalance });
     },
     onError: (error) => {
       if (error instanceof ApiRequestError && error.code === 'PROMO_INVALID') {
@@ -187,6 +220,13 @@ export default function Checkout() {
         setApplied(null);
         keyRef.current = null;
         setPromoError(error.message);
+        return;
+      }
+      if (error instanceof ApiRequestError && error.code === 'LOYALTY_INVALID') {
+        // Same idea as a promo code going stale between the check and the pay.
+        setPointsApplied(null);
+        keyRef.current = null;
+        setPointsError(error.message);
         return;
       }
       if (error instanceof ApiRequestError && error.code === 'HOLD_EXPIRED') {
@@ -212,7 +252,22 @@ export default function Checkout() {
   }
 
   const held = hold.data;
-  const totalMinor = (applied ? applied.totalMinor : held.totalMinor) + addOnsMinor;
+  const totalMinor =
+    held.subtotalMinor +
+    held.feeMinor -
+    (applied?.discountMinor ?? 0) -
+    (pointsApplied?.discountMinor ?? 0) +
+    addOnsMinor;
+  // What a single tap would redeem: capped by the balance, by what the
+  // (promo-reduced) subtotal can use, and never offered once points are
+  // already applied or the price is locked in.
+  const pointsToOffer =
+    pointsApplied || priced
+      ? 0
+      : Math.min(
+          loyaltyBalance.data?.balance ?? 0,
+          Math.floor((held.subtotalMinor - (applied?.discountMinor ?? 0)) / POINT_VALUE_MINOR),
+        );
   const expired = countdown.hasExpired || held.status === 'EXPIRED' || held.status === 'RELEASED';
   const waiting = paymentId !== null && settled?.bookingStatus !== 'FAILED';
   const declined =
@@ -306,6 +361,13 @@ export default function Checkout() {
               positive
             />
           ) : null}
+          {pointsApplied ? (
+            <Row
+              label={`Points (${pointsApplied.points})`}
+              value={`− ${formatMoney(pointsApplied.discountMinor, held.currency)}`}
+              positive
+            />
+          ) : null}
           <Row label="Total" value={formatMoney(totalMinor, held.currency)} strong />
         </Card>
 
@@ -334,6 +396,23 @@ export default function Checkout() {
             keyRef.current = null;
             setApplied(null);
             setPromoError(null);
+          }}
+        />
+
+        <LoyaltyBox
+          pointsToOffer={pointsToOffer}
+          applied={pointsApplied}
+          busy={checkPoints.isPending}
+          error={pointsError}
+          locked={priced}
+          onApply={() => {
+            keyRef.current = null;
+            checkPoints.mutate(pointsToOffer);
+          }}
+          onRemove={() => {
+            keyRef.current = null;
+            setPointsApplied(null);
+            setPointsError(null);
           }}
         />
 

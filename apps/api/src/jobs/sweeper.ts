@@ -3,8 +3,9 @@ import { prisma } from '../db';
 import { env } from '../env';
 import { purgeExpiredIdempotencyRecords } from '../lib/idempotency';
 import { logger } from '../logger';
-import { publishSeatDeltas } from '../modules/realtime/seat-events';
+import { reverseRedemption } from '../modules/loyalty/loyalty.service';
 import { reconcilePendingPayments } from '../modules/payments/payments.service';
+import { publishSeatDeltas } from '../modules/realtime/seat-events';
 
 /**
  * Housekeeping, and nothing more.
@@ -46,18 +47,33 @@ export async function sweepOnce(): Promise<SweepResult> {
 
   // A booking whose hold lapsed before payment landed is dead. Cancelling it
   // here keeps "PENDING" meaning "still payable" rather than "possibly
-  // abandoned weeks ago".
-  const { count: bookingsCancelled } = await prisma.booking.updateMany({
-    where: {
-      status: 'PENDING',
-      hold: { status: { in: ['EXPIRED', 'RELEASED'] } },
-    },
-    data: {
-      status: 'CANCELLED',
-      cancelledAt: new Date(),
-      failureReason: 'The hold expired before payment completed',
-    },
+  // abandoned weeks ago". Fetched before the update (rather than a plain
+  // `updateMany`) so any points it redeemed can be handed back the same way
+  // an explicit cancellation does — this is the common "abandoned checkout"
+  // path, unlike payments.service.ts's reversal, which only covers a capture
+  // that arrives after the hold already expired.
+  const dead = await prisma.booking.findMany({
+    where: { status: 'PENDING', hold: { status: { in: ['EXPIRED', 'RELEASED'] } } },
+    select: { id: true, userId: true, pointsRedeemed: true },
   });
+  if (dead.length > 0) {
+    await prisma.booking.updateMany({
+      where: { id: { in: dead.map((b) => b.id) } },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        failureReason: 'The hold expired before payment completed',
+      },
+    });
+    for (const booking of dead) {
+      await reverseRedemption(prisma, {
+        userId: booking.userId,
+        bookingId: booking.id,
+        points: booking.pointsRedeemed,
+      });
+    }
+  }
+  const bookingsCancelled = dead.length;
 
   const idempotencyPurged = await purgeExpiredIdempotencyRecords();
 
