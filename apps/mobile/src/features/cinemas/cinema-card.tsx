@@ -8,6 +8,7 @@ import { callNumber, formatDistance, openDirections } from '../../lib/maps';
 import { AnimatedPressable, usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
+import { useFavoriteCinemas } from './use-favorite-cinemas';
 
 /** How many facilities fit on a card before the row starts wrapping badly. */
 const AMENITY_LIMIT = 3;
@@ -22,6 +23,8 @@ export function CinemaCard({
   const { colors, radius, spacing, elevation } = useTheme();
   const distance = formatDistance(cinema.distanceKm);
   const press = usePressScale();
+  const favorites = useFavoriteCinemas();
+  const saved = favorites.isSaved(cinema.id);
 
   const place = {
     latitude: cinema.latitude,
@@ -152,6 +155,12 @@ export function CinemaCard({
             else entirely, and a tap that opens Google Maps when the user
             meant to open the cinema is a bad surprise. */}
         <IconAction
+          icon={saved ? 'heart' : 'heart-outline'}
+          label={saved ? `Remove ${cinema.name} from saved` : `Save ${cinema.name}`}
+          tint={saved ? colors.primary : colors.accent}
+          onPress={() => favorites.toggle(cinema)}
+        />
+        <IconAction
           icon="navigate-outline"
           label={`Directions to ${cinema.name}`}
           onPress={() => void openDirections(place)}
@@ -171,10 +180,14 @@ export function CinemaCard({
 function IconAction({
   icon,
   label,
+  tint,
   onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+  /** Defaults to the accent — the heart overrides it once saved, so it reads
+   * the same red as every other "this is saved" state in the app. */
+  tint?: string;
   onPress: () => void;
 }) {
   const { colors, radius } = useTheme();
@@ -182,7 +195,10 @@ function IconAction({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      onPress={onPress}
+      onPress={() => {
+        tapFeedback();
+        onPress();
+      }}
       hitSlop={6}
       style={({ pressed }) => ({
         width: HIT_SIZE - 8,
@@ -193,7 +209,7 @@ function IconAction({
         backgroundColor: pressed ? colors.accentMuted : colors.surfaceMuted,
       })}
     >
-      <Ionicons name={icon} size={18} color={colors.accent} />
+      <Ionicons name={icon} size={18} color={tint ?? colors.accent} />
     </Pressable>
   );
 }

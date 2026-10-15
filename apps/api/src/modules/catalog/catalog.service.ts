@@ -278,11 +278,14 @@ export async function listCinemas(params: {
   search?: string;
   lat?: number;
   lng?: number;
+  /** Narrows to exactly these cinemas — favorite-cinemas.service.ts's only use of this. */
+  ids?: string[];
 }): Promise<CinemaDirectoryEntry[]> {
   const cinemas = await prisma.cinema.findMany({
     where: {
       // The load-test venue is inventory, not a place anyone can go.
       slug: { not: LOAD_TEST_SLUG },
+      ...(params.ids ? { id: { in: params.ids } } : {}),
       ...(params.city ? { city: params.city } : {}),
       ...(params.brand ? { brand: params.brand } : {}),
       ...(params.search

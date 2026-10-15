@@ -3,6 +3,7 @@ import { updateProfileSchema } from '@app/shared';
 import { pathParam, validateBody } from '../../http/validate';
 import { authenticate, requireUserId } from '../../middleware/authenticate';
 import * as authService from '../auth/auth.service';
+import * as favoriteCinemas from '../favorites/favorite-cinemas.service';
 import * as watchlist from '../watchlist/watchlist.service';
 
 export const usersRouter: Router = Router();
@@ -30,5 +31,19 @@ usersRouter.put('/me/watchlist/:idOrSlug', async (req, res) => {
 
 usersRouter.delete('/me/watchlist/:idOrSlug', async (req, res) => {
   await watchlist.removeMovie(requireUserId(req), pathParam(req, 'idOrSlug'));
+  res.status(204).end();
+});
+
+usersRouter.get('/me/favorite-cinemas', async (req, res) => {
+  res.json({ cinemas: await favoriteCinemas.listFavoriteCinemas(requireUserId(req)) });
+});
+
+usersRouter.put('/me/favorite-cinemas/:idOrSlug', async (req, res) => {
+  await favoriteCinemas.saveCinema(requireUserId(req), pathParam(req, 'idOrSlug'));
+  res.status(204).end();
+});
+
+usersRouter.delete('/me/favorite-cinemas/:idOrSlug', async (req, res) => {
+  await favoriteCinemas.removeCinema(requireUserId(req), pathParam(req, 'idOrSlug'));
   res.status(204).end();
 });

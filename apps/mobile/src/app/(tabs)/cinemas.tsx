@@ -10,6 +10,7 @@ import { EmptyState, ErrorState } from '../../components/query-state';
 import { AppBar, Skeleton, Text } from '../../components/ui';
 import { CinemaCard } from '../../features/cinemas/cinema-card';
 import { CinemaMap } from '../../features/cinemas/cinema-map';
+import { useFavoriteCinemas } from '../../features/cinemas/use-favorite-cinemas';
 import { useUserLocation } from '../../features/cinemas/use-location';
 import { SponsoredCard } from '../../features/promos/sponsored-card';
 import { RecentSearchChips } from '../../features/search/recent-search-chips';
@@ -32,7 +33,9 @@ export default function Cinemas() {
   const [city, setCity] = useState<string | undefined>(undefined);
   const [brand, setBrand] = useState<string | undefined>(undefined);
   const [mapOpen, setMapOpen] = useState(false);
+  const [savedOnly, setSavedOnly] = useState(false);
   const recentSearches = useRecentSearches(STORAGE_KEYS.recentCinemaSearches);
+  const favorites = useFavoriteCinemas();
 
   const location = useUserLocation();
   const coords = location.state.status === 'granted' ? location.state.coords : null;
@@ -63,9 +66,12 @@ export default function Cinemas() {
   const cinemas = useQuery({
     queryKey: queryKeys.cinemas(query),
     queryFn: () => cinemasApi.list(query),
+    enabled: !savedOnly,
   });
 
-  const results = cinemas.data ?? [];
+  const isPending = savedOnly ? favorites.isPending : cinemas.isPending;
+  const isError = savedOnly ? favorites.isError : cinemas.isError;
+  const results = savedOnly ? (favorites.cinemas ?? []) : (cinemas.data ?? []);
 
   const nearMeLabel =
     location.state.status === 'asking'
@@ -131,37 +137,53 @@ export default function Cinemas() {
       ) : null}
 
       {/* Filters. "Near me" leads because it is the one that needs permission
-          and the one people actually want; the rest narrow what it returns. */}
+          and the one people actually want; the rest narrow what it returns.
+          "Saved" is its own mode rather than another narrowing filter — mixing
+          it with city/brand would mean explaining which won, so picking it
+          hides the rest instead. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}
       >
         <Chip
-          label={nearMeLabel}
-          icon={coords ? 'navigate' : 'navigate-outline'}
-          active={Boolean(coords)}
-          busy={location.state.status === 'asking'}
-          onPress={() => (coords ? location.clear() : void location.request())}
+          label="Saved"
+          icon={savedOnly ? 'heart' : 'heart-outline'}
+          active={savedOnly}
+          dismissible={savedOnly}
+          onPress={() => setSavedOnly((v) => !v)}
         />
-        {city ? <Chip label={city} active onPress={() => setCity(undefined)} dismissible /> : null}
-        {brand ? (
-          <Chip label={brand} active onPress={() => setBrand(undefined)} dismissible />
-        ) : null}
+        {savedOnly ? null : (
+          <>
+            <Chip
+              label={nearMeLabel}
+              icon={coords ? 'navigate' : 'navigate-outline'}
+              active={Boolean(coords)}
+              busy={location.state.status === 'asking'}
+              onPress={() => (coords ? location.clear() : void location.request())}
+            />
+            {city ? (
+              <Chip label={city} active onPress={() => setCity(undefined)} dismissible />
+            ) : null}
+            {brand ? (
+              <Chip label={brand} active onPress={() => setBrand(undefined)} dismissible />
+            ) : null}
 
-        {!city
-          ? (cities.data ?? []).map((name) => (
-              <Chip key={name} label={name} active={false} onPress={() => setCity(name)} />
-            ))
-          : null}
-        {!brand && city
-          ? (brands.data ?? []).map((name) => (
-              <Chip key={name} label={name} active={false} onPress={() => setBrand(name)} />
-            ))
-          : null}
+            {!city
+              ? (cities.data ?? []).map((name) => (
+                  <Chip key={name} label={name} active={false} onPress={() => setCity(name)} />
+                ))
+              : null}
+            {!brand && city
+              ? (brands.data ?? []).map((name) => (
+                  <Chip key={name} label={name} active={false} onPress={() => setBrand(name)} />
+                ))
+              : null}
+          </>
+        )}
       </ScrollView>
 
-      {location.state.status === 'denied' ? (
+      {!savedOnly && location.state.status === 'denied' ? (
         <View style={{ paddingHorizontal: spacing.lg }}>
           <Text variant="caption" tone="muted">
             Location is off, so cinemas are listed alphabetically. Turn it on in Settings to sort by
@@ -169,7 +191,7 @@ export default function Cinemas() {
           </Text>
         </View>
       ) : null}
-      {location.state.status === 'failed' ? (
+      {!savedOnly && location.state.status === 'failed' ? (
         <View style={{ paddingHorizontal: spacing.lg }}>
           <Text variant="caption" tone="danger">
             {location.state.message}
@@ -202,21 +224,21 @@ export default function Cinemas() {
         <View style={{ paddingHorizontal: spacing.lg }}>
           <Text variant="caption" tone="muted" numeric>
             {results.length} {results.length === 1 ? 'cinema' : 'cinemas'}
-            {coords ? ' · nearest first' : ''}
+            {savedOnly ? ' · saved' : coords ? ' · nearest first' : ''}
           </Text>
         </View>
       ) : null}
     </View>
   );
 
-  if (cinemas.isError) {
+  if (isError) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <AppBar title="Cinemas" subtitle="Where to watch" />
         <ErrorState
-          error={cinemas.error}
+          error={savedOnly ? favorites.error : cinemas.error}
           title="Could not load cinemas"
-          onRetry={() => void cinemas.refetch()}
+          onRetry={() => void (savedOnly ? favorites.refetch() : cinemas.refetch())}
         />
       </View>
     );
@@ -252,7 +274,7 @@ export default function Cinemas() {
         }
       />
 
-      {cinemas.isPending ? (
+      {isPending ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
           <Skeleton style={{ height: HIT_SIZE, borderRadius: 10 }} />
           <Skeleton style={{ height: 150, borderRadius: 14 }} />
@@ -277,8 +299,8 @@ export default function Cinemas() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={cinemas.isRefetching}
-              onRefresh={() => void cinemas.refetch()}
+              refreshing={savedOnly ? false : cinemas.isRefetching}
+              onRefresh={() => void (savedOnly ? favorites.refetch() : cinemas.refetch())}
               tintColor={colors.primary}
             />
           }
@@ -295,26 +317,34 @@ export default function Cinemas() {
             ) : null
           }
           ListEmptyComponent={
-            <EmptyState
-              title="No cinemas match"
-              message={
-                trimmed
-                  ? `Nothing here matches “${trimmed}”.`
-                  : 'Try a different city, or clear the filters.'
-              }
-              action={
-                city || brand || trimmed
-                  ? {
-                      label: 'Clear filters',
-                      onPress: () => {
-                        setCity(undefined);
-                        setBrand(undefined);
-                        setSearch('');
-                      },
-                    }
-                  : undefined
-              }
-            />
+            savedOnly ? (
+              <EmptyState
+                icon="heart-outline"
+                title="No saved cinemas yet"
+                message="Tap the heart on a cinema to pin it here."
+              />
+            ) : (
+              <EmptyState
+                title="No cinemas match"
+                message={
+                  trimmed
+                    ? `Nothing here matches “${trimmed}”.`
+                    : 'Try a different city, or clear the filters.'
+                }
+                action={
+                  city || brand || trimmed
+                    ? {
+                        label: 'Clear filters',
+                        onPress: () => {
+                          setCity(undefined);
+                          setBrand(undefined);
+                          setSearch('');
+                        },
+                      }
+                    : undefined
+                }
+              />
+            )
           }
         />
       )}
