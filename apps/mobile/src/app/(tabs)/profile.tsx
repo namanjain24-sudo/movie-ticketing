@@ -7,8 +7,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { authApi } from '../../api/auth';
 import { bookingApi } from '../../api/booking';
 import { loyaltyApi } from '../../api/loyalty';
-import { ErrorState, LoadingState } from '../../components/query-state';
-import { AppBar, Button, Text, TextField } from '../../components/ui';
+import { ErrorState } from '../../components/query-state';
+import { AppBar, Button, Skeleton, Text, TextField } from '../../components/ui';
 import { useWatchlist } from '../../features/watchlist/use-watchlist';
 import { useAuthStore } from '../../features/auth/auth-store';
 import { tapFeedback } from '../../lib/haptics';
@@ -52,7 +52,7 @@ export default function Profile() {
     },
   });
 
-  if (isPending) return <LoadingState />;
+  if (isPending) return <ProfileSkeleton />;
   if (isError || !user) {
     return (
       <ErrorState error={null} title="Could not load your profile" onRetry={() => void refetch()} />
@@ -195,6 +195,30 @@ export default function Profile() {
           }}
         />
       </ScrollView>
+    </View>
+  );
+}
+
+/** Shaped like the loaded screen: an avatar circle, four stat tiles, a
+ * grouped row block — so the account screen doesn't flash blank first. */
+function ProfileSkeleton() {
+  const { colors, radius, spacing } = useTheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <AppBar title="Profile" subtitle="Account" />
+      <View style={{ padding: spacing.lg, gap: spacing.xl }}>
+        <View style={{ alignItems: 'center', gap: spacing.md }}>
+          <Skeleton style={{ width: 76, height: 76, borderRadius: 38 }} />
+          <Skeleton style={{ width: 140, height: 18, borderRadius: 6 }} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <Skeleton style={{ flex: 1, height: 66, borderRadius: radius.lg }} />
+          <Skeleton style={{ flex: 1, height: 66, borderRadius: radius.lg }} />
+          <Skeleton style={{ flex: 1, height: 66, borderRadius: radius.lg }} />
+          <Skeleton style={{ flex: 1, height: 66, borderRadius: radius.lg }} />
+        </View>
+        <Skeleton style={{ height: 150, borderRadius: radius.lg }} />
+      </View>
     </View>
   );
 }

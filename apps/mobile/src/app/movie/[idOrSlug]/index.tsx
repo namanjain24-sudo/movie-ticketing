@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Share, View } from 'react-native';
 import Animated, {
   Extrapolation,
+  FadeInDown,
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -15,7 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { catalogApi } from '../../../api/catalog';
-import { EmptyState, ErrorState, LoadingState } from '../../../components/query-state';
+import { EmptyState, ErrorState } from '../../../components/query-state';
 import { Badge, Card, Poster, RatingStars, Skeleton, Text } from '../../../components/ui';
 import { DateStrip } from '../../../features/catalog/date-strip';
 import { ShowtimeChip } from '../../../features/catalog/showtime-chip';
@@ -126,7 +127,7 @@ export default function MovieDetail() {
     },
   });
 
-  if (movie.isPending) return <LoadingState label="Loading film" />;
+  if (movie.isPending) return <MovieDetailSkeleton />;
 
   if (movie.isError || !movie.data) {
     return (
@@ -423,8 +424,12 @@ export default function MovieDetail() {
                   }
                 />
               ) : (
-                visible.map(({ cinema, showtimes: slots }) => (
-                  <Card key={cinema.id} style={{ gap: spacing.md }}>
+                visible.map(({ cinema, showtimes: slots }, index) => (
+                  <Animated.View
+                    key={cinema.id}
+                    entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}
+                  >
+                    <Card style={{ gap: spacing.md }}>
                     {/* The venue block is a link now that a venue is a place:
                       it has a map, a phone number and the rest of its week. */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -481,7 +486,8 @@ export default function MovieDetail() {
                         />
                       ))}
                     </View>
-                  </Card>
+                    </Card>
+                  </Animated.View>
                 ))
               )}
             </View>
@@ -494,6 +500,49 @@ export default function MovieDetail() {
 
         <SimilarMoviesRail film={film} onSelect={(movie) => router.push(`/movie/${movie.slug}`)} />
       </Animated.ScrollView>
+    </View>
+  );
+}
+
+/** Shaped like the page itself: backdrop, poster, title, synopsis, actions —
+ * so the layout is already in place the instant the film data lands instead
+ * of jumping into existence under a spinner. */
+function MovieDetailSkeleton() {
+  const { spacing, radius } = useTheme();
+  return (
+    <View style={{ flex: 1 }}>
+      <Skeleton style={{ height: BACKDROP_HEIGHT, borderRadius: 0 }} />
+
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: spacing.lg,
+          paddingHorizontal: spacing.lg,
+          marginTop: -72,
+        }}
+      >
+        <Skeleton style={{ width: 104, aspectRatio: 2 / 3, borderRadius: radius.lg }} />
+        <View style={{ flex: 1, paddingTop: 76, gap: spacing.sm }}>
+          <Skeleton style={{ height: 22, width: '85%', borderRadius: 6 }} />
+          <Skeleton style={{ height: 14, width: '50%', borderRadius: 6 }} />
+        </View>
+      </View>
+
+      <View style={{ padding: spacing.lg, gap: spacing.md }}>
+        <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+          <Skeleton style={{ height: 22, width: 64, borderRadius: radius.full }} />
+          <Skeleton style={{ height: 22, width: 64, borderRadius: radius.full }} />
+        </View>
+        <Skeleton style={{ height: 14, width: '100%', borderRadius: 6 }} />
+        <Skeleton style={{ height: 14, width: '100%', borderRadius: 6 }} />
+        <Skeleton style={{ height: 14, width: '70%', borderRadius: 6 }} />
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <Skeleton style={{ flex: 1, height: HIT_SIZE, borderRadius: radius.md }} />
+          <Skeleton style={{ flex: 1, height: HIT_SIZE, borderRadius: radius.md }} />
+          <Skeleton style={{ flex: 1, height: HIT_SIZE, borderRadius: radius.md }} />
+          <Skeleton style={{ flex: 1, height: HIT_SIZE, borderRadius: radius.md }} />
+        </View>
+      </View>
     </View>
   );
 }

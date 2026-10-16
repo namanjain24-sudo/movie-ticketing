@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { catalogApi } from '../../../api/catalog';
 import { ApiRequestError } from '../../../api/client';
 import { reviewsApi } from '../../../api/reviews';
-import { EmptyState, ErrorState, LoadingState } from '../../../components/query-state';
-import { AppBar, Button, Text } from '../../../components/ui';
+import { EmptyState, ErrorState } from '../../../components/query-state';
+import { AppBar, Button, Skeleton, Text } from '../../../components/ui';
 import { useAuth } from '../../../features/auth/auth-provider';
 import { RatingBreakdown } from '../../../features/reviews/rating-breakdown';
 import { ReviewCard } from '../../../features/reviews/review-card';
@@ -91,7 +92,12 @@ export default function ReviewsScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <AppBar title={title} subtitle="Reviews" onBack={() => router.back()} />
-        <LoadingState label="Loading reviews" />
+        <View style={{ padding: spacing.lg, gap: spacing.md }}>
+          <Skeleton style={{ height: 90, borderRadius: radius.lg }} />
+          <Skeleton style={{ height: 76, borderRadius: radius.lg }} />
+          <Skeleton style={{ height: 76, borderRadius: radius.lg }} />
+          <Skeleton style={{ height: 76, borderRadius: radius.lg }} />
+        </View>
       </View>
     );
   }
@@ -202,18 +208,20 @@ export default function ReviewsScreen() {
         data={data.reviews}
         keyExtractor={(review) => review.id}
         ListHeaderComponent={header}
-        renderItem={({ item }) => (
-          <ReviewCard
-            review={item}
-            onEdit={
-              item.mine
-                ? () => {
-                    setWriteError(null);
-                    setComposerOpen(true);
-                  }
-                : undefined
-            }
-          />
+        renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}>
+            <ReviewCard
+              review={item}
+              onEdit={
+                item.mine
+                  ? () => {
+                      setWriteError(null);
+                      setComposerOpen(true);
+                    }
+                  : undefined
+              }
+            />
+          </Animated.View>
         )}
         contentContainerStyle={{
           paddingHorizontal: spacing.lg,
