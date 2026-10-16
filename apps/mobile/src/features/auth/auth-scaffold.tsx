@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import Animated, { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui';
 import { useTheme } from '../../theme';
@@ -47,21 +48,25 @@ export function AuthScaffold({
             gap: spacing.xl,
           }}
         >
-          <Text variant="overline" style={{ color: colors.onChromeMuted, letterSpacing: 3 }}>
-            BOXOFFICE
-          </Text>
+          <Animated.View entering={FadeInDown.duration(260)}>
+            <Text variant="overline" style={{ color: colors.onChromeMuted, letterSpacing: 3 }}>
+              BOXOFFICE
+            </Text>
+          </Animated.View>
           <SeatMotif />
-          <View style={{ gap: spacing.xs }}>
+          <Animated.View entering={FadeInDown.delay(80).duration(280)} style={{ gap: spacing.xs }}>
             <Text variant="display" tone="onChrome">
               {title}
             </Text>
             <Text style={{ color: colors.onChromeMuted }}>{subtitle}</Text>
-          </View>
+          </Animated.View>
         </View>
 
         {/* The form arrives on a sheet that rises out of the chrome, which is
-            the same move the seat-count and city sheets make elsewhere. */}
-        <View
+            the same move the seat-count and city sheets make elsewhere — now
+            with an actual rise on first mount instead of just the metaphor. */}
+        <Animated.View
+          entering={FadeInUp.delay(120).duration(320)}
           style={{
             flex: 1,
             backgroundColor: colors.background,
@@ -75,7 +80,7 @@ export function AuthScaffold({
         >
           {children}
           {footer}
-        </View>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -95,8 +100,12 @@ function SeatMotif() {
       {seats.map((i) => {
         const chosen = i === 2;
         return (
-          <View
+          <Animated.View
             key={i}
+            entering={ZoomIn.delay(i * 60)
+              .duration(260)
+              .springify()
+              .damping(12)}
             style={{
               width: 22,
               height: 22,
@@ -112,7 +121,7 @@ function SeatMotif() {
             }}
           >
             {chosen ? <Ionicons name="checkmark" size={13} color={colors.onPrimary} /> : null}
-          </View>
+          </Animated.View>
         );
       })}
     </View>
