@@ -9,8 +9,8 @@ import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { bookingApi } from '../../api/booking';
-import { ErrorState, LoadingState } from '../../components/query-state';
-import { Badge, Button, Card, Text } from '../../components/ui';
+import { ErrorState } from '../../components/query-state';
+import { Badge, Button, Card, Skeleton, Text } from '../../components/ui';
 import { addShowtimeToCalendar } from '../../lib/calendar';
 import { SplitBillSheet } from '../../features/bookings/split-bill-sheet';
 import {
@@ -124,7 +124,7 @@ export default function BookingTicket() {
     });
   }, [booking.data]);
 
-  if (booking.isPending) return <LoadingState label="Loading your ticket" />;
+  if (booking.isPending) return <BookingTicketSkeleton />;
 
   if (booking.isError || !booking.data) {
     return (
@@ -564,4 +564,31 @@ function confirmCancel(refund: string, fee: string, onConfirm: () => void) {
     { text: 'Keep booking', style: 'cancel' },
     { text: 'Cancel booking', style: 'destructive', onPress: onConfirm },
   ]);
+}
+
+/** Shaped like the ticket itself: the checkmark circle, then the stub —
+ * matches what's about to render rather than a spinner with no relation to
+ * the thing being waited for. */
+function BookingTicketSkeleton() {
+  const { colors, radius, spacing } = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.lg,
+          paddingTop: insets.top + spacing.xl,
+          gap: spacing.xl,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ alignItems: 'center', gap: spacing.sm }}>
+          <Skeleton style={{ width: 64, height: 64, borderRadius: 32 }} />
+          <Skeleton style={{ width: 160, height: 20, borderRadius: 6 }} />
+        </View>
+        <Skeleton style={{ height: 320, borderRadius: radius.lg }} />
+        <Skeleton style={{ height: 44, borderRadius: radius.md }} />
+      </ScrollView>
+    </View>
+  );
 }

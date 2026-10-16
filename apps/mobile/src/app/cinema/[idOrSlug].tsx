@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
 import { cinemasApi } from '../../api/cinemas';
-import { ErrorState, LoadingState } from '../../components/query-state';
-import { AppBar, Button, Poster, Text } from '../../components/ui';
+import { ErrorState } from '../../components/query-state';
+import { AppBar, Button, Poster, Skeleton, Text } from '../../components/ui';
 import { CinemaMap } from '../../features/cinemas/cinema-map';
 import { DateStrip } from '../../features/catalog/date-strip';
 import { groupByMovie } from '../../features/catalog/group-by-movie';
@@ -65,7 +66,7 @@ export default function CinemaScreen() {
 
   const here = showtimes.data?.find((entry) => entry.cinema.id === cinema.data?.id);
 
-  if (cinema.isPending) return <LoadingState label="Loading cinema" />;
+  if (cinema.isPending) return <CinemaScreenSkeleton />;
 
   if (cinema.isError || !cinema.data) {
     return (
@@ -170,8 +171,9 @@ export default function CinemaScreen() {
           <DateStrip days={days} value={date} onChange={setDate} />
 
           {showtimes.isPending ? (
-            <View style={{ paddingVertical: spacing.xl }}>
-              <LoadingState />
+            <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
+              <Skeleton style={{ height: 72, borderRadius: 10 }} />
+              <Skeleton style={{ height: 72, borderRadius: 10 }} />
             </View>
           ) : !here || here.showtimes.length === 0 ? (
             <View style={{ paddingHorizontal: spacing.lg }}>
@@ -179,8 +181,12 @@ export default function CinemaScreen() {
             </View>
           ) : (
             <View style={{ paddingHorizontal: spacing.lg, gap: spacing.xl }}>
-              {groupByMovie(here.showtimes).map(({ movie, showtimes: slots }) => (
-                <View key={movie.id} style={{ gap: spacing.sm }}>
+              {groupByMovie(here.showtimes).map(({ movie, showtimes: slots }, index) => (
+                <Animated.View
+                  key={movie.id}
+                  entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}
+                  style={{ gap: spacing.sm }}
+                >
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`${movie.title}. Open this film`}
@@ -210,10 +216,40 @@ export default function CinemaScreen() {
                       />
                     ))}
                   </View>
-                </View>
+                </Animated.View>
               ))}
             </View>
           )}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+/** Shaped like the page: a map, the address block, then a couple of
+ * showtime-sized bars — so the venue page doesn't flash blank before a
+ * spinner, then flash again into its real layout. */
+function CinemaScreenSkeleton() {
+  const { colors, spacing } = useTheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <AppBar title="Cinema" />
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: spacing['3xl'], gap: spacing.xl }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Skeleton style={{ height: MAP_HEIGHT, borderRadius: 0 }} />
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 6 }} />
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            <Skeleton style={{ flex: 1, height: 44, borderRadius: 10 }} />
+            <Skeleton style={{ flex: 1, height: 44, borderRadius: 10 }} />
+          </View>
+        </View>
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
+          <Skeleton style={{ height: 22, width: 120, borderRadius: 6 }} />
+          <Skeleton style={{ height: 72, borderRadius: 10 }} />
+          <Skeleton style={{ height: 72, borderRadius: 10 }} />
         </View>
       </ScrollView>
     </View>

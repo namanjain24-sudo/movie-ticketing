@@ -1,8 +1,9 @@
 import type { MovieSummary } from '@app/shared';
 import { useRouter } from 'expo-router';
 import { FlatList, RefreshControl, View } from 'react-native';
-import { EmptyState, ErrorState, LoadingState } from '../components/query-state';
-import { AppBar } from '../components/ui';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { EmptyState, ErrorState } from '../components/query-state';
+import { AppBar, Skeleton } from '../components/ui';
 import { MovieCard } from '../features/catalog/movie-card';
 import { useWatchlist } from '../features/watchlist/use-watchlist';
 import { useTheme } from '../theme';
@@ -27,7 +28,16 @@ export default function Watchlist() {
       />
 
       {watchlist.isPending ? (
-        <LoadingState label="Loading your list" />
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: spacing.lg,
+            padding: spacing.lg,
+          }}
+        >
+          <Skeleton style={{ flex: 1, aspectRatio: 2 / 3, borderRadius: 14 }} />
+          <Skeleton style={{ flex: 1, aspectRatio: 2 / 3, borderRadius: 14 }} />
+        </View>
       ) : watchlist.isError ? (
         <ErrorState
           error={watchlist.error}
@@ -38,7 +48,16 @@ export default function Watchlist() {
         <FlatList
           data={watchlist.movies}
           keyExtractor={(movie) => movie.id}
-          renderItem={({ item }) => <MovieCard movie={item} onPress={() => open(item)} />}
+          renderItem={({ item, index }) => (
+            <Animated.View
+              entering={FadeInDown.delay(Math.min(Math.floor(index / COLUMNS), 6) * 50).duration(
+                280,
+              )}
+              style={{ flex: 1 }}
+            >
+              <MovieCard movie={item} onPress={() => open(item)} />
+            </Animated.View>
+          )}
           numColumns={COLUMNS}
           columnWrapperStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg }}
           contentContainerStyle={{
