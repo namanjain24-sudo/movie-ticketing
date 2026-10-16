@@ -380,6 +380,142 @@ section {
   }
 }
 
+/* Download */
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.download {
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.download-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(32px, 6vw, 72px);
+  align-items: center;
+}
+
+.download-copy h2 {
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0 0 16px;
+}
+
+.download-copy p {
+  color: var(--text-secondary);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  max-width: 48ch;
+  margin: 0 0 24px;
+}
+
+.download-copy code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.9em;
+}
+
+.download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.btn-lg {
+  padding: 16px 28px;
+  font-size: 1.3125rem;
+  animation: download-pulse 2.6s ease-in-out infinite;
+}
+
+.btn-lg:hover,
+.btn-lg:focus-visible {
+  animation-play-state: paused;
+}
+
+@keyframes download-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(248, 68, 100, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(248, 68, 100, 0);
+  }
+}
+
+.android-mark {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+}
+
+.download-meta {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 0.9375rem;
+}
+
+.download-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.download-checks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.check-icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  color: var(--plenty);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.download-checks strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+
+.download-checks p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 860px) {
+  .download-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Seat demo (hero visual) */
 
 .seat-demo-card {
@@ -747,8 +883,8 @@ section {
   margin: 0 0 32px;
 }
 
-.closing .btn {
-  margin-inline: auto;
+.closing-actions {
+  justify-content: center;
 }
 
 /* Footer */

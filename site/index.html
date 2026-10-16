@@ -6,7 +6,7 @@
     <title>Boxoffice: the seat map that never oversells</title>
     <meta
       name="description"
-      content="A movie ticketing app for Indian multiplexes, built around one proven claim: it never oversells a seat. Ten load tests up to 5,000 concurrent users, zero oversells, zero double charges."
+      content="A movie ticketing app for Indian multiplexes, built around one proven claim: it never oversells a seat. Download the Android APK directly, or read the proof: ten load tests up to 5,000 concurrent users, zero oversells, zero double charges."
     />
     <meta name="theme-color" content="#0b0c0f" />
     <link
@@ -34,15 +34,18 @@
           <li><a href="#how-it-works">How it works</a></li>
           <li><a href="#proof">The proof</a></li>
           <li><a href="#honesty">No invented data</a></li>
+          <li><a href="#download">Get the app</a></li>
         </ul>
         <div class="nav-cta">
-          <a
-            class="btn btn-ghost btn-sm"
-            href="https://github.com/namanjain24-sudo/movie-ticketing"
-            target="_blank"
-            rel="noopener"
-            >Follow the build</a
-          >
+          <a class="btn btn-primary btn-sm" href="#download">
+            <svg class="android-mark" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M17.6 9.48l1.84-3.18c.1-.18.04-.4-.14-.5-.18-.1-.4-.04-.5.14l-1.86 3.22a10.8 10.8 0 00-9.02 0L6.06 5.94c-.1-.18-.32-.24-.5-.14-.18.1-.24.32-.14.5L7.26 9.48C4.4 11.1 2.46 14 2.17 17.5h19.66c-.29-3.5-2.23-6.4-5.06-8.02h-.17zM7 15.25a1.12 1.12 0 110-2.25 1.12 1.12 0 010 2.25zm10 0a1.12 1.12 0 110-2.25 1.12 1.12 0 010 2.25z"
+              />
+            </svg>
+            Download APK
+          </a>
         </div>
       </div>
     </nav>
@@ -57,13 +60,7 @@
               across ten load tests up to five thousand concurrent bookings.
             </p>
             <div class="hero-actions reveal">
-              <a
-                class="btn btn-primary"
-                href="https://github.com/namanjain24-sudo/movie-ticketing"
-                target="_blank"
-                rel="noopener"
-                >Follow the build</a
-              >
+              <a class="btn btn-primary" href="#download">Download the APK</a>
               <a class="btn btn-ghost" href="#how-it-works">See how it works</a>
             </div>
           </div>
@@ -104,6 +101,70 @@
           </div>
         </div>
       </header>
+
+      <section class="download" id="download">
+        <div class="wrap download-grid">
+          <div class="download-copy reveal">
+            <p class="eyebrow">Android · Direct install</p>
+            <h2>Put it on your phone, not just your browser.</h2>
+            <p>
+              The same code in <code>apps/mobile</code>, built to an APK with
+              Expo and side-loaded — no Play Store review queue, no bundled
+              analytics SDK, nothing the source doesn&rsquo;t already show you.
+            </p>
+            <div class="download-actions">
+              <a
+                class="btn btn-primary btn-lg"
+                href="https://github.com/namanjain24-sudo/movie-ticketing/releases/latest"
+                target="_blank"
+                rel="noopener"
+              >
+                <svg class="android-mark" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M17.6 9.48l1.84-3.18c.1-.18.04-.4-.14-.5-.18-.1-.4-.04-.5.14l-1.86 3.22a10.8 10.8 0 00-9.02 0L6.06 5.94c-.1-.18-.32-.24-.5-.14-.18.1-.24.32-.14.5L7.26 9.48C4.4 11.1 2.46 14 2.17 17.5h19.66c-.29-3.5-2.23-6.4-5.06-8.02h-.17zM7 15.25a1.12 1.12 0 110-2.25 1.12 1.12 0 010 2.25zm10 0a1.12 1.12 0 110-2.25 1.12 1.12 0 010 2.25z"
+                  />
+                </svg>
+                Download APK
+              </a>
+              <a
+                class="btn btn-ghost"
+                href="https://github.com/namanjain24-sudo/movie-ticketing"
+                target="_blank"
+                rel="noopener"
+                >View the source</a
+              >
+            </div>
+            <p class="download-meta">
+              Android 8.0 and up · Latest build on GitHub Releases
+            </p>
+          </div>
+
+          <ul class="download-checks reveal">
+            <li>
+              <span class="check-icon" aria-hidden="true">&#10003;</span>
+              <div>
+                <strong>No review queue</strong>
+                <p>A direct APK, not a store listing waiting on approval.</p>
+              </div>
+            </li>
+            <li>
+              <span class="check-icon" aria-hidden="true">&#10003;</span>
+              <div>
+                <strong>Nothing hidden</strong>
+                <p>No analytics SDK, no ad network baked into the build.</p>
+              </div>
+            </li>
+            <li>
+              <span class="check-icon" aria-hidden="true">&#10003;</span>
+              <div>
+                <strong>Same code you can read</strong>
+                <p>Built from exactly what&rsquo;s public in this repository.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
 
       <section class="proof" id="proof">
         <div class="wrap">
@@ -263,13 +324,22 @@
           <p class="reveal">
             The code, the load tests, and the chaos runs are public.
           </p>
-          <a
-            class="btn btn-primary reveal"
-            href="https://github.com/namanjain24-sudo/movie-ticketing"
-            target="_blank"
-            rel="noopener"
-            >Follow the build</a
-          >
+          <div class="hero-actions closing-actions reveal">
+            <a
+              class="btn btn-primary"
+              href="https://github.com/namanjain24-sudo/movie-ticketing/releases/latest"
+              target="_blank"
+              rel="noopener"
+              >Download APK</a
+            >
+            <a
+              class="btn btn-ghost"
+              href="https://github.com/namanjain24-sudo/movie-ticketing"
+              target="_blank"
+              rel="noopener"
+              >Follow the build</a
+            >
+          </div>
         </div>
       </section>
     </main>
@@ -284,6 +354,14 @@
           <p class="footer-tagline">A movie ticketing app for Indian multiplexes.</p>
         </div>
         <ul class="footer-links">
+          <li>
+            <a
+              href="https://github.com/namanjain24-sudo/movie-ticketing/releases/latest"
+              target="_blank"
+              rel="noopener"
+              >Download APK</a
+            >
+          </li>
           <li>
             <a
               href="https://github.com/namanjain24-sudo/movie-ticketing"
