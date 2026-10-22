@@ -70,16 +70,27 @@ open the app yourself a minute beforehand. A free uptime pinger
 
 ## 2. Point the build at it
 
-`apps/mobile/eas.json` assumes the service is called `boxoffice-api`:
+Already done, and worth knowing why it needed doing. `boxoffice-api` was taken
+globally, so Render named the service `boxoffice-api-i1ra`. Both `preview` and
+`production` in `apps/mobile/eas.json` carry that real URL:
 
 ```json
-"EXPO_PUBLIC_API_URL": "https://boxoffice-api.onrender.com"
+"EXPO_PUBLIC_API_URL": "https://boxoffice-api-i1ra.onrender.com"
 ```
 
-Render appends a suffix if that name is taken. **Check the real URL in the
-Render dashboard and put it in both `preview` and `production`.** Getting this
-wrong is the single most likely reason a finished APK shows "cannot reach the
-server" on every screen.
+If the service is ever renamed or recreated, this is the one line to change.
+Getting it wrong is the single most likely reason a finished APK shows "cannot
+reach the server" on every screen.
+
+### Verified against the live service
+
+The deployed API was exercised end to end before any build was made — demo
+login, a 274-seat map, a two-seat hold, checkout, and the gateway webhook
+confirming it:
+
+```
+status CONFIRMED   reference BK-W3Z3R5   pointsEarned 6
+```
 
 ---
 
