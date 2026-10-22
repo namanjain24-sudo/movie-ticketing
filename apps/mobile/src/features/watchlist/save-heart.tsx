@@ -11,8 +11,6 @@ import Animated, {
 import { useTheme } from '../../theme';
 import { useWatchlist } from './use-watchlist';
 
-const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
-
 /**
  * A heart sat on a poster's corner. Glass-dark in both themes because it lives
  * on artwork, and artwork has no theme.
@@ -54,12 +52,17 @@ export function SaveHeart({ movie }: { movie: MovieSummary }) {
         backgroundColor: colors.onImageScrim,
       }}
     >
-      <AnimatedIonicons
-        name={saved ? 'heart' : 'heart-outline'}
-        size={18}
-        color={saved ? colors.primary : colors.onImage}
-        style={popStyle}
-      />
+      {/* The transform goes on a wrapping View rather than on an animated
+          Ionicons: animating the icon itself routes through `setNativeProps`,
+          which @expo/vector-icons forwards to an inner Text that
+          react-native-web 0.21 no longer gives that method. */}
+      <Animated.View style={popStyle}>
+        <Ionicons
+          name={saved ? 'heart' : 'heart-outline'}
+          size={18}
+          color={saved ? colors.primary : colors.onImage}
+        />
+      </Animated.View>
     </Pressable>
   );
 }
