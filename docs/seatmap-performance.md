@@ -31,7 +31,7 @@ the hardware the target actually names.
    the way someone scanning for a block of seats actually would.
 5. Watch the console. Two kinds of line appear once a second:
    - `[seatmap-perf] ~N seat cells mounted (R rows × C columns in the current
-     window)` — updates whenever the visible window changes size. This is the
+window)` — updates whenever the visible window changes size. This is the
      number to compare against the claimed 633 for the IMAX house.
    - `[seatmap-perf] F frames, D dropped, last second` — a frame is counted
      dropped when the gap since the previous one exceeds 25ms (1.5× the 16.7ms
@@ -46,7 +46,7 @@ the hardware the target actually names.
   total**: the RN-views approach is meeting the target. Leave it; a Skia
   rewrite would trade Expo Go for a dev-client build (see the README and
   PRODUCT.md's constraint) for no measured benefit.
-- **Dropped frames climb during a fast scroll**: worth profiling *why* before
+- **Dropped frames climb during a fast scroll**: worth profiling _why_ before
   reaching for Skia — check whether it is JS-thread work (the column-window
   recompute in `SeatGrid`) or the UI thread (view mounting/unmounting churn at
   the FlatList's row boundaries) using the platform's own profiler
