@@ -2,7 +2,7 @@
 
 Everything here is reproducible from the repo. The scenario is committed, the
 fixture generator is committed, and the verdict is not k6's — it is a script
-that reads the database afterwards and asserts eleven invariants.
+that reads the database afterwards and asserts thirteen invariants.
 
 **The failed runs are included on purpose.** A clean sheet from a suite that has
 never caught anything is not evidence.
@@ -169,7 +169,7 @@ next thing on the list.
 
 ## What the report checks
 
-`npm run verify:invariants` runs eleven assertions as SQL that returns
+`npm run verify:invariants` runs thirteen assertions as SQL that returns
 offending rows, so a check cannot pass by looking at nothing.
 
 - No showtime has more confirmed seats than inventory
@@ -178,7 +178,9 @@ offending rows, so a check cannot pass by looking at nothing.
 - No booking has more than one captured payment
 - Every captured payment belongs to a confirmed booking
 - A confirmed booking holds exactly the seats its hold claimed
-- Booking totals equal the sum of seat prices plus the fee
+- Booking totals equal seat prices plus the fee and add-ons, minus any discount
+- A booking's add-ons total equals the sum of its priced add-on lines
+- No promo code has more live redemptions than its total or per-user limit
 - Every held seat points at a hold and carries that hold's expiry
 - An available seat carries no hold and no booking
 - No hold is still active more than 60 seconds past expiry

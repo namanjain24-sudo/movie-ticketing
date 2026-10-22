@@ -35,7 +35,7 @@ runs where the server was being crushed.
 The full report, **including the runs that failed and what was wrong**, is in
 [`docs/load-testing.md`](docs/load-testing.md). The verdict is not the load
 generator's: an [invariant script](apps/api/src/scripts/verify-invariants.ts)
-reads the database afterwards and asserts eleven properties in SQL.
+reads the database afterwards and asserts thirteen properties in SQL.
 
 ## How overselling is prevented
 
@@ -159,8 +159,8 @@ pricing and the run dates are generated demo data.
 ## Proving it yourself
 
 ```bash
-npm test                    # 130 API tests including real concurrent HTTP, 124 in the app
-npm run verify:invariants   # 12 assertions against the live database
+npm test                    # 182 API tests including real concurrent HTTP, 203 in the app
+npm run verify:invariants   # 13 assertions against the live database
 
 # Load
 API_WORKERS=8 DATABASE_POOL_MAX=25 \
@@ -195,9 +195,31 @@ k6 is not committed. `brew install k6`, or drop the binary at `.tooling/k6`.
   codes: `WELCOME50`, `MOVIE20`, `FAMILY100`.
 - **Saved films.** `PUT/DELETE /v1/users/me/watchlist/:film`, idempotent by
   composite primary key. A heart on every poster, optimistic in the app.
+- **Saved cinemas.** `PUT/DELETE /v1/users/me/favorite-cinemas/:cinema`, the same
+  shape as saved films down to the composite key. A "Saved" mode on the cinemas
+  tab, which is its own mode rather than another filter next to city and brand —
+  mixing them would mean explaining which one won.
 - **Best seats.** One tap picks the requested number of seats side by side, near
   the middle and a little behind the centre line, never across an aisle, never a
   wheelchair space, and avoiding a stranded single seat.
+- **Loyalty points.** A point per ₹100 on a confirmed booking, redeemable at
+  checkout alongside a promo code. Points live in a `LoyaltyLedger` — a ledger,
+  not a counter, so a balance is always the sum of what actually happened.
+  `POST /v1/loyalty/quote` prices a redemption against a hold; `POST /v1/checkout`
+  re-checks it under a per-user advisory lock, since a derived balance has no
+  single row to lock the way a promo code does. Spent points come back if the
+  booking never completes — the late-capture path, an explicit cancellation, and
+  the sweeper's cleanup of abandoned holds all reverse them, and a cancellation
+  also claws back what the booking earned.
+- **Split the bill.** `POST /v1/bookings/:id/split` records who owes what on a
+  booking the organiser already paid for in full, validated to add up to exactly
+  the total. Deliberately not a second payment path: multiple captured payments
+  against one booking is precisely what the `booking-has-payment` and
+  `no-double-charge` invariants exist to forbid.
+- **Notification history.** A browsable list of what the app has scheduled —
+  showtime reminders, hold-expiry nudges, release-day check-ins. Client-only, and
+  it says "scheduled", never "delivered": nothing here can observe a background
+  notification actually firing.
 
 ## What is in the box
 
@@ -227,7 +249,9 @@ apps/
       holds/        The critical section. Everything else is surface.
       payments/     Gateway boundary, webhooks, reconciliation
       catalog/      Movies, showtimes, the seat map read
-      bookings/     Tickets and signed QR payloads
+      bookings/     Tickets, signed QR payloads, splitting the bill
+      loyalty/      The points ledger, and what reverses an entry
+      favorites/    Saved cinemas, shaped like the film watchlist
       realtime/     Seat delta publisher
     src/lib/        Transaction retry, lock timeout, idempotency
     src/jobs/       The sweeper. Housekeeping, never correctness.
@@ -243,8 +267,9 @@ docs/               Architecture and the load-test report
 **Done, server.** Schema and inventory model, the hold mechanic with row-level
 locking, logical expiry plus sweeper, the idempotency layer, payment
 orchestration with webhooks and reconciliation, the seat map and catalogue read
-APIs, tickets with signed QR payloads, 51 tests, 11 invariants, the k6 scenario,
-seven chaos scenarios, and the load report.
+APIs, tickets with signed QR payloads, the loyalty ledger and the split-the-bill
+tracker, 182 tests, 13 invariants, the k6 scenario, seven chaos scenarios, and
+the load report.
 
 **Done, app.** The booking flow end to end: now showing with a city filter,
 movie detail with showtimes by cinema and date, the seat map with selection
@@ -255,6 +280,13 @@ ticket with a scannable QR and a share sheet, My bookings with upcoming and
 past, cancellation with a quoted refund, the "how many seats?" step before the
 map, and a Coming soon shelf of films that are announced but not yet on sale. A seat lost to someone else greys out in place from the 409's
 `unavailableShowSeatIds` instead of bouncing the user off the screen.
+
+Around that core: a one-time intro before sign-in, loyalty points earned and
+redeemed in the same checkout, splitting a paid booking's cost with friends,
+saved cinemas beside saved films, a browsable history of scheduled
+notifications, a whole-auditorium overview sheet with tap-to-jump for wide
+seat maps, and "Book again" on a past ticket. Every screen that waits on the
+network now waits behind a skeleton shaped like itself rather than a spinner.
 
 **Cancellation** is part of the lifecycle, not an afterthought. The seats are
 released in the same transaction that marks the booking cancelled, so no seat is
@@ -300,29 +332,43 @@ needs a deployed target. See [`docs/load-testing.md`](docs/load-testing.md).
 
 ## API
 
-| Method   | Path                              | Notes                                                                                |
-| -------- | --------------------------------- | ------------------------------------------------------------------------------------ |
-| `GET`    | `/v1/movies`                      | Now showing, filterable by city and title; `?comingSoon=true` for the announced list |
-| `GET`    | `/v1/movies/:idOrSlug`            | Detail with available formats, rating average and star breakdown                     |
-| `GET`    | `/v1/movies/:idOrSlug/reviews`    | Sortable and filterable by star; the caller's own review is flagged and hoisted      |
-| `PUT`    | `/v1/movies/:idOrSlug/reviews/me` | Create or replace. One person, one review — posting twice edits                      |
-| `DELETE` | `/v1/movies/:idOrSlug/reviews/me` | Removes the caller's review                                                          |
-| `GET`    | `/v1/cities`                      | Cities with a bookable venue                                                         |
-| `GET`    | `/v1/cinemas`                     | Venue directory. `?lat=&lng=` adds a distance to every entry and sorts by it         |
-| `GET`    | `/v1/cinemas/:idOrSlug`           | One venue: address, coordinate, phone, facilities                                    |
-| `GET`    | `/v1/cinema-brands`               | The chains represented, for the filter chips                                         |
-| `GET`    | `/v1/showtimes`                   | Grouped by cinema, with an availability band                                         |
-| `GET`    | `/v1/showtimes/:id/seatmap`       | The whole map. Auth optional; a holder sees their own seats as theirs.               |
-| `POST`   | `/v1/showtimes/:id/holds`         | **Requires `Idempotency-Key`**                                                       |
-| `GET`    | `/v1/holds/:id`                   | Server-authoritative expiry for the countdown                                        |
-| `DELETE` | `/v1/holds/:id`                   | Voluntary release                                                                    |
-| `POST`   | `/v1/checkout`                    | **Requires `Idempotency-Key`**                                                       |
-| `GET`    | `/v1/payments/:id`                | Poll after an ambiguous submit                                                       |
-| `POST`   | `/v1/payments/webhook`            | HMAC-verified, deduplicated by event id                                              |
-| `GET`    | `/v1/bookings`                    | Upcoming and past                                                                    |
-| `GET`    | `/v1/bookings/reference/:ref`     | Counter lookup                                                                       |
-| `GET`    | `/v1/bookings/:id/cancellation`   | Quotes the refund and the deadline before the user commits                           |
-| `POST`   | `/v1/bookings/:id/cancel`         | Releases the seats and refunds the seat money; the booking fee is kept               |
+| Method   | Path                                    | Notes                                                                                |
+| -------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `GET`    | `/v1/movies`                            | Now showing, filterable by city and title; `?comingSoon=true` for the announced list |
+| `GET`    | `/v1/movies/:idOrSlug`                  | Detail with available formats, rating average and star breakdown                     |
+| `GET`    | `/v1/movies/:idOrSlug/reviews`          | Sortable and filterable by star; the caller's own review is flagged and hoisted      |
+| `PUT`    | `/v1/movies/:idOrSlug/reviews/me`       | Create or replace. One person, one review — posting twice edits                      |
+| `DELETE` | `/v1/movies/:idOrSlug/reviews/me`       | Removes the caller's review                                                          |
+| `GET`    | `/v1/cities`                            | Cities with a bookable venue                                                         |
+| `GET`    | `/v1/cinemas`                           | Venue directory. `?lat=&lng=` adds a distance to every entry and sorts by it         |
+| `GET`    | `/v1/cinemas/:idOrSlug`                 | One venue: address, coordinate, phone, facilities                                    |
+| `GET`    | `/v1/cinema-brands`                     | The chains represented, for the filter chips                                         |
+| `GET`    | `/v1/showtimes`                         | Grouped by cinema, with an availability band                                         |
+| `GET`    | `/v1/showtimes/:id/seatmap`             | The whole map. Auth optional; a holder sees their own seats as theirs.               |
+| `POST`   | `/v1/showtimes/:id/holds`               | **Requires `Idempotency-Key`**                                                       |
+| `GET`    | `/v1/holds/:id`                         | Server-authoritative expiry for the countdown                                        |
+| `DELETE` | `/v1/holds/:id`                         | Voluntary release                                                                    |
+| `POST`   | `/v1/checkout`                          | **Requires `Idempotency-Key`**                                                       |
+| `GET`    | `/v1/payments/:id`                      | Poll after an ambiguous submit                                                       |
+| `POST`   | `/v1/payments/webhook`                  | HMAC-verified, deduplicated by event id                                              |
+| `GET`    | `/v1/bookings`                          | Upcoming and past                                                                    |
+| `GET`    | `/v1/bookings/reference/:ref`           | Counter lookup                                                                       |
+| `GET`    | `/v1/bookings/:id/cancellation`         | Quotes the refund and the deadline before the user commits                           |
+| `POST`   | `/v1/bookings/:id/cancel`               | Releases the seats and refunds the seat money; the booking fee is kept               |
+| `GET`    | `/v1/bookings/:id/split`                | Who owes what on this booking. Owner-only; 404 otherwise, so ids cannot be probed    |
+| `POST`   | `/v1/bookings/:id/split`                | Replaces the whole share list. Must add up to exactly the booking total              |
+| `PATCH`  | `/v1/bookings/:id/split/:shareId`       | Marks one share settled, or unsettled                                                |
+| `GET`    | `/v1/loyalty/balance`                   | Summed from the ledger, never stored                                                 |
+| `POST`   | `/v1/loyalty/quote`                     | Prices a points redemption against a hold. Checkout re-checks it under a lock        |
+| `GET`    | `/v1/promos`                            | Codes anyone could use right now, for the offers rail. Public                        |
+| `POST`   | `/v1/promos/validate`                   | Prices a code against a hold; changes nothing                                        |
+| `GET`    | `/v1/concessions`                       | The snacks menu offered at checkout                                                  |
+| `GET`    | `/v1/users/me/watchlist`                | Saved films, most recently saved first                                               |
+| `PUT`    | `/v1/users/me/watchlist/:film`          | Idempotent by composite key: saving twice is one row                                 |
+| `DELETE` | `/v1/users/me/watchlist/:film`          | Removing one that was never saved is not an error                                    |
+| `GET`    | `/v1/users/me/favorite-cinemas`         | Saved venues, same ordering and semantics as the watchlist                           |
+| `PUT`    | `/v1/users/me/favorite-cinemas/:cinema` | Idempotent, same composite-key shape                                                 |
+| `DELETE` | `/v1/users/me/favorite-cinemas/:cinema` | Also idempotent                                                                      |
 
 Every non-2xx response has the same body shape. Clients switch on
 `error.code`, never on `error.message`. A seat conflict carries the offending
@@ -339,7 +385,7 @@ those seats out in place instead of navigating away.
 | `npm run mobile`                               | Expo only                                   |
 | `npm test`                                     | Every test suite in the workspace           |
 | `npm run typecheck`                            | TypeScript across all three packages        |
-| `npm run verify:invariants`                    | The eleven correctness assertions           |
+| `npm run verify:invariants`                    | The thirteen correctness assertions         |
 | `npm run loadtest`                             | Prepare, run k6, report                     |
 | `npm run chaos`                                | The seven failure scenarios                 |
 | `npm run infra` / `infra:down`                 | Postgres and Redis in Docker, if you use it |
