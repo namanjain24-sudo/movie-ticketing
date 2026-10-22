@@ -142,7 +142,13 @@ export function RatingInput({
       {Array.from({ length: RATING_MAX }, (_, i) => {
         const rating = i + RATING_MIN;
         const on = value !== null && rating <= value;
-        const star = <Ionicons name={on ? 'star' : 'star-outline'} size={size} color={on ? colors.warning : colors.borderStrong} />;
+        const star = (
+          <Ionicons
+            name={on ? 'star' : 'star-outline'}
+            size={size}
+            color={on ? colors.warning : colors.borderStrong}
+          />
+        );
         return (
           <Pressable
             key={rating}

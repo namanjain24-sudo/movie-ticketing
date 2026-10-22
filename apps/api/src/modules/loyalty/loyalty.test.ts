@@ -83,8 +83,13 @@ describe('loyalty points', () => {
       .send({ holdId, method: 'CARD', ...body });
 
   const balance = async (user: TestUser) =>
-    (await request(app).get('/v1/loyalty/balance').set(user.auth).expect(200).then((r) => r.body))
-      .balance as number;
+    (
+      await request(app)
+        .get('/v1/loyalty/balance')
+        .set(user.auth)
+        .expect(200)
+        .then((r) => r.body)
+    ).balance as number;
 
   async function settled(bookingId: string) {
     await waitFor(async () => {

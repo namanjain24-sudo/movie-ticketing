@@ -1,6 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Dimensions, Pressable, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import {
+  Dimensions,
+  Pressable,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   interpolate,
@@ -130,7 +136,13 @@ export default function Onboarding() {
         bounces={false}
       >
         {PANELS.map((panel, i) => (
-          <OnboardingPanel key={panel.key} panel={panel} index={i} scrollX={scrollX} active={index === i} />
+          <OnboardingPanel
+            key={panel.key}
+            panel={panel}
+            index={i}
+            scrollX={scrollX}
+            active={index === i}
+          />
         ))}
       </Animated.ScrollView>
 

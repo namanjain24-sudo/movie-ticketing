@@ -123,7 +123,8 @@ export function SeatOverview({
                       // transparent in dark mode (an outline, not a block) —
                       // at dot size that would vanish, so the dot borrows its
                       // border colour instead, same green either way.
-                      const dotColor = palette.fill === 'transparent' ? palette.border : palette.fill;
+                      const dotColor =
+                        palette.fill === 'transparent' ? palette.border : palette.fill;
                       return (
                         <View
                           key={seat.id}

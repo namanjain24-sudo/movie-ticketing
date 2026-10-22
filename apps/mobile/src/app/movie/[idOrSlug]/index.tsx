@@ -430,62 +430,62 @@ export default function MovieDetail() {
                     entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}
                   >
                     <Card style={{ gap: spacing.md }}>
-                    {/* The venue block is a link now that a venue is a place:
+                      {/* The venue block is a link now that a venue is a place:
                       it has a map, a phone number and the rest of its week. */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`${cinema.name}, ${cinema.address}. Open this cinema`}
-                        onPress={() => router.push(`/cinema/${cinema.slug}`)}
-                        hitSlop={4}
-                        style={{ flex: 1, gap: spacing['2xs'] }}
-                      >
-                        <View
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`${cinema.name}, ${cinema.address}. Open this cinema`}
+                          onPress={() => router.push(`/cinema/${cinema.slug}`)}
+                          hitSlop={4}
+                          style={{ flex: 1, gap: spacing['2xs'] }}
                         >
-                          <Text variant="label" numberOfLines={1} style={{ flexShrink: 1 }}>
-                            {cinema.name}
+                          <View
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+                          >
+                            <Text variant="label" numberOfLines={1} style={{ flexShrink: 1 }}>
+                              {cinema.name}
+                            </Text>
+                            <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
+                          </View>
+                          <Text variant="caption" tone="muted" numberOfLines={1}>
+                            {cinema.address}
                           </Text>
-                          <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
-                        </View>
-                        <Text variant="caption" tone="muted" numberOfLines={1}>
-                          {cinema.address}
-                        </Text>
-                      </Pressable>
+                        </Pressable>
 
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Directions to ${cinema.name}`}
-                        onPress={() =>
-                          void openDirections({
-                            latitude: cinema.latitude,
-                            longitude: cinema.longitude,
-                            label: cinema.name,
-                          })
-                        }
-                        hitSlop={8}
-                        style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: radius.full,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: colors.surfaceMuted,
-                        }}
-                      >
-                        <Ionicons name="navigate-outline" size={16} color={colors.accent} />
-                      </Pressable>
-                    </View>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                      {slots.map((slot) => (
-                        <ShowtimeChip
-                          key={slot.id}
-                          showtime={slot}
-                          closed={slot.closed}
-                          onPress={() => router.push(`/showtime/${slot.id}`)}
-                        />
-                      ))}
-                    </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Directions to ${cinema.name}`}
+                          onPress={() =>
+                            void openDirections({
+                              latitude: cinema.latitude,
+                              longitude: cinema.longitude,
+                              label: cinema.name,
+                            })
+                          }
+                          hitSlop={8}
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: radius.full,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.surfaceMuted,
+                          }}
+                        >
+                          <Ionicons name="navigate-outline" size={16} color={colors.accent} />
+                        </Pressable>
+                      </View>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                        {slots.map((slot) => (
+                          <ShowtimeChip
+                            key={slot.id}
+                            showtime={slot}
+                            closed={slot.closed}
+                            onPress={() => router.push(`/showtime/${slot.id}`)}
+                          />
+                        ))}
+                      </View>
                     </Card>
                   </Animated.View>
                 ))

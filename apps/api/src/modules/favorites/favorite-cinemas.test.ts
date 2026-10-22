@@ -35,8 +35,7 @@ describe('favorite cinemas', () => {
     request(app).put(`/v1/users/me/favorite-cinemas/${cinema}`).set(user.auth);
   const unsave = (user: TestUser, cinema = cinemaSlug) =>
     request(app).delete(`/v1/users/me/favorite-cinemas/${cinema}`).set(user.auth);
-  const list = (user: TestUser) =>
-    request(app).get('/v1/users/me/favorite-cinemas').set(user.auth);
+  const list = (user: TestUser) => request(app).get('/v1/users/me/favorite-cinemas').set(user.auth);
 
   it('starts empty', async () => {
     const res = await list(alice).expect(200);

@@ -66,9 +66,7 @@ function RootNavigator() {
           <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Not found' }} />
         </Stack>
       ) : null}
-      {showAppSplash ? (
-        <AppSplash ready={ready} onHidden={() => setShowAppSplash(false)} />
-      ) : null}
+      {showAppSplash ? <AppSplash ready={ready} onHidden={() => setShowAppSplash(false)} /> : null}
     </>
   );
 }

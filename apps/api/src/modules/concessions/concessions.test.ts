@@ -58,9 +58,9 @@ describe('priceAddOns', () => {
   });
 
   it('refuses an item id that does not exist', async () => {
-    await expect(
-      priceAddOns(prisma, [{ itemId: 'nope', quantity: 1 }]),
-    ).rejects.toMatchObject({ status: 400 });
+    await expect(priceAddOns(prisma, [{ itemId: 'nope', quantity: 1 }])).rejects.toMatchObject({
+      status: 400,
+    });
   });
 
   it('is a no-op for an empty request', async () => {

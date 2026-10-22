@@ -118,7 +118,11 @@ describe('BookingCard', () => {
   it('offers Book again even for a cancelled past booking', async () => {
     const onRebook = jest.fn();
     const { getByLabelText } = await render(
-      <BookingCard booking={booking({ status: 'CANCELLED' })} onPress={jest.fn()} onRebook={onRebook} />,
+      <BookingCard
+        booking={booking({ status: 'CANCELLED' })}
+        onPress={jest.fn()}
+        onRebook={onRebook}
+      />,
     );
 
     await userEvent.press(getByLabelText('Book again'));

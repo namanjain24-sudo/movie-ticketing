@@ -31,7 +31,10 @@ export interface PricedAddOn {
  * to re-check at the moment of charge, the same way a promo code is
  * re-evaluated at checkout rather than trusted from an earlier quote.
  */
-export async function priceAddOns(db: Pick<Tx, 'concessionItem'>, lines: AddOnLine[]): Promise<PricedAddOn[]> {
+export async function priceAddOns(
+  db: Pick<Tx, 'concessionItem'>,
+  lines: AddOnLine[],
+): Promise<PricedAddOn[]> {
   if (lines.length === 0) return [];
 
   // Two lines for the same item (a double-tap, a client bug) merge into one —
