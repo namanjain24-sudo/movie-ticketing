@@ -1,4 +1,5 @@
 import { defineConfig } from 'prisma/config';
+import { pinConnectionToUtc } from './src/lib/database-url';
 
 /**
  * An explicit DATABASE_URL in the environment always wins. Captured before the
@@ -24,9 +25,13 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    url:
+    // Pinned to UTC here as well as in src/env.ts: migrations and the seed
+    // reach the database through this URL rather than the app's, and a
+    // managed Postgres hands one over with no options attached.
+    url: pinConnectionToUtc(
       explicitUrl ??
-      process.env.DATABASE_URL ??
-      'postgresql://ticketing:ticketing@localhost:5432/ticketing',
+        process.env.DATABASE_URL ??
+        'postgresql://ticketing:ticketing@localhost:5432/ticketing',
+    ),
   },
 });

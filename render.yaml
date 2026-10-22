@@ -1,0 +1,78 @@
+# Render blueprint: the API and its Postgres, so the phone app has something
+# real to talk to. Deploy with Render's "New → Blueprint" against this repo.
+#
+# Redis is deliberately absent. The API treats it as optional by design —
+# redis.ts connects lazily and every call site tolerates it being unreachable,
+# because it only carries realtime seat fanout, never state. Without it,
+# booking works exactly the same; seat changes just arrive on the next refetch
+# instead of being pushed. Add one later and set REDIS_URL if that matters.
+
+databases:
+  - name: boxoffice-db
+    databaseName: ticketing
+    user: ticketing
+    plan: free
+    # Must match the web service's region, or the two cannot reach each other
+    # over the internal connection string.
+    region: singapore
+
+services:
+  - type: web
+    name: boxoffice-api
+    runtime: node
+    plan: free
+    region: singapore
+    # Closest Render region to India, where the venues in the seed actually are.
+    branch: main
+    # The workspace root is the build context: @app/shared is a workspace
+    # dependency, and tsup inlines it into the API bundle.
+    #
+    # `--include=dev` is not optional. NODE_ENV=production below makes npm
+    # skip devDependencies, and prisma, tsup and tsx all live there — without
+    # it the build dies on "tsup: not found".
+    buildCommand: npm ci --include=dev && npm run db:generate --workspace @app/api && npm run build --workspace @app/api
+    # Migrations run on every boot, not in the build: a build runs before the
+    # database is necessarily reachable, and `migrate deploy` is idempotent.
+    #
+    # The seed is guarded, and that guard is the whole point. This command runs
+    # again on every deploy and every wake-from-idle, and prisma/seed.ts is
+    # destructive — it clears bookings and payments before rebuilding the
+    # catalogue. `db:seed:if-empty` only acts on a database with no films in
+    # it, so a restart can never delete a ticket somebody has already booked.
+    startCommand: npm run db:deploy --workspace @app/api && npm run db:seed:if-empty --workspace @app/api && npm run start --workspace @app/api
+    healthCheckPath: /health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: boxoffice-db
+          property: connectionString
+      # Required by the env schema, and harmless when nothing is listening:
+      # the client is lazy and every call site tolerates the failure.
+      - key: REDIS_URL
+        value: redis://127.0.0.1:6379
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
+      # The mock gateway fails one payment in ten by default, which is the
+      # right behaviour for a test suite and the wrong one for a demo someone
+      # is seeing for the first time.
+      - key: MOCK_PAYMENT_FAILURE_RATE
+        value: '0'
+      # The app's own URL scheme, from apps/mobile/app.json. A native client
+      # sends no Origin header at all, so CORS never applies to it and this
+      # value is never matched against anything — but it must not be empty.
+      # env.ts refuses to boot in production on an empty list, because zero
+      # parsed origins makes cors() reflect whatever Origin it is sent, which
+      # with credentials enabled would hand any website authenticated access.
+      # Naming the app scheme keeps that guard satisfied while authorising no
+      # browser origin whatsoever. Add a real https:// origin here only if a
+      # website ever needs to call this API.
+      - key: CORS_ORIGINS
+        value: mobileapp://
+      - key: NODE_VERSION
+        value: '22'
