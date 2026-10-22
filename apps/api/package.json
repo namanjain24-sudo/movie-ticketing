@@ -16,6 +16,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx --env-file-if-exists=.env prisma/seed.ts",
+    "db:seed:if-empty": "tsx --env-file-if-exists=.env prisma/seed-if-empty.ts",
     "db:reset": "prisma migrate reset --force",
     "verify:invariants": "tsx --env-file-if-exists=.env src/scripts/verify-invariants.ts",
     "loadtest:prepare": "tsx --env-file-if-exists=.env src/scripts/prepare-load-test.ts",

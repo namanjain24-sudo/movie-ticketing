@@ -112,6 +112,13 @@ export const config = {
   configuredApiUrl: process.env.EXPO_PUBLIC_API_URL?.trim() ?? null,
   /** Requests that take longer than this are aborted. */
   requestTimeoutMs: 15_000,
+  /**
+   * The budget for one retry of a GET that timed out. Deliberately generous:
+   * a free host spins the service down after a quiet spell and takes most of
+   * a minute to wake, and a server that is merely starting should not be
+   * reported to the user as a server that is down.
+   */
+  coldStartTimeoutMs: 50_000,
   /** How long the reachability probe waits before calling the server down. */
   healthTimeoutMs: 4_000,
 } as const;

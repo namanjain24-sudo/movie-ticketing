@@ -17,14 +17,14 @@
       "channel": "preview",
       "android": { "buildType": "apk" },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://staging-api.example.com"
+        "EXPO_PUBLIC_API_URL": "https://boxoffice-api.onrender.com"
       }
     },
     "production": {
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.example.com"
+        "EXPO_PUBLIC_API_URL": "https://boxoffice-api.onrender.com"
       }
     }
   },

@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { warmUpServer } from '../api/client';
 import { AppSplash } from '../components/app-splash';
 import { ErrorBoundary } from '../components/error-boundary';
 import { AuthProvider, useAuth } from '../features/auth/auth-provider';
@@ -17,6 +18,9 @@ export { ErrorBoundary } from '../components/error-boundary';
 
 void SplashScreen.preventAutoHideAsync();
 installNotificationHandler();
+// Fired at module load rather than from an effect: the point is to start the
+// server waking as early as possible, and nothing renders before this runs.
+warmUpServer();
 
 function RootNavigator() {
   const { isReady } = useAuth();

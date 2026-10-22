@@ -872,9 +872,19 @@ async function createShowtime(input: {
   return seats.length;
 }
 
-main()
-  .catch((err) => {
-    console.error(err);
-    process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());
+export { main as seed };
+
+/**
+ * Only when run directly, so `seed-if-empty.ts` can import and await `seed`
+ * instead of racing a module-load side effect — importing this file used to
+ * start the work without any way to wait for it. Same guard as
+ * `src/scripts/verify-invariants.ts`.
+ */
+if (process.argv[1]?.endsWith('seed.ts')) {
+  main()
+    .catch((err) => {
+      console.error(err);
+      process.exitCode = 1;
+    })
+    .finally(() => prisma.$disconnect());
+}
