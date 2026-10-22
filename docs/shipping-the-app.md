@@ -96,18 +96,57 @@ status CONFIRMED   reference BK-W3Z3R5   pointsEarned 6
 
 ## 3. Build the APK
 
+Done, and published: **[v1.0.0](https://github.com/namanjain24-sudo/movie-ticketing/releases/tag/v1.0.0)**,
+112 MB universal, SHA-256 `825b4a57…6ecf3f6c`. Every Download button on the
+site points at `/releases/latest`, so it is already being served.
+
+### Locally, with Gradle
+
+What produced that build. Needs JDK 17 and the Android SDK command line tools:
+
+```bash
+cd apps/mobile
+npx expo prebuild                # generates android/, which is gitignored
+cd android
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
+export PATH="$JAVA_HOME/bin:$PATH"
+export EXPO_PUBLIC_API_URL="https://boxoffice-api-i1ra.onrender.com"
+./gradlew assembleRelease
+```
+
+The APK lands in `app/build/outputs/apk/release/`.
+
+**Check the URL actually made it in**, because this is the one failure that
+looks like a broken app rather than a broken build:
+
+```bash
+unzip -p app-release.apk assets/index.android.bundle | grep -ac onrender
+```
+
+That must be `1`. Hermes packs its string table with overlapping suffixes, so
+grep for a distinctive fragment rather than the whole URL, which can share its
+leading `h` with a neighbouring string. If the count is `0`, the env var did
+not reach the bundler and `src/lib/config.ts` fell back to `10.0.2.2:4000`,
+the Android emulator's alias for the host machine. That build works on an
+emulator and is dead on every real phone.
+
+`expo prebuild` also rewrites a couple of `package.json` scripts. Revert them.
+
+### Or on Expo's machines
+
 ```bash
 npm install -g eas-cli
-eas login                        # your Expo account
+eas login
 cd apps/mobile
 eas init                         # once: writes extra.eas.projectId into app.json
 eas build --profile preview --platform android
 ```
 
-`preview` is the profile that produces an installable `.apk` (the production
-profile builds an `.aab`, which is for the Play Store and cannot be
-side-loaded). The build runs on Expo's machines; when it finishes you get a
-download link.
+`preview` is the profile that produces an installable `.apk`; `production`
+builds an `.aab`, which is for the Play Store and cannot be side-loaded. Both
+profiles already carry the Render URL in `eas.json`, so the failure above
+cannot happen on this path.
 
 Commit the `app.json` change `eas init` makes — the project id belongs in git.
 
@@ -115,22 +154,57 @@ Commit the `app.json` change `eas init` makes — the project id belongs in git.
 
 ## 4. Get it to people
 
-Two options, both already wired up:
-
-- **The link EAS gives you.** Fastest. Send it; Android warns about installing
-  outside the Play Store, they tap through it.
-- **A GitHub Release.** The landing page's every Download button already points
-  at `/releases/latest`. Create a release on
-  `namanjain24-sudo/movie-ticketing`, attach the `.apk`, and the site starts
-  serving it with no further changes.
+Send them
+<https://github.com/namanjain24-sudo/movie-ticketing/releases/latest>, or the
+site, which links to the same place.
 
 Tell whoever installs it: **Settings → allow install from this source** is
 expected for any APK that did not come from the Play Store.
+
+To cut a new version: build, then
+
+```bash
+gh release create v1.0.1 --title "Boxoffice 1.0.1 for Android" \
+  boxoffice-1.0.1-android.apk
+```
+
+`/releases/latest` follows along on its own; the site needs no change.
 
 ### The demo login
 
 The seed creates `demo@example.com` / `DemoPassw0rd`. They can also register
 their own account — it is a real signup against a real database.
+
+---
+
+---
+
+## The marketing site
+
+`site/` is published to GitHub Pages from the `gh-pages` branch, live at
+<https://namanjain24-sudo.github.io/movie-ticketing/>. It is static: no build
+step, no bundler, no framework. To deploy a change:
+
+```bash
+git worktree add /tmp/bo-pages gh-pages
+cp -R site/. /tmp/bo-pages/
+cd /tmp/bo-pages && git add -A && git commit -m "…" && git push origin gh-pages
+cd - && git worktree remove /tmp/bo-pages
+```
+
+The worktree keeps `gh-pages` entirely out of `main`'s working tree, so there
+is no branch to switch to and nothing to accidentally commit to the wrong one.
+
+Two things there are generated rather than hand made, and both are
+reproducible:
+
+- `site/shots/*.webp` are real screenshots of the app running on the web
+  target against a seeded local API, resized to 780px wide and encoded at
+  q82. They are not mockups, and they should be recaptured rather than
+  retouched when a screen changes.
+- `site/fonts/*.woff2` are Geist and Geist Mono, subset from the `geist` npm
+  package to the glyphs this page uses. 32 KB and 33 KB. The licence sits
+  beside them.
 
 ---
 
