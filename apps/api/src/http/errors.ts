@@ -1,4 +1,9 @@
-import { ERROR_CODES, type ErrorCode, type LoyaltyInvalidReason, type PromoReason } from '@app/shared';
+import {
+  ERROR_CODES,
+  type ErrorCode,
+  type LoyaltyInvalidReason,
+  type PromoReason,
+} from '@app/shared';
 
 /**
  * The only error type route code should throw. Anything else that escapes a

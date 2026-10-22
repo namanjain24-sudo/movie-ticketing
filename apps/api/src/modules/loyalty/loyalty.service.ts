@@ -94,7 +94,11 @@ export async function evaluateRedemption(
     );
   }
 
-  const discountMinor = computeRedemptionDiscount(params.points, params.subtotalMinor, params.feeMinor);
+  const discountMinor = computeRedemptionDiscount(
+    params.points,
+    params.subtotalMinor,
+    params.feeMinor,
+  );
   return { points: params.points, discountMinor };
 }
 
@@ -146,7 +150,12 @@ export async function recordRedemption(
 ): Promise<void> {
   if (params.points <= 0) return;
   await tx.loyaltyLedger.create({
-    data: { userId: params.userId, bookingId: params.bookingId, points: -params.points, reason: 'REDEEMED' },
+    data: {
+      userId: params.userId,
+      bookingId: params.bookingId,
+      points: -params.points,
+      reason: 'REDEEMED',
+    },
   });
 }
 
@@ -158,7 +167,12 @@ export async function reverseRedemption(
 ): Promise<void> {
   if (params.points <= 0) return;
   await tx.loyaltyLedger.create({
-    data: { userId: params.userId, bookingId: params.bookingId, points: params.points, reason: 'REVERSED' },
+    data: {
+      userId: params.userId,
+      bookingId: params.bookingId,
+      points: params.points,
+      reason: 'REVERSED',
+    },
   });
 }
 
@@ -187,6 +201,11 @@ export async function clawbackEarned(
   const points = earnedPoints(params.totalMinor);
   if (points <= 0) return;
   await tx.loyaltyLedger.create({
-    data: { userId: params.userId, bookingId: params.bookingId, points: -points, reason: 'REVERSED' },
+    data: {
+      userId: params.userId,
+      bookingId: params.bookingId,
+      points: -points,
+      reason: 'REVERSED',
+    },
   });
 }

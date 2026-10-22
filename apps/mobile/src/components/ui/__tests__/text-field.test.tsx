@@ -6,7 +6,9 @@ const wrap = (ui: React.ReactElement) => render(<ThemeProvider>{ui}</ThemeProvid
 
 describe('TextField', () => {
   it('exposes the visible label as the accessible label, for a screen reader', async () => {
-    const { getByLabelText } = await wrap(<TextField label="Email" value="" onChangeText={jest.fn()} />);
+    const { getByLabelText } = await wrap(
+      <TextField label="Email" value="" onChangeText={jest.fn()} />,
+    );
     expect(getByLabelText('Email')).toBeTruthy();
   });
 
@@ -38,7 +40,12 @@ describe('TextField', () => {
 
   it('falls back to the hint when there is no error', async () => {
     const { getByText } = await wrap(
-      <TextField label="Password" value="" onChangeText={jest.fn()} hint="At least 10 characters" />,
+      <TextField
+        label="Password"
+        value=""
+        onChangeText={jest.fn()}
+        hint="At least 10 characters"
+      />,
     );
     expect(getByText('At least 10 characters')).toBeTruthy();
   });

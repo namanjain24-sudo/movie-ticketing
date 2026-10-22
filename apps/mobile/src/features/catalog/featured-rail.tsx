@@ -110,9 +110,7 @@ export function FeaturedRail({
                       {item.certification} · {formatRuntime(item.durationMins)}
                     </Text>
                     {rated ? (
-                      <View
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
-                      >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                         <Ionicons name="star" size={11} color={colors.warning} />
                         <Text variant="caption" numeric style={{ color: colors.onImage }}>
                           {item.rating.average?.toFixed(1)}

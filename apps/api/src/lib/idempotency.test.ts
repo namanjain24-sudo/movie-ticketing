@@ -37,7 +37,7 @@ describe('withIdempotency stale-claim takeover', () => {
     });
   }
 
-  it('refuses to take over another user\'s stale claim, even with a matching request', async () => {
+  it("refuses to take over another user's stale claim, even with a matching request", async () => {
     const key = 'shared-key-cross-user';
     await seedStaleInFlight(alice.id, key);
 

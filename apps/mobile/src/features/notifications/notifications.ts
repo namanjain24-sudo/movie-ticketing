@@ -64,7 +64,12 @@ export async function scheduleShowtimeReminder(booking: Booking) {
       content: { title, body },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
     });
-    await recordNotificationHistory({ id: showtimeReminderId(booking.id), kind: 'showtime-reminder', title, body });
+    await recordNotificationHistory({
+      id: showtimeReminderId(booking.id),
+      kind: 'showtime-reminder',
+      title,
+      body,
+    });
   }, undefined);
 }
 
@@ -84,7 +89,11 @@ export async function cancelShowtimeReminder(bookingId: string) {
  * best-effort nudge; it is not the kind of drift the actual hold mechanic
  * has to defend against.
  */
-export async function scheduleHoldExpiryNudge(holdId: string, expiresAt: string, serverTime: string) {
+export async function scheduleHoldExpiryNudge(
+  holdId: string,
+  expiresAt: string,
+  serverTime: string,
+) {
   const fireAt = holdNudgeTime(expiresAt, serverTime);
   if (!fireAt) return;
   const title = 'Your seats are about to be released';
@@ -100,7 +109,10 @@ export async function scheduleHoldExpiryNudge(holdId: string, expiresAt: string,
 }
 
 export async function cancelHoldExpiryNudge(holdId: string) {
-  await attempt(() => Notifications.cancelScheduledNotificationAsync(holdNudgeId(holdId)), undefined);
+  await attempt(
+    () => Notifications.cancelScheduledNotificationAsync(holdNudgeId(holdId)),
+    undefined,
+  );
 }
 
 const releaseCheckId = (movieId: string) => `release-check-${movieId}`;
@@ -112,7 +124,9 @@ const releaseCheckId = (movieId: string) => `release-check-${movieId}`;
  * backend record exists for this, so `isReleaseCheckScheduled` is the only
  * source of truth for whether it's on.
  */
-export async function scheduleReleaseCheck(movie: Pick<MovieSummary, 'id' | 'title' | 'releaseDate'>) {
+export async function scheduleReleaseCheck(
+  movie: Pick<MovieSummary, 'id' | 'title' | 'releaseDate'>,
+) {
   const fireAt = releaseCheckTime(movie.releaseDate);
   if (!fireAt) return;
   const title = `${movie.title} may be booking now`;
@@ -123,7 +137,12 @@ export async function scheduleReleaseCheck(movie: Pick<MovieSummary, 'id' | 'tit
       content: { title, body },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
     });
-    await recordNotificationHistory({ id: releaseCheckId(movie.id), kind: 'release-check', title, body });
+    await recordNotificationHistory({
+      id: releaseCheckId(movie.id),
+      kind: 'release-check',
+      title,
+      body,
+    });
   }, undefined);
 }
 

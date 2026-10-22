@@ -53,19 +53,15 @@ bookingsRouter.get('/:id/split', async (req, res) => {
   );
 });
 
-bookingsRouter.post(
-  '/:id/split',
-  validateBody(setBookingSplitSchema),
-  async (req, res) => {
-    res.json(
-      await bookings.setSplit({
-        userId: requireUserId(req),
-        bookingId: pathParam(req, 'id'),
-        shares: req.body.shares,
-      }),
-    );
-  },
-);
+bookingsRouter.post('/:id/split', validateBody(setBookingSplitSchema), async (req, res) => {
+  res.json(
+    await bookings.setSplit({
+      userId: requireUserId(req),
+      bookingId: pathParam(req, 'id'),
+      shares: req.body.shares,
+    }),
+  );
+});
 
 bookingsRouter.patch(
   '/:id/split/:shareId',

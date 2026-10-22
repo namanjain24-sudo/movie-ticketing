@@ -2,7 +2,12 @@ import type { MovieSummary } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect } from 'react';
 import { Pressable } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTheme } from '../../theme';
 import { useWatchlist } from './use-watchlist';
 
@@ -21,7 +26,11 @@ export function SaveHeart({ movie }: { movie: MovieSummary }) {
   // Only the moment of saving gets the pop — removing is a plain swap, the
   // same asymmetry the seat spring draws between choosing and letting go.
   useEffect(() => {
-    if (saved) pop.value = withSequence(withTiming(1.35, { duration: 110 }), withTiming(1, { duration: 160 }));
+    if (saved)
+      pop.value = withSequence(
+        withTiming(1.35, { duration: 110 }),
+        withTiming(1, { duration: 160 }),
+      );
   }, [saved, pop]);
 
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));

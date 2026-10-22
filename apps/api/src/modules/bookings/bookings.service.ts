@@ -410,7 +410,13 @@ function toSplitDto(booking: {
   id: string;
   totalMinor: number;
   currency: string;
-  splitShares: { id: string; label: string; amountMinor: number; settled: boolean; position: number }[];
+  splitShares: {
+    id: string;
+    label: string;
+    amountMinor: number;
+    settled: boolean;
+    position: number;
+  }[];
 }): BookingSplit {
   return {
     bookingId: booking.id,
@@ -440,7 +446,10 @@ async function loadOwnedBooking(params: { userId: string; bookingId: string }) {
   return booking;
 }
 
-export async function getSplit(params: { userId: string; bookingId: string }): Promise<BookingSplit> {
+export async function getSplit(params: {
+  userId: string;
+  bookingId: string;
+}): Promise<BookingSplit> {
   return toSplitDto(await loadOwnedBooking(params));
 }
 

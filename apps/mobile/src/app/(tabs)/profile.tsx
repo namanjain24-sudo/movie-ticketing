@@ -287,7 +287,11 @@ function Divider() {
   return <View style={{ height: 1, backgroundColor: colors.border }} />;
 }
 
-const THEME_OPTIONS: { value: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+const THEME_OPTIONS: {
+  value: ThemePreference;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
   { value: 'system', label: 'System', icon: 'phone-portrait-outline' },
   { value: 'light', label: 'Light', icon: 'sunny-outline' },
   { value: 'dark', label: 'Dark', icon: 'moon-outline' },
@@ -335,7 +339,10 @@ function ThemeToggle() {
                 size={20}
                 color={selected ? colors.primary : colors.textMuted}
               />
-              <Text variant="label" style={{ flex: 1, color: selected ? colors.primary : colors.text }}>
+              <Text
+                variant="label"
+                style={{ flex: 1, color: selected ? colors.primary : colors.text }}
+              >
                 {option.label}
               </Text>
               <Ionicons

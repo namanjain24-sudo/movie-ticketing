@@ -39,9 +39,7 @@ describe('AppBar', () => {
 
   it('makes the title itself the control when onPressTitle is given, naming the current value', async () => {
     const onPressTitle = jest.fn();
-    const { getByLabelText } = await wrap(
-      <AppBar title="Mumbai" onPressTitle={onPressTitle} />,
-    );
+    const { getByLabelText } = await wrap(<AppBar title="Mumbai" onPressTitle={onPressTitle} />);
 
     await userEvent.press(getByLabelText('Change location, currently Mumbai'));
 

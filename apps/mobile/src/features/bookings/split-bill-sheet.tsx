@@ -91,7 +91,12 @@ function SplitBillForm({ totalMinor, currency, initialLabels, busy, error, onSav
               tapFeedback();
               setLabels((prev) => [...prev, '']);
             }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.xs,
+              paddingVertical: spacing.sm,
+            }}
           >
             <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
             <Text variant="label" tone="primary">
@@ -161,8 +166,8 @@ export function SplitBillSheet({
           <View style={{ gap: spacing.xs }}>
             <Text variant="title">Split the bill</Text>
             <Text variant="caption" tone="muted">
-              You already paid {formatMoney(form.totalMinor, form.currency)}. This just keeps
-              track of who owes you what.
+              You already paid {formatMoney(form.totalMinor, form.currency)}. This just keeps track
+              of who owes you what.
             </Text>
           </View>
 
