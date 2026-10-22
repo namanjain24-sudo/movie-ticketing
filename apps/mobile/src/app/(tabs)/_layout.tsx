@@ -9,10 +9,14 @@ import { useAuth } from '../../features/auth/auth-provider';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
 
-const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
-
 /** A small settle on arrival, not a bounce on every render — keyed to the one
- * moment that actually changed, which tab is focused. */
+ * moment that actually changed, which tab is focused.
+ *
+ * The transform lives on a wrapping `Animated.View`, not on an animated
+ * Ionicons. Wrapping the icon itself goes through `setNativeProps`, which
+ * `@expo/vector-icons` forwards to its inner `Text` — a method react-native-web
+ * 0.21 no longer has, so the tab bar throws on the web target. A View is also
+ * the cheaper thing to transform on native. */
 function TabIcon({
   name,
   color,
@@ -32,7 +36,11 @@ function TabIcon({
 
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-  return <AnimatedIonicons name={name} color={color as string} size={size} style={style} />;
+  return (
+    <Animated.View style={style}>
+      <Ionicons name={name} color={color as string} size={size} />
+    </Animated.View>
+  );
 }
 
 export default function TabsLayout() {
