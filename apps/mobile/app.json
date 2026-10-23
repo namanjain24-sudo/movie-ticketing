@@ -38,7 +38,8 @@
         "googleMaps": {
           "apiKey": "$GOOGLE_MAPS_ANDROID_KEY"
         }
-      }
+      },
+      "versionCode": 1
     },
     "web": {
       "output": "static",
@@ -69,6 +70,16 @@
         "expo-calendar",
         {
           "calendarPermission": "This app adds a showtime to your calendar only when you ask it to."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "reactNativeArchitectures": ["arm64-v8a", "armeabi-v7a"]
+          }
         }
       ]
     ],

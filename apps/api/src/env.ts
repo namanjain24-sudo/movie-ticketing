@@ -2,6 +2,15 @@ import { z } from 'zod';
 import { pinConnectionToUtc } from './lib/database-url';
 
 /**
+ * The webhook secret every non-production environment uses. It is in the repo
+ * on purpose, and that is exactly why production must never run on it: anyone
+ * reading this file could then forge `payment.captured` for a booking they
+ * chose the idempotency key for, and the API would confirm the seats and award
+ * the points without a rupee moving.
+ */
+const DEV_WEBHOOK_SECRET = 'mock-webhook-secret-change-me';
+
+/**
  * The process refuses to boot with a bad environment. Failing here is much
  * cheaper than failing on the first request in production.
  */
@@ -24,6 +33,18 @@ const envSchema = z.object({
   HOLD_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   /// Upper bound on seats in one booking, matching the seat-map selection cap.
   MAX_SEATS_PER_BOOKING: z.coerce.number().int().positive().max(20).default(10),
+  /// Upper bound on seats one account may have on hold at once, across every
+  /// showtime.
+  ///
+  /// This is the cap that stops an auditorium being taken hostage, and a
+  /// per-request limit cannot do it: at MAX_SEATS_PER_BOOKING seats per
+  /// request and RATE_LIMIT_HOLD_PER_MINUTE requests per minute, one account
+  /// could put 300 seats a minute on hold and keep re-holding them as they
+  /// expired. A seeded house is 150 to 400 seats, so that is the whole screen
+  /// inside two minutes. Two full bookings in flight is already more than a
+  /// person needs; a script that wants more now needs a fresh account per
+  /// twenty seats.
+  MAX_SEATS_HELD_PER_USER: z.coerce.number().int().positive().max(100).default(20),
   /// Booking fee in minor units (paise), applied once per booking.
   BOOKING_FEE_MINOR: z.coerce.number().int().nonnegative().default(3000),
   /// How close to the screening a booking may still be cancelled. Two hours
@@ -42,7 +63,9 @@ const envSchema = z.object({
   /// `mock` is the in-process gateway used by tests, the load test and the
   /// chaos suite. A real provider swaps in behind the same interface.
   PAYMENT_PROVIDER: z.enum(['mock']).default('mock'),
-  PAYMENT_WEBHOOK_SECRET: z.string().min(16).default('mock-webhook-secret-change-me'),
+  /// Keeps its development default so the test suite, the load test and the
+  /// chaos runs need no setup. Production refuses to boot on it: see `load()`.
+  PAYMENT_WEBHOOK_SECRET: z.string().min(16).default(DEV_WEBHOOK_SECRET),
   /// Probability a mock payment declines, so the failure path is exercised
   /// rather than merely written.
   MOCK_PAYMENT_FAILURE_RATE: z.coerce.number().min(0).max(1).default(0.1),
@@ -58,6 +81,10 @@ const envSchema = z.object({
   RATE_LIMIT_GLOBAL_PER_MINUTE: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_HOLD_PER_MINUTE: z.coerce.number().int().positive().default(30),
   RATE_LIMIT_AUTH_PER_15_MINUTES: z.coerce.number().int().positive().default(10),
+  /// Accounts creatable from one address per hour. Low on purpose: a real
+  /// person makes one, and an unlimited supply of fresh accounts defeats
+  /// every per-account limit the API has.
+  RATE_LIMIT_REGISTER_PER_HOUR: z.coerce.number().int().positive().default(5),
 
   /// Exposes an unauthenticated endpoint that makes the mock payment gateway
   /// misbehave, for the chaos suite. Refused outright in production.
@@ -89,6 +116,13 @@ function load() {
     // Checked on the parsed list, not the raw string: a value like "," or "
     // " is non-empty text but parses to no real origin.
     throw new Error('CORS_ORIGINS must be set in production');
+  }
+  if (e.NODE_ENV === 'production' && e.PAYMENT_WEBHOOK_SECRET === DEV_WEBHOOK_SECRET) {
+    // The one credential that could otherwise boot production from a value
+    // published in this repository. Both JWT secrets already have no default
+    // at all; this one keeps its default so tests need no setup, so the guard
+    // has to live here instead.
+    throw new Error('PAYMENT_WEBHOOK_SECRET must be set in production, not left at its default');
   }
   return {
     ...e,

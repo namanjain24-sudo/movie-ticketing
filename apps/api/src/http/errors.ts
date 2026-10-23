@@ -87,6 +87,19 @@ export class HttpError extends Error {
     );
   }
 
+  /**
+   * 429 rather than 400: this is a budget that refills on its own, either when
+   * a hold is spent on a booking or when it expires, so the right advice is to
+   * wait or finish, not to send a different request.
+   */
+  static tooManyHolds(max: number) {
+    return new HttpError(
+      429,
+      ERROR_CODES.TOO_MANY_HOLDS,
+      `You already have ${max} seats on hold. Pay for those or let the hold run out first.`,
+    );
+  }
+
   static salesClosed(message = 'Booking has closed for this show') {
     return new HttpError(409, ERROR_CODES.SALES_CLOSED, message);
   }

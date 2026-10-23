@@ -1,8 +1,8 @@
-import { SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
+import { SHOW_FORMAT_LABELS, formatMoney, type SeatMapSeat } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,6 +46,38 @@ export default function SeatMapScreen() {
   });
 
   const selection = useSeatSelection(seatMap.data, partySize);
+
+  /**
+   * A seat tap, behind a handler whose identity never changes.
+   *
+   * `SeatGrid` is built to avoid re-rendering seats that did not change:
+   * `Seat` and `Row` are both memoised, and `Row`'s comparator comes down to
+   * `prev.onPressSeat === next.onPressSeat`. An inline arrow here failed that
+   * comparison on every render, so all of it did nothing: one tap re-rendered
+   * roughly 380 seats on a 524-seat house, and so did every row boundary
+   * crossed while scrolling, which is exactly when frames are scarcest.
+   *
+   * A plain `useCallback` is not enough, because `selection.toggle` is itself
+   * a new function after every tap. Holding the live body in a ref and handing
+   * out a fixed wrapper keeps the identity stable without going stale.
+   *
+   * The ref is refreshed in an effect rather than during render: a ref write
+   * while rendering is the thing `react-hooks/refs` forbids, and the gap costs
+   * nothing here because the only caller is a press, which cannot happen
+   * between a render and its effects.
+   */
+  const onPressRef = useRef<(seat: SeatMapSeat) => void>(() => {});
+  useEffect(() => {
+    onPressRef.current = (seat) => {
+      setHoldError(null);
+      // The rules live in the hook; the feedback follows what it decided, so a
+      // refused tap never feels the same as an accepted one.
+      const accepted = selection.toggle(seat);
+      if (accepted) tapFeedback();
+      else rejectFeedback();
+    };
+  });
+  const onPressSeat = useCallback((seat: SeatMapSeat) => onPressRef.current(seat), []);
 
   /**
    * One key per attempt at the same seats. It survives a failed request so a
@@ -184,14 +216,7 @@ export default function SeatMapScreen() {
           map={map}
           statusOf={selection.statusOf}
           onVisibleRowChange={setVisibleRow}
-          onPressSeat={(seat) => {
-            setHoldError(null);
-            // The rules live in the hook; the feedback follows what it decided,
-            // so a refused tap never feels the same as an accepted one.
-            const accepted = selection.toggle(seat);
-            if (accepted) tapFeedback();
-            else rejectFeedback();
-          }}
+          onPressSeat={onPressSeat}
         />
       </View>
 

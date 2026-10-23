@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import { loginSchema, refreshSchema, registerSchema } from '@app/shared';
 import { validateBody } from '../../http/validate';
-import { authLimiter } from '../../middleware/rate-limit';
+import { loginLimiter, registerLimiter } from '../../middleware/rate-limit';
 import * as authService from './auth.service';
 
 export const authRouter: Router = Router();
 
-authRouter.post('/register', authLimiter, validateBody(registerSchema), async (req, res) => {
+authRouter.post('/register', registerLimiter, validateBody(registerSchema), async (req, res) => {
   res.status(201).json(await authService.register(req.body));
 });
 
-authRouter.post('/login', authLimiter, validateBody(loginSchema), async (req, res) => {
+authRouter.post('/login', loginLimiter, validateBody(loginSchema), async (req, res) => {
   res.json(await authService.login(req.body));
 });
 

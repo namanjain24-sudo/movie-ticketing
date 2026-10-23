@@ -34,6 +34,9 @@ export const ERROR_CODES = {
   HOLD_EXPIRED: 'HOLD_EXPIRED',
   /// More seats requested than one booking allows.
   TOO_MANY_SEATS: 'TOO_MANY_SEATS',
+  /// This account already holds as many seats at once as it is allowed to.
+  /// Distinct from TOO_MANY_SEATS, which is about one request's size.
+  TOO_MANY_HOLDS: 'TOO_MANY_HOLDS',
   /// Booking has closed for this showtime.
   SALES_CLOSED: 'SALES_CLOSED',
   /// The same idempotency key arrived with a different body.

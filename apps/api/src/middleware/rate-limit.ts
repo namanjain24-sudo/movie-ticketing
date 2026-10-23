@@ -17,8 +17,12 @@ export const globalLimiter = rateLimit({
   message: body,
 });
 
-/** Much tighter, because these are the endpoints that get brute-forced. */
-export const authLimiter = rateLimit({
+/**
+ * Sign-in. `skipSuccessfulRequests` is deliberate here: the budget is meant to
+ * be spent by wrong guesses, so a household behind one NAT address signing in
+ * all evening never runs it down.
+ */
+export const loginLimiter = rateLimit({
   windowMs: 15 * 60_000,
   limit: env.isProduction
     ? env.RATE_LIMIT_AUTH_PER_15_MINUTES
@@ -27,6 +31,35 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true,
   message: body,
+});
+
+/**
+ * Registration, which needs the opposite rule.
+ *
+ * On sign-in a failure is the thing to ration. On registration *success* is:
+ * every 201 is a fresh identity, and an unlimited supply of identities defeats
+ * any per-account limit elsewhere — including the hold cap that stops one
+ * account taking an auditorium hostage. Counting only failures left this
+ * bounded by the global ceiling alone, which is roughly 120 new accounts a
+ * minute from one address.
+ *
+ * Its own instance, not a shared one: express-rate-limit keys its store per
+ * limiter, so reusing `loginLimiter` here would also make failed sign-ins eat
+ * the signup budget and vice versa.
+ */
+export const registerLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: env.isProduction
+    ? env.RATE_LIMIT_REGISTER_PER_HOUR
+    : env.RATE_LIMIT_REGISTER_PER_HOUR * 100,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: ERROR_CODES.RATE_LIMITED,
+      message: 'Too many accounts created from here. Try again later.',
+    },
+  },
 });
 
 /**

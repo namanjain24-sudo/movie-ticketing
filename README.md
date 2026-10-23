@@ -9,6 +9,8 @@ React Native (Expo) · React · Node/TypeScript · Postgres · Redis
 **[Install the Android APK](https://github.com/namanjain24-sudo/movie-ticketing/releases/latest)**
 &nbsp;·&nbsp;
 **[Watch the full walkthrough](https://namanjain24-sudo.github.io/movie-ticketing/#booking)**
+&nbsp;·&nbsp;
+**[How all of it works](docs/INTERVIEW.md)**
 
 > **Status.** The correctness core is built and proven, and the flow it exists
 > for now runs end to end in the app: browse, pick seats, hold, pay against the

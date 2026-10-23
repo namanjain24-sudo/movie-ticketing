@@ -25,11 +25,20 @@ import { publishSeatDeltas } from '../modules/realtime/seat-events';
  * a missed tick is an inconvenience rather than an incident.
  */
 
+/**
+ * How long a revoked refresh token is kept so reuse detection can still
+ * recognise it. A week is far longer than any legitimate client needs to
+ * notice it has been rotated, and short enough that the table does not grow
+ * without bound.
+ */
+const REFRESH_REUSE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
 export interface SweepResult {
   seatsReleased: number;
   holdsExpired: number;
   bookingsCancelled: number;
   idempotencyPurged: number;
+  refreshTokensPurged: number;
 }
 
 export async function sweepOnce(): Promise<SweepResult> {
@@ -77,6 +86,26 @@ export async function sweepOnce(): Promise<SweepResult> {
 
   const idempotencyPurged = await purgeExpiredIdempotencyRecords();
 
+  /**
+   * Refresh tokens were the one table nothing ever cleaned.
+   *
+   * Rotation writes a row per refresh and revokes the previous one, and both
+   * stay forever. A client refreshing on a loop writes rows faster than any
+   * human uses the app, and on a free-tier Postgres that is the table that
+   * fills the disk first.
+   *
+   * Only rows that can no longer authenticate anything are removed: expired,
+   * or revoked long enough ago that reuse detection has nothing left to catch.
+   * A revoked token still inside that window has to stay, because recognising
+   * it is what proves a stolen token was replayed.
+   */
+  const reuseWindow = new Date(Date.now() - REFRESH_REUSE_RETENTION_MS);
+  const { count: refreshTokensPurged } = await prisma.refreshToken.deleteMany({
+    where: {
+      OR: [{ expiresAt: { lte: new Date() } }, { revokedAt: { lte: reuseWindow } }],
+    },
+  });
+
   // Group the released seats per showtime so each channel gets one message.
   const byShowtime = new Map<string, SeatDelta[]>();
   for (const row of released) {
@@ -93,6 +122,7 @@ export async function sweepOnce(): Promise<SweepResult> {
     holdsExpired,
     bookingsCancelled,
     idempotencyPurged,
+    refreshTokensPurged,
   };
 }
 

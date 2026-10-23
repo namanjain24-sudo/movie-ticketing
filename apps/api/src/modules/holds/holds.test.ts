@@ -234,5 +234,121 @@ describe('holds', () => {
       const result = await sweepOnce();
       expect(result.seatsReleased).toBe(0);
     });
+
+    it('purges refresh tokens that can no longer authenticate anything', async () => {
+      const user = await prisma.user.findFirstOrThrow();
+      await prisma.refreshToken.createMany({
+        data: [
+          // Expired: useless to everyone.
+          {
+            id: 'rt-expired',
+            tokenHash: 'h1',
+            userId: user.id,
+            expiresAt: new Date(Date.now() - 1000),
+          },
+          // Revoked long ago: reuse detection has nothing left to catch.
+          {
+            id: 'rt-old-revoked',
+            tokenHash: 'h2',
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 86_400_000),
+            revokedAt: new Date(Date.now() - 30 * 86_400_000),
+          },
+          // Revoked just now: has to survive, because recognising it is what
+          // proves a stolen token was replayed.
+          {
+            id: 'rt-fresh-revoked',
+            tokenHash: 'h3',
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 86_400_000),
+            revokedAt: new Date(),
+          },
+          // Live.
+          {
+            id: 'rt-live',
+            tokenHash: 'h4',
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 86_400_000),
+          },
+        ],
+      });
+
+      const result = await sweepOnce();
+
+      expect(result.refreshTokensPurged).toBe(2);
+      const left = (await prisma.refreshToken.findMany({ select: { id: true } })).map((r) => r.id);
+      expect(left.sort()).toEqual(['rt-fresh-revoked', 'rt-live']);
+    });
+  });
+
+  describe('per-user hold cap', () => {
+    /**
+     * The cap exists to stop one account sitting on a whole auditorium. The
+     * per-request limit cannot do that on its own: ten seats a request at the
+     * hold rate limit is three hundred seats a minute, and a seeded house is
+     * one to four hundred seats.
+     */
+    it('refuses a hold that would take the account past the cap', async () => {
+      const big = await createShowtime({ seatCount: 40, priceMinor: 10_000 });
+      const seats = big.showSeatIds;
+
+      const keep = (ids: string[]) =>
+        request(app)
+          .post(`/v1/showtimes/${big.showtimeId}/holds`)
+          .set(alice.auth)
+          .set('Idempotency-Key', idempotencyKey())
+          .send({ showSeatIds: ids });
+
+      // MAX_SEATS_HELD_PER_USER defaults to 20, so two full requests of ten.
+      await keep(seats.slice(0, 10)).expect(201);
+      await keep(seats.slice(10, 20)).expect(201);
+
+      const res = await keep(seats.slice(20, 30)).expect(429);
+      expect(res.body.error.code).toBe(ERROR_CODES.TOO_MANY_HOLDS);
+
+      // And the refused request took nothing: those seats are still free.
+      const rows = await prisma.showSeat.findMany({
+        where: { id: { in: seats.slice(20, 30) } },
+        select: { state: true },
+      });
+      expect(rows.every((r) => r.state === 'AVAILABLE')).toBe(true);
+    });
+
+    it('frees the budget again as soon as a hold lapses', async () => {
+      const big = await createShowtime({ seatCount: 40, priceMinor: 10_000 });
+      const seats = big.showSeatIds;
+      const keep = (ids: string[]) =>
+        request(app)
+          .post(`/v1/showtimes/${big.showtimeId}/holds`)
+          .set(alice.auth)
+          .set('Idempotency-Key', idempotencyKey())
+          .send({ showSeatIds: ids });
+
+      const first = await keep(seats.slice(0, 10)).expect(201);
+      await keep(seats.slice(10, 20)).expect(201);
+      await keep(seats.slice(20, 30)).expect(429);
+
+      // Logical expiry, with no sweeper run: the same rule the seat query uses.
+      await expireHold(first.body.id);
+
+      await keep(seats.slice(20, 30)).expect(201);
+    });
+
+    it('counts only the account that made the holds', async () => {
+      const big = await createShowtime({ seatCount: 40, priceMinor: 10_000 });
+      const seats = big.showSeatIds;
+      const keep = (user: TestUser, ids: string[]) =>
+        request(app)
+          .post(`/v1/showtimes/${big.showtimeId}/holds`)
+          .set(user.auth)
+          .set('Idempotency-Key', idempotencyKey())
+          .send({ showSeatIds: ids });
+
+      await keep(alice, seats.slice(0, 10)).expect(201);
+      await keep(alice, seats.slice(10, 20)).expect(201);
+      await keep(alice, seats.slice(20, 30)).expect(429);
+      // Bob's budget is his own.
+      await keep(bob, seats.slice(20, 30)).expect(201);
+    });
   });
 });

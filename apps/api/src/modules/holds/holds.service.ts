@@ -64,6 +64,36 @@ export async function createHold(params: CreateHoldParams): Promise<HoldDto> {
       if (!showtime) throw HttpError.notFound('That showtime does not exist');
       if (showtime.salesCloseAt <= now) throw HttpError.salesClosed();
 
+      /**
+       * How much of the house this account is already sitting on.
+       *
+       * Without this, the per-request seat cap is the only limit, and it does
+       * not limit anything that matters: ten seats a request at the hold rate
+       * limit is three hundred seats a minute, and a seeded auditorium is one
+       * to four hundred. One scripted account could hold an entire screen and
+       * keep it held, and every real user would see SOLD OUT.
+       *
+       * The advisory lock is the same device `evaluateRedemption` uses for the
+       * same reason: the quantity being checked is a sum over many rows rather
+       * than one row to `SELECT ... FOR UPDATE`, so without serialising per
+       * user two concurrent requests would both read the old count and both
+       * pass. It is taken on the user, so it never contends with another
+       * account booking the same showtime.
+       *
+       * `expiresAt > now` matters: expiry here is logical, exactly as it is in
+       * the seat query below, so a lapsed hold frees the budget immediately
+       * rather than waiting for the sweeper.
+       */
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+      const held = await tx.hold.aggregate({
+        where: { userId, status: 'ACTIVE', expiresAt: { gt: now } },
+        _sum: { seatCount: true },
+      });
+      const alreadyHeld = held._sum.seatCount ?? 0;
+      if (alreadyHeld + showSeatIds.length > env.MAX_SEATS_HELD_PER_USER) {
+        throw HttpError.tooManyHolds(env.MAX_SEATS_HELD_PER_USER);
+      }
+
       // The critical section.
       //
       // `FOR UPDATE OF ss` locks only the inventory rows, not the joined seat
