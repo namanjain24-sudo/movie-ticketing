@@ -77,4 +77,8 @@ export const STORAGE_KEYS = {
   recentlyViewedFilms: 'catalog.recentlyViewed',
   onboardingSeen: 'onboarding.seen',
   notificationHistory: 'notifications.history',
+  /** References of the tickets kept for offline use, newest first. */
+  savedTicketIndex: 'tickets.index',
+  /** Prefix; the reference is appended. One key per ticket, see ticket-vault. */
+  savedTicketPrefix: 'tickets.saved.',
 } as const;

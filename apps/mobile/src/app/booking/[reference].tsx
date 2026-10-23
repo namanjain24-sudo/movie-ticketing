@@ -13,6 +13,14 @@ import { ErrorState } from '../../components/query-state';
 import { Badge, Button, Card, Skeleton, Text } from '../../components/ui';
 import { addShowtimeToCalendar } from '../../lib/calendar';
 import { SplitBillSheet } from '../../features/bookings/split-bill-sheet';
+import { SavedTicketCard } from '../../features/bookings/saved-ticket-card';
+import { Field, Perforation } from '../../features/bookings/ticket-parts';
+import {
+  forgetTicket,
+  readSavedTicket,
+  saveTicket,
+  type SavedTicket,
+} from '../../features/bookings/ticket-vault';
 import {
   cancelShowtimeReminder,
   requestNotificationPermissionIfUnasked,
@@ -131,9 +139,41 @@ export default function BookingTicket() {
     });
   }, [booking.data]);
 
+  /**
+   * Keep an offline copy of a confirmed ticket, and drop it again the moment
+   * it stops being one. Written on every successful load rather than only the
+   * first, so the stored copy tracks a cancellation made on this device.
+   */
+  useEffect(() => {
+    const data = booking.data;
+    if (!data) return;
+    void (data.status === 'CONFIRMED' ? saveTicket(data) : forgetTicket(data.reference));
+  }, [booking.data]);
+
+  /**
+   * Read once, before the live ticket has had a chance to fail, so there is no
+   * second spinner between the error and the copy.
+   */
+  const [savedTicket, setSavedTicket] = useState<SavedTicket | null>(null);
+  useEffect(() => {
+    if (!reference) return;
+    let cancelled = false;
+    void readSavedTicket(reference).then((found) => {
+      if (!cancelled) setSavedTicket(found);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reference]);
+
   if (booking.isPending) return <BookingTicketSkeleton />;
 
   if (booking.isError || !booking.data) {
+    // The saved copy, if this phone has one. Only ever reached when the live
+    // ticket could not be loaded, so there is nothing fresher being hidden.
+    if (savedTicket) {
+      return <SavedTicketCard ticket={savedTicket} onRetry={() => void booking.refetch()} />;
+    }
     return (
       <ErrorState
         error={booking.error}
@@ -494,62 +534,6 @@ export default function BookingTicket() {
         error={splitError}
         onClose={() => setSplitSheetOpen(false)}
         onSave={(shares) => saveSplit.mutate(shares)}
-      />
-    </View>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ gap: 2 }}>
-      <Text variant="overline" tone="muted">
-        {label.toUpperCase()}
-      </Text>
-      <Text variant="label">{value}</Text>
-    </View>
-  );
-}
-
-/** The torn edge. Two notches and a dashed rule, drawn rather than imagined. */
-function Perforation() {
-  const { colors, spacing } = useTheme();
-  const NOTCH = 20;
-
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        height: NOTCH,
-      }}
-    >
-      <View
-        style={{
-          width: NOTCH,
-          height: NOTCH,
-          borderRadius: NOTCH / 2,
-          backgroundColor: colors.background,
-          marginLeft: -NOTCH / 2,
-        }}
-      />
-      <View
-        style={{
-          flex: 1,
-          borderBottomWidth: 1,
-          borderStyle: 'dashed',
-          borderColor: colors.borderStrong,
-          marginHorizontal: spacing.sm,
-        }}
-      />
-      <View
-        style={{
-          width: NOTCH,
-          height: NOTCH,
-          borderRadius: NOTCH / 2,
-          backgroundColor: colors.background,
-          marginRight: -NOTCH / 2,
-        }}
       />
     </View>
   );
