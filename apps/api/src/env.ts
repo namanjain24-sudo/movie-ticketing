@@ -90,16 +90,35 @@ const envSchema = z.object({
   RATE_LIMIT_RESET_PER_HOUR: z.coerce.number().int().positive().default(5),
 
   // --- Rate limits ----------------------------------------------------------
-  /// Per IP, per minute. Configurable because a load test drives thousands of
-  /// virtual users from a single address and would otherwise measure the rate
-  /// limiter rather than the booking mechanic. Production keeps the defaults.
+  /// Per account where the request carries a session, per address otherwise;
+  /// `middleware/rate-limit.ts` explains why that distinction matters more
+  /// than the number does. Configurable because a load test drives thousands
+  /// of virtual users from a single address and would otherwise measure the
+  /// rate limiter rather than the booking mechanic.
   RATE_LIMIT_GLOBAL_PER_MINUTE: z.coerce.number().int().positive().default(120),
+  /// Hold requests per account per minute. One tap on Continue is one request,
+  /// not one per seat, so this sits far above what a person can produce.
   RATE_LIMIT_HOLD_PER_MINUTE: z.coerce.number().int().positive().default(30),
+  /// Failed sign-ins for one account per quarter hour. This is the number that
+  /// stops somebody guessing a particular person's password.
   RATE_LIMIT_AUTH_PER_15_MINUTES: z.coerce.number().int().positive().default(10),
-  /// Accounts creatable from one address per hour. Low on purpose: a real
-  /// person makes one, and an unlimited supply of fresh accounts defeats
-  /// every per-account limit the API has.
-  RATE_LIMIT_REGISTER_PER_HOUR: z.coerce.number().int().positive().default(5),
+  /// Failed sign-ins from one address per quarter hour, across every account.
+  /// Deliberately much looser: its only job is to bound a spray over many
+  /// accounts, and a shared network full of people mistyping their own
+  /// passwords must never reach it.
+  RATE_LIMIT_AUTH_IP_PER_15_MINUTES: z.coerce.number().int().positive().default(60),
+  /// Accounts creatable from one address per hour.
+  ///
+  /// The one limit a shared network genuinely has to divide, because creating
+  /// the account is the thing being rationed and there is no account yet to
+  /// count it against. Twenty is set for a room of people installing the app
+  /// at the same time, which is this project's normal case, and it is not
+  /// free: twenty accounts at MAX_SEATS_HELD_PER_USER each is four hundred
+  /// seats one address could have on hold at once. Those holds expire by
+  /// themselves after HOLD_TTL_SECONDS and never become bookings without
+  /// payment, so the damage is loud, temporary and self-healing rather than
+  /// permanent. Lower it if this is ever deployed somewhere that matters.
+  RATE_LIMIT_REGISTER_PER_HOUR: z.coerce.number().int().positive().default(20),
 
   /// Exposes an unauthenticated endpoint that makes the mock payment gateway
   /// misbehave, for the chaos suite. Refused outright in production.

@@ -7,7 +7,12 @@ import {
   resetPasswordSchema,
 } from '@app/shared';
 import { validateBody } from '../../http/validate';
-import { loginLimiter, registerLimiter, resetLimiter } from '../../middleware/rate-limit';
+import {
+  loginAccountLimiter,
+  loginAddressLimiter,
+  registerLimiter,
+  resetLimiter,
+} from '../../middleware/rate-limit';
 import * as authService from './auth.service';
 
 export const authRouter: Router = Router();
@@ -16,9 +21,22 @@ authRouter.post('/register', registerLimiter, validateBody(registerSchema), asyn
   res.status(201).json(await authService.register(req.body));
 });
 
-authRouter.post('/login', loginLimiter, validateBody(loginSchema), async (req, res) => {
-  res.json(await authService.login(req.body));
-});
+/**
+ * Two limiters, because one address and one account are different things to
+ * ration. The account one is tight and stops a password being guessed; the
+ * address one is loose and stops one machine trying a thousand accounts once
+ * each. Ordered account first so the message a real person sees names their
+ * account rather than their network.
+ */
+authRouter.post(
+  '/login',
+  loginAccountLimiter,
+  loginAddressLimiter,
+  validateBody(loginSchema),
+  async (req, res) => {
+    res.json(await authService.login(req.body));
+  },
+);
 
 authRouter.post('/refresh', validateBody(refreshSchema), async (req, res) => {
   res.json(await authService.refresh(req.body.refreshToken));
