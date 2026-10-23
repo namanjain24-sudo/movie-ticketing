@@ -24,7 +24,8 @@
     "dev:cluster": "tsx --env-file-if-exists=.env src/cluster.ts",
     "start:cluster": "node --env-file-if-exists=.env dist/cluster.js",
     "chaos": "tsx --env-file-if-exists=.env src/scripts/chaos.ts",
-    "catalogue": "tsx --env-file-if-exists=.env src/scripts/fetch-catalogue.ts"
+    "catalogue": "tsx --env-file-if-exists=.env src/scripts/fetch-catalogue.ts",
+    "db:extend-showtimes": "tsx --env-file-if-exists=.env prisma/extend-showtimes.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
