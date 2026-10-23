@@ -44,6 +44,47 @@
     ).observe(sentinel);
   }
 
+  // --- the tutorial's chapter list -----------------------------------------
+  // Clicking a chapter seeks the recording; the recording highlights whichever
+  // chapter it is currently inside. `timeupdate` fires a few times a second,
+  // which is the right rate for this and far cheaper than a rAF loop.
+
+  const video = document.getElementById('tutVideo');
+  const chapterButtons = [...document.querySelectorAll('.tut-chapters button')];
+
+  if (video && chapterButtons.length) {
+    const marks = chapterButtons.map((b) => Number(b.dataset.at));
+
+    chapterButtons.forEach((b, i) => {
+      b.addEventListener('click', () => {
+        video.currentTime = marks[i];
+        // A chapter click is a deliberate "show me this", so start it playing.
+        video.play().catch(() => {});
+      });
+    });
+
+    let shown = -1;
+    video.addEventListener('timeupdate', () => {
+      let n = 0;
+      for (let i = 0; i < marks.length; i++) if (video.currentTime >= marks[i]) n = i;
+      if (n === shown) return;
+      shown = n;
+      chapterButtons.forEach((b, i) => b.setAttribute('aria-current', String(i === n)));
+    });
+
+    // Autoplay only while it is on screen, and only when motion is welcome.
+    // It is muted and loops, so this costs the reader nothing.
+    if (!reduce) {
+      new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) video.play().catch(() => {});
+          else video.pause();
+        },
+        { threshold: 0.4 },
+      ).observe(video);
+    }
+  }
+
   // --- the booking walkthrough ---------------------------------------------
   // The phone is sticky; whichever step is nearest the middle of the viewport
   // owns it. A band in the centre, not the whole viewport, so the handover

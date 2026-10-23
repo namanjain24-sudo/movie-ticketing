@@ -228,6 +228,51 @@
 
             <figure class="reveal">
               <img
+                src="shots/seatmap.webp"
+                width="780"
+                height="1688"
+                alt="The seat map, with the screen at the top, seats grouped into Standard, Premium and Recliner tiers, and two seats selected in red."
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>
+                <b>The seat map</b>
+                Tiers priced on the map, and a legend that says what every colour means.
+              </figcaption>
+            </figure>
+
+            <figure class="reveal">
+              <img
+                src="shots/checkout.webp"
+                width="780"
+                height="1688"
+                alt="The checkout screen showing the chosen seats, a subtotal, a booking fee and a banner counting down from four minutes fifty."
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>
+                <b>Checkout</b>
+                Snacks, promo codes and points, with the hold counting down the whole time.
+              </figcaption>
+            </figure>
+
+            <figure class="reveal">
+              <img
+                src="shots/ticket.webp"
+                width="780"
+                height="1688"
+                alt="A confirmed booking with the film, screen, seats, a booking reference and a signed QR code."
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>
+                <b>The ticket</b>
+                A signed QR, a reference, and the points that booking earned.
+              </figcaption>
+            </figure>
+
+            <figure class="reveal">
+              <img
                 src="shots/cinemas.webp"
                 width="780"
                 height="1688"
@@ -259,62 +304,94 @@
         </div>
       </section>
 
-      <!-- ===== the booking half: sticky phone, steps beside it =========== -->
-      <section class="walk" id="booking">
+      <!-- ===== the tutorial: a real recording of a real booking ========== -->
+      <section class="tut" id="booking">
         <div class="wrap">
-          <div class="walk-visual">
-            <div class="walk-phone">
-              <img
-                src="shots/seatmap.webp"
-                width="780"
-                height="1688"
-                alt="The seat map, with the screen at the top, seats grouped into Standard, Premium and Recliner tiers, and two seats selected in red."
-                data-active="true"
-                decoding="async"
-              />
-              <img
-                src="shots/checkout.webp"
-                width="780"
-                height="1688"
-                alt="The checkout screen, showing the two chosen seats, a subtotal, a booking fee, and a banner counting down from four minutes fifty."
-                loading="lazy"
-                decoding="async"
-              />
-              <img
-                src="shots/ticket.webp"
-                width="780"
-                height="1688"
-                alt="A confirmed booking, with the film, screen, seats, a booking reference and a signed QR code."
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
+          <div class="tut-head reveal">
+            <h2>Watch a ticket actually get booked</h2>
+            <p>
+              Two minutes and twenty seconds, recorded in one take against a running server. The
+              hold really counts down, the promo code is really validated, and the booking at the
+              end is in the database.
+            </p>
           </div>
 
-          <div class="walk-steps">
-            <article class="walk-step" data-active="true">
-              <h3>Choose by tier, then by seat</h3>
-              <p>
-                The price is on the map. Standard, Premium and Recliner are marked before you pick,
-                so nothing changes at the till.
-              </p>
-            </article>
+          <div class="tut-body">
+            <div class="tut-player reveal">
+              <video
+                id="tutVideo"
+                poster="media/poster.webp"
+                width="390"
+                height="844"
+                playsinline
+                muted
+                loop
+                preload="metadata"
+                controls
+                aria-label="A screen recording of the Boxoffice app: signing in, browsing films, picking a showtime, choosing seats, applying a promo code, paying, and arriving at a confirmed ticket."
+              >
+                <source src="media/tutorial.webm" type="video/webm" />
+                <source src="media/tutorial.mp4" type="video/mp4" />
+                Your browser cannot play this video.
+                <a href="media/tutorial.mp4">Download it instead.</a>
+              </video>
+            </div>
 
-            <article class="walk-step">
-              <h3>Five minutes that are really yours</h3>
-              <p>
-                The seat is locked in the database the moment you choose it, not merely greyed out
-                on your screen. The countdown is anchored to server time, never your phone clock.
-              </p>
-            </article>
-
-            <article class="walk-step">
-              <h3>A ticket the gate can read offline</h3>
-              <p>
-                The QR is signed when the payment is captured, so a scanner can verify it without a
-                connection. If the hold ever expires first, you were never charged.
-              </p>
-            </article>
+            <ol class="tut-chapters reveal" style="--i: 1">
+              <li>
+                <button type="button" data-at="2.85">
+                  <span class="mono">0:02</span>
+                  <span><b>Sign in</b>Or register. Both write to a real database.</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="17.29">
+                  <span class="mono">0:17</span>
+                  <span><b>What is playing</b>Filtered by city, genre and language.</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="26.09">
+                  <span class="mono">0:26</span>
+                  <span
+                    ><b>A film, then a showtime</b>With how full each screening already is.</span
+                  >
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="56.65">
+                  <span class="mono">0:56</span>
+                  <span><b>Choose your seats</b>The price is on the map, before you commit.</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="78.64">
+                  <span class="mono">1:18</span>
+                  <span><b>Checkout</b>Those seats are held for five minutes, on server time.</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="92.93">
+                  <span class="mono">1:32</span>
+                  <span
+                    ><b>A promo code</b>Validated by the server, never trusted from the
+                    client.</span
+                  >
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="108.58">
+                  <span class="mono">1:48</span>
+                  <span><b>Pay</b>If the hold expires first, you were never charged.</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="126.49">
+                  <span class="mono">2:06</span>
+                  <span><b>Your ticket</b>A signed QR the gate can read without a connection.</span>
+                </button>
+              </li>
+            </ol>
           </div>
         </div>
       </section>
