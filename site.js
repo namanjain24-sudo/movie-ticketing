@@ -85,6 +85,39 @@
     }
   }
 
+  // --- the clip grid --------------------------------------------------------
+  // Four phone recordings on one page is four video decoders if they all run,
+  // so each is `preload="none"` and only loads and plays while it is actually
+  // on screen. Off screen it pauses, which hands the decoder back.
+
+  const clips = [...document.querySelectorAll('.clip-screen video')];
+  if (clips.length) {
+    if (reduce) {
+      // The poster is a real frame of the same screen, so a still is not a
+      // downgrade here; it is the first frame held.
+      clips.forEach((v) => v.removeAttribute('autoplay'));
+    } else {
+      const clipObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const video = entry.target;
+            if (entry.isIntersecting) {
+              if (video.preload === 'none') video.preload = 'auto';
+              video.play().catch(() => {
+                // Autoplay can still be refused. The poster stays, which is a
+                // frame of the same recording, so nothing looks broken.
+              });
+            } else {
+              video.pause();
+            }
+          }
+        },
+        { threshold: 0.35 },
+      );
+      clips.forEach((v) => clipObserver.observe(v));
+    }
+  }
+
   // --- the booking walkthrough ---------------------------------------------
   // The phone is sticky; whichever step is nearest the middle of the viewport
   // owns it. A band in the centre, not the whole viewport, so the handover
