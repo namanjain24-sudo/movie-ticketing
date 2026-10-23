@@ -68,19 +68,43 @@ const movies = await call('/movies?limit=5');
 const list = movies.json?.movies ?? [];
 check('movies now showing', movies.status === 200 && list.length > 0, `${list.length} films`);
 
-// 3. A bookable showtime today.
-const today = new Date().toISOString().slice(0, 10);
+/**
+ * 3. Something bookable soon.
+ *
+ * Deliberately not "today". This asked for `toISOString().slice(0, 10)`, which
+ * is the date in UTC, against a schedule written in the cinemas' own local
+ * time — so from half past eleven at night in India onwards it was asking for
+ * a day whose last screening had already started, and reporting a perfectly
+ * healthy deployment as broken. The window it needs is three quarters of an
+ * hour of runway, which is a question about the clock and not about the
+ * calendar, so it now walks forward a few days until it finds one.
+ */
+const dayAfter = (offset) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const hasRunway = (s) => new Date(s.salesCloseAt).getTime() > Date.now() + 45 * 60_000;
+
 let show = null;
-for (const m of list) {
-  const r = await call(`/showtimes?movieId=${m.id}&date=${today}`);
-  const all = (r.json?.cinemas ?? []).flatMap((c) => c.showtimes ?? []);
-  const usable = all.filter((s) => new Date(s.salesCloseAt).getTime() > Date.now() + 45 * 60_000);
-  if (usable.length) {
-    show = usable[0];
-    break;
+let searched = [];
+outer: for (const offset of [0, 1, 2]) {
+  const date = dayAfter(offset);
+  searched.push(date);
+  for (const m of list) {
+    const r = await call(`/showtimes?movieId=${m.id}&date=${date}`);
+    const usable = (r.json?.cinemas ?? []).flatMap((c) => c.showtimes ?? []).filter(hasRunway);
+    if (usable.length) {
+      show = usable[0];
+      break outer;
+    }
   }
 }
-check('a bookable showtime today', show !== null, show ? show.startsAt : 'none found');
+check(
+  'a bookable showtime',
+  show !== null,
+  show ? show.startsAt : `nothing with 45 minutes of runway on ${searched.join(', ')}`,
+);
 if (!show) {
   console.log(step.join('\n'));
   process.exit(1);
