@@ -1,0 +1,37 @@
+# Keeps the demo API from going to sleep.
+#
+# Render's free plan stops the service after fifteen minutes with no traffic,
+# and starting it again takes the better part of a minute. The app handles
+# that honestly now, but a minute is still a minute, and the first person to
+# open the app at a demo should not be the one who pays it.
+#
+# This is a best-effort nudge, not a monitor. GitHub delays scheduled
+# workflows under load, so it is set well inside the fifteen minute window and
+# never fails the run: a missed ping costs one slow open, and a red tick on
+# the repository for that would be noise.
+name: Keep the demo API awake
+
+on:
+  schedule:
+    # Every ten minutes. Cron here is UTC and best effort.
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake the API
+        run: |
+          # --max-time covers a genuine cold start, which is the case this
+          # exists to prevent and therefore the one it has to sit through.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 180 \
+            https://boxoffice-api-i1ra.onrender.com/health/ready || echo 000)
+          echo "health/ready -> $code"
+          if [ "$code" != "200" ]; then
+            echo "::warning::API answered $code. It will wake on the next real request."
+          fi
