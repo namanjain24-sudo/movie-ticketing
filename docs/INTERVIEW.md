@@ -494,13 +494,39 @@ part most implementations skip.
 
 **Registration is rate limited separately from login**, and this is a subtler
 decision than it looks. Login uses `skipSuccessfulRequests: true`, so only
-failed guesses spend the budget and a household behind one NAT address signing
-in all evening never runs out. Registration must do the opposite: there,
-_success is the abuse_, because every 201 is a fresh identity, and an
-unlimited supply of identities defeats every per-account limit elsewhere —
-including the hold cap from section 6. They need separate limiter instances,
-because `express-rate-limit` keys its store per limiter and sharing one would
-make failed logins eat the signup budget.
+failed guesses spend the budget and someone signing in all evening never runs
+out. Registration must do the opposite: there, _success is the abuse_, because
+every 201 is a fresh identity, and an unlimited supply of identities defeats
+every per-account limit elsewhere — including the hold cap from section 6.
+They need separate limiter instances, because `express-rate-limit` keys its
+store per limiter and sharing one would make failed logins eat the signup
+budget.
+
+**What a request is counted against matters more than the number.** Everything
+was originally keyed by IP address, which is wrong the moment several people
+share a network — and this app's whole purpose is to be shown to a room. One
+person doing one booking is about thirty requests over two or three minutes,
+so at 120 a minute per address roughly the ninth person in the room started
+being refused, having done nothing wrong. An authenticated request is now
+counted against the **account**, which is both kinder and stricter: a
+neighbour's browsing no longer spends your budget, and an attacker cannot
+escape a per-account limit by changing address. A token that does not verify
+falls back to the address deliberately — if nonsense could mint a bucket the
+limiter would be decorative, and there is a test that sends three different
+pieces of nonsense to prove it does not.
+
+Sign-in cannot use that key, because the caller is not signed in yet, so it is
+two limiters: tight per account, which is what stops somebody guessing one
+person's password, and loose per address, which only bounds a spray across
+many accounts. Keying it by address alone was wrong in both directions — ten
+typos on a shared wifi locked everyone else out for a quarter of an hour,
+while a patient attacker who changed address was never slowed at all.
+
+And the liveness probe is exempt from all of it. It is a static object that
+touches nothing, and it is what a phone polls every two seconds while a
+sleeping free host wakes; a room cold-starting together would otherwise spend
+the whole address budget on probes and then be refused the request they were
+waiting to make.
 
 ---
 
@@ -783,15 +809,23 @@ answer and a great one.
 - The invariant script. Without it, "never oversells" is a claim; with it, it
   is a check that runs.
 - Redis being strictly optional.
+- **The offline ticket, and how narrow it is.** The architecture used to
+  contradict itself: the QR is signed precisely so a gate scanner can verify
+  it with no network, but the app kept its cache in memory, so a user could
+  not open their own ticket without one — and a cinema basement is exactly
+  where that fails. The obvious fix was to persist the whole query cache. I
+  did not, because a seat map that is stale on disk is actively harmful in a
+  way a ticket is not. What is stored is one confirmed booking, trimmed to
+  what a stub prints, written on confirmation and deleted the moment it stops
+  being confirmed. One key per ticket, because `expo-secure-store` documents a
+  2 KB ceiling per value on Android and a real ten-seat booking is already
+  over it — a list would have failed silently, and first for the people with
+  the most seats. The offline screen says when the copy was taken rather than
+  claiming to be current, because a booking cancelled on another device would
+  still be sitting there saying confirmed.
 
 **What I would change**
 
-- **Tickets are not available offline.** This is the gap that bothers me most,
-  because the architecture contradicts itself: the QR is signed specifically
-  so a gate scanner can verify it without a network, but the app has no query
-  persistence, so a user cannot open their own ticket without one. Cinema
-  basements are exactly where this fails. The fix is persisting the query
-  cache and giving confirmed bookings a long retention.
 - **The 2,000-VU latency.** 6.4 seconds p99 is honest but not good. The next
   thing to try is reducing the lock hold time inside the transaction, and
   sharding the advisory locks.
@@ -842,8 +876,12 @@ without it.
 **"What is the weakest part of this?"**
 The mobile app had the thinnest failure handling, and auditing it found
 several real dead ends — a shared ticket link that 404s used to leave a
-full-screen error with no back button and nothing behind it in the stack.
-Those are fixed. The one I have not fixed yet is offline tickets.
+full-screen error with no back button and nothing behind it in the stack, and
+a ticket that could not be opened without a network even though its QR was
+signed specifically so it would not need one. Those are fixed. What is left is
+that the APK is signed with Android's public debug key, so its signature
+proves nothing about who built it, and that there are no OTA updates, so every
+JS fix needs a full redistribution.
 
 **"Three hundred seats is small. Does this scale?"**
 Three hundred is the _hard_ case, not the easy one: it concentrates every

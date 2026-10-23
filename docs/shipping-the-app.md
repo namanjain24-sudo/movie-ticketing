@@ -96,9 +96,17 @@ status CONFIRMED   reference BK-W3Z3R5   pointsEarned 6
 
 ## 3. Build the APK
 
-Done, and published: **[v1.0.0](https://github.com/namanjain24-sudo/movie-ticketing/releases/tag/v1.0.0)**,
-112 MB universal, SHA-256 `825b4a57…6ecf3f6c`. Every Download button on the
-site points at `/releases/latest`, so it is already being served.
+Done, and published. The current build is
+**[v1.0.3](https://github.com/namanjain24-sudo/movie-ticketing/releases/tag/v1.0.3)**,
+53 MB, `versionCode` 4, arm64-v8a and armeabi-v7a, SHA-256 `8534235a…0262274d`.
+Every Download button on the site points at `/releases/latest`, so a new
+release is served the moment it is cut and the site needs no change.
+
+The first build, v1.0.0, was 112 MB universal, because it carried x86 and
+x86_64 libraries that only an emulator can run and shipped without minify or
+resource shrinking. Halving it was `expo-build-properties`, and the key is
+`buildArchs` — not `reactNativeArchitectures`, which is what I tried first and
+which silently changes nothing.
 
 ### Locally, with Gradle
 
