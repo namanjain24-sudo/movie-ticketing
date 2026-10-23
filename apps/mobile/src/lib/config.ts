@@ -56,6 +56,27 @@ export function parseUrl(
   };
 }
 
+/** The port that needs no mentioning, per protocol. */
+const DEFAULT_FOR = new Map([
+  ['http:', '80'],
+  ['https:', '443'],
+]);
+
+/**
+ * Rebuilds an origin, leaving out a port that is the protocol's default.
+ *
+ * `parseUrl` fills the port in so the loopback branches below have something
+ * to work with, which meant a plain `https://api.example.com` came back out as
+ * `https://api.example.com:443`. That is a valid URL and every client I tried
+ * accepts it, but it is not the address anyone configured, it shows up that
+ * way in the connection diagnostic, and it is the sort of difference that
+ * sends you looking in the wrong place when a request fails.
+ */
+function joinOrigin(parts: { protocol: string; host: string; port: string; path: string }): string {
+  const port = DEFAULT_FOR.get(parts.protocol) === parts.port ? '' : `:${parts.port}`;
+  return `${parts.protocol}//${parts.host}${port}${parts.path}`;
+}
+
 /** How the base URL was arrived at, surfaced in the connection diagnostic. */
 export type ApiUrlSource = 'env' | 'dev-server' | 'android-emulator' | 'localhost';
 
@@ -69,10 +90,7 @@ export function resolveApiUrl(
   // A configured non-loopback URL is a deliberate choice — a staging server, a
   // tunnel — and is always honoured.
   if (parsed && !LOOPBACK.has(parsed.host)) {
-    return {
-      url: `${parsed.protocol}//${parsed.host}:${parsed.port}${parsed.path}`,
-      source: 'env',
-    };
+    return { url: joinOrigin(parsed), source: 'env' };
   }
 
   const protocol = parsed?.protocol ?? 'http:';

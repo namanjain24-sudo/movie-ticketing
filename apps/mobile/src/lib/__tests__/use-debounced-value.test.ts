@@ -1,8 +1,29 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useDebouncedValue } from '../use-debounced-value';
 
-/** Real timers, short delays: avoids the flakiness of fake timers across an act()/setTimeout boundary. */
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * Fake timers, so the assertions are about the debounce and not about how busy
+ * the machine is.
+ *
+ * This file used real timers and short sleeps, which made the "rapid changes"
+ * case fail whenever something else was using the CPU: six `sleep(10)` calls
+ * only stay inside a 40ms window while each one actually takes about 10ms, and
+ * under load they do not. Advancing the clock by hand removes the machine from
+ * the test entirely.
+ */
+const advance = async (ms: number) => {
+  await act(async () => {
+    jest.advanceTimersByTime(ms);
+  });
+};
+
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
 
 /**
  * This is what keeps the home screen's search box typeable: see the comment
@@ -22,7 +43,7 @@ describe('useDebouncedValue', () => {
     );
 
     await rerender({ value: 'sa' });
-    await act(() => sleep(10));
+    await advance(39);
     expect(result.current).toBe('s');
   });
 
@@ -33,7 +54,7 @@ describe('useDebouncedValue', () => {
     );
 
     await rerender({ value: 'sa' });
-    await act(() => sleep(40));
+    await advance(20);
     expect(result.current).toBe('sa');
   });
 
@@ -43,13 +64,16 @@ describe('useDebouncedValue', () => {
       { initialProps: { value: '' } },
     );
 
+    // Six keystrokes, each 10ms after the last: the 40ms timer is restarted
+    // every time and never gets to fire.
     for (const value of ['s', 'sa', 'sar', 'sard', 'sarda', 'sardar']) {
       await rerender({ value });
-      await act(() => sleep(10));
+      await advance(10);
     }
-    expect(result.current).toBe(''); // every change arrived within 40ms of the last
+    expect(result.current).toBe('');
 
-    await act(() => sleep(50));
+    // Stop typing, and only the final value lands.
+    await advance(40);
     expect(result.current).toBe('sardar');
   });
 });

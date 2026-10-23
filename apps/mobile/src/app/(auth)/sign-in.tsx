@@ -6,6 +6,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 import { Button, Text, TextField } from '../../components/ui';
 import { authErrorMessage } from '../../features/auth/auth-error';
+import { useSlowSubmit } from '../../features/auth/use-slow-submit';
 import { AuthScaffold } from '../../features/auth/auth-scaffold';
 import { useAuthStore } from '../../features/auth/auth-store';
 import { useTheme } from '../../theme';
@@ -24,6 +25,8 @@ export default function SignIn() {
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
+
+  const slowSubmit = useSlowSubmit(isSubmitting);
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -93,6 +96,12 @@ export default function SignIn() {
         {formError ? (
           <Text tone="danger" variant="caption" accessibilityLiveRegion="polite">
             {formError}
+          </Text>
+        ) : null}
+
+        {slowSubmit && !formError ? (
+          <Text tone="muted" variant="caption" accessibilityLiveRegion="polite">
+            Waking the server. On the free plan that takes about a minute the first time.
           </Text>
         ) : null}
 

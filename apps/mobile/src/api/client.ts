@@ -88,6 +88,45 @@ function unreachable(err: unknown): ApiRequestError {
   );
 }
 
+/**
+ * Whether the server has answered anything at all this session.
+ *
+ * On a free host the service sleeps after a quarter of an hour and takes most
+ * of a minute to wake, and the very first thing a new user does is submit a
+ * form. A `GET` can afford to discover that by timing out and retrying on a
+ * longer budget; a mutation cannot, because a request that timed out may still
+ * have been received, which is why `send` never retries one.
+ *
+ * So the waiting is moved in front of the mutation instead of after it. Once
+ * anything has come back, this is a no-op for the rest of the session.
+ */
+let serverAnswered = false;
+let waking: Promise<void> | null = null;
+
+/** Resolves once the server is answering, or gives up on the long budget. */
+function waitForServer(signal?: AbortSignal): Promise<void> {
+  if (serverAnswered) return Promise.resolve();
+  // One probe shared by every caller, so a screen firing two mutations at once
+  // does not wake the server twice.
+  waking ??= fetchWithin(
+    `${config.apiUrl}/health/live`,
+    { method: 'GET', headers: { Accept: 'application/json' } },
+    config.coldStartTimeoutMs,
+    signal,
+  )
+    .then(() => {
+      serverAnswered = true;
+    })
+    .catch(() => {
+      // Still unreachable. Let the real request run and report the failure
+      // itself, rather than inventing one here.
+    })
+    .finally(() => {
+      waking = null;
+    });
+  return waking;
+}
+
 async function send<T>(path: string, options: RequestOptions, retry: boolean): Promise<T> {
   const { method = 'GET', body, signal } = options;
 
@@ -104,6 +143,10 @@ async function send<T>(path: string, options: RequestOptions, retry: boolean): P
     body: body === undefined ? undefined : JSON.stringify(body),
   };
 
+  // A mutation sent at a sleeping server fails on a fifteen second deadline
+  // and cannot be retried, so wake the server first and send it once.
+  if (method !== 'GET' && !serverAnswered) await waitForServer(signal);
+
   let response: Response;
   try {
     response = await fetchWithin(url, init, config.requestTimeoutMs, signal);
@@ -118,9 +161,9 @@ async function send<T>(path: string, options: RequestOptions, retry: boolean): P
      * therefore fails on a server that is merely starting, not broken.
      *
      * Retried once on a much longer budget, and only for GET: a safe method
-     * by definition, so re-sending it cannot do anything twice. Everything
-     * that changes state is left to the user to retry deliberately, where
-     * the idempotency key makes the repeat safe.
+     * by definition, so re-sending it cannot do anything twice. A mutation is
+     * never re-sent — one that timed out may still have been received — which
+     * is why `waitForServer` above does its waiting before sending instead.
      */
     if (method !== 'GET') throw unreachable(err);
     try {
@@ -129,6 +172,9 @@ async function send<T>(path: string, options: RequestOptions, retry: boolean): P
       throw unreachable(retryErr);
     }
   }
+
+  // Anything that came back, including a 4xx, proves the server is up.
+  serverAnswered = true;
 
   // One silent refresh-and-retry, then give up and sign the user out.
   if (response.status === 401 && retry && !options.public && hooks) {
@@ -165,11 +211,8 @@ export const api = {
  * matters most for signing in, which is a POST and so is never auto-retried.
  */
 export function warmUpServer(): void {
-  void fetch(`${config.apiUrl}/health/live`, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  }).catch(() => {
-    // Nothing to do and nothing to report: this is an optimisation, not a
-    // health check the app's behaviour depends on.
-  });
+  // Shares the one probe with `waitForServer`, so a mutation sent while this
+  // is still in flight waits for the same request rather than starting a
+  // second one, and a mutation sent after it succeeds does not wait at all.
+  void waitForServer();
 }
