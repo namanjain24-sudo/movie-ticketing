@@ -37,6 +37,8 @@ export const ERROR_CODES = {
   /// This account already holds as many seats at once as it is allowed to.
   /// Distinct from TOO_MANY_SEATS, which is about one request's size.
   TOO_MANY_HOLDS: 'TOO_MANY_HOLDS',
+  /// A password reset link that is unknown, already spent, or out of date.
+  RESET_LINK_INVALID: 'RESET_LINK_INVALID',
   /// Booking has closed for this showtime.
   SALES_CLOSED: 'SALES_CLOSED',
   /// The same idempotency key arrived with a different body.

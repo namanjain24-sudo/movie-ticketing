@@ -74,6 +74,21 @@ const envSchema = z.object({
   /// How long an idempotency record is replayable for.
   IDEMPOTENCY_TTL_SECONDS: z.coerce.number().int().positive().default(86_400),
 
+  // --- Mail -----------------------------------------------------------------
+  /// Unset means password reset links are written to the log instead of sent.
+  /// Deliberate: this project must run with no third-party account at all.
+  RESEND_API_KEY: z.string().optional(),
+  MAIL_FROM: z.string().default('Boxoffice <onboarding@resend.dev>'),
+  /// Where a reset link points. The app registers `mobileapp://`, so the link
+  /// opens the reset screen directly on a phone that has it installed.
+  RESET_LINK_BASE: z.string().default('mobileapp://reset-password'),
+  /// How long a reset link is good for. Short, because the only thing it
+  /// protects is an account whose owner has already lost control of it once.
+  PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(30),
+  /// Reset requests from one address per hour. Low: each one sends mail, and
+  /// an unlimited supply is both a spam cannon and an enumeration oracle.
+  RATE_LIMIT_RESET_PER_HOUR: z.coerce.number().int().positive().default(5),
+
   // --- Rate limits ----------------------------------------------------------
   /// Per IP, per minute. Configurable because a load test drives thousands of
   /// virtual users from a single address and would otherwise measure the rate

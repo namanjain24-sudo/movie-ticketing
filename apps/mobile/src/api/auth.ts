@@ -4,6 +4,8 @@ import type {
   RegisterInput,
   UpdateProfileInput,
   User,
+  ForgotPasswordInput,
+  ResetPasswordInput,
 } from '@app/shared';
 import { api } from './client';
 
@@ -18,6 +20,13 @@ export const authApi = {
 
   logout: (refreshToken: string) =>
     api.post<void>('/v1/auth/logout', { refreshToken }, { public: true }),
+
+  /** Always resolves, whether or not that address has an account. */
+  forgotPassword: (input: ForgotPasswordInput) =>
+    api.post<{ message: string }>('/v1/auth/forgot-password', input, { public: true }),
+
+  resetPassword: (input: ResetPasswordInput) =>
+    api.post<void>('/v1/auth/reset-password', input, { public: true }),
 
   me: () => api.get<User>('/v1/users/me'),
 

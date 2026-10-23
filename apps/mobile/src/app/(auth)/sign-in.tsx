@@ -3,13 +3,14 @@ import { loginSchema, type LoginInput } from '@app/shared';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Button, Text, TextField } from '../../components/ui';
 import { authErrorMessage } from '../../features/auth/auth-error';
 import { useSlowSubmit } from '../../features/auth/use-slow-submit';
 import { AuthScaffold } from '../../features/auth/auth-scaffold';
 import { useAuthStore } from '../../features/auth/auth-store';
 import { useTheme } from '../../theme';
+import { HIT_SIZE } from '../../theme/tokens';
 
 export default function SignIn() {
   const router = useRouter();
@@ -108,6 +109,19 @@ export default function SignIn() {
         ) : null}
 
         <Button label="Sign in" loading={isSubmitting} onPress={onSubmit} />
+
+        <Link href="/(auth)/forgot-password" asChild>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Forgot your password"
+            hitSlop={HIT_SIZE / 3}
+            style={{ alignSelf: 'center', minHeight: HIT_SIZE, justifyContent: 'center' }}
+          >
+            <Text tone="primary" variant="label">
+              Forgot your password?
+            </Text>
+          </Pressable>
+        </Link>
       </View>
     </AuthScaffold>
   );

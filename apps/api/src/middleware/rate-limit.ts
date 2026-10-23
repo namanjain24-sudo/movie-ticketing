@@ -74,3 +74,22 @@ export const holdLimiter = rateLimit({
   legacyHeaders: false,
   message: body,
 });
+
+/**
+ * Password resets. Every one of these sends mail and names an address, so an
+ * unlimited supply is both a spam cannon aimed at somebody else's inbox and a
+ * cheap way to probe which addresses exist. Counted on success as well as
+ * failure, for the same reason registration is.
+ */
+export const resetLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: env.isProduction ? env.RATE_LIMIT_RESET_PER_HOUR : env.RATE_LIMIT_RESET_PER_HOUR * 100,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: ERROR_CODES.RATE_LIMITED,
+      message: 'Too many reset requests from here. Try again later.',
+    },
+  },
+});

@@ -52,6 +52,8 @@ function RootNavigator() {
           {/* Fades rather than sliding: there is no screen behind it to slide off of. */}
           <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
           <Stack.Screen name="(auth)" />
+          {/* Top level so a reset link opens even when somebody is signed in. */}
+          <Stack.Screen name="reset-password" />
           <Stack.Screen name="(tabs)" />
           {/* Owns a back button over its backdrop, so it keeps the header off. */}
           <Stack.Screen name="movie/[idOrSlug]/index" />

@@ -23,6 +23,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   refreshTokens   RefreshToken[]
+  passwordResets  PasswordResetToken[]
   holds           Hold[]
   bookings        Booking[]
   reviews         Review[]
@@ -31,6 +32,23 @@ model User {
   favoriteCinemas CinemaFavorite[]
 
   @@index([email])
+}
+
+/// A single-use password reset, stored the same way a refresh token is: only
+/// a SHA-256 hash, so the table is worthless to anyone who reads it. Short
+/// lived, consumed on first use, and every one for a user is invalidated when
+/// any of them is spent.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 /// One row per issued refresh token. The raw token is never stored, only a
@@ -408,42 +426,42 @@ enum BookingStatus {
 }
 
 model Booking {
-  id            String        @id @default(cuid())
+  id             String        @id @default(cuid())
   /// Short human-readable code printed on the ticket, e.g. BK-7F3K9Q.
-  reference     String        @unique
-  showtimeId    String
-  showtime      Showtime      @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
-  userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reference      String        @unique
+  showtimeId     String
+  showtime       Showtime      @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// One booking per hold, enforced by the database. A retried checkout
   /// therefore cannot produce a second booking for the same seats.
-  holdId        String        @unique
-  hold          Hold          @relation(fields: [holdId], references: [id], onDelete: Restrict)
-  status        BookingStatus @default(PENDING)
-  subtotalMinor Int
-  feeMinor      Int
+  holdId         String        @unique
+  hold           Hold          @relation(fields: [holdId], references: [id], onDelete: Restrict)
+  status         BookingStatus @default(PENDING)
+  subtotalMinor  Int
+  feeMinor       Int
   /// Concessions ordered at checkout. Not refunded on cancellation, the same
   /// treatment as the booking fee — see `refundableMinor` in
   /// bookings.service.ts.
-  addOnsMinor   Int           @default(0)
+  addOnsMinor    Int           @default(0)
   /// Taken off the seat subtotal, never the fee or the add-ons. Zero when no
   /// code was used. `totalMinor = subtotalMinor + feeMinor + addOnsMinor -
   /// discountMinor`, which the invariant script asserts against the database.
-  discountMinor Int           @default(0)
+  discountMinor  Int           @default(0)
   /// How many loyalty points were spent, folded into `discountMinor` above at
   /// the rate `loyalty.service.ts` fixes. Purely informational — the money
   /// effect already lives in `discountMinor`, so `booking-totals` in
   /// verify-invariants.ts needs no separate accounting for it.
-  pointsRedeemed Int          @default(0)
-  totalMinor    Int
-  promoCodeId   String?
-  promoCode     PromoCode?    @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
-  currency      String        @default("INR")
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  confirmedAt   DateTime?
-  cancelledAt   DateTime?
-  failureReason String?
+  pointsRedeemed Int           @default(0)
+  totalMinor     Int
+  promoCodeId    String?
+  promoCode      PromoCode?    @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  currency       String        @default("INR")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  confirmedAt    DateTime?
+  cancelledAt    DateTime?
+  failureReason  String?
 
   showSeats     ShowSeat[]
   payments      Payment[]

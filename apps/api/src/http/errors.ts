@@ -100,6 +100,19 @@ export class HttpError extends Error {
     );
   }
 
+  /**
+   * One message for an unknown token, a spent one and an expired one. Which
+   * of the three it is cannot help anyone holding a real link, and does help
+   * someone probing with invented ones.
+   */
+  static resetLinkInvalid() {
+    return new HttpError(
+      400,
+      ERROR_CODES.RESET_LINK_INVALID,
+      'That reset link has expired or has already been used. Ask for a new one.',
+    );
+  }
+
   static salesClosed(message = 'Booking has closed for this show') {
     return new HttpError(409, ERROR_CODES.SALES_CLOSED, message);
   }

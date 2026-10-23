@@ -83,5 +83,11 @@ services:
       # website ever needs to call this API.
       - key: CORS_ORIGINS
         value: mobileapp://
+      # Unset on purpose. Without it, password reset links are written to
+      # the service log instead of emailed, which is enough to complete a
+      # reset from the Render dashboard and keeps the deployment free of any
+      # third-party account. Set it to a Resend key to deliver them properly.
+      # - key: RESEND_API_KEY
+      #   sync: false
       - key: NODE_VERSION
         value: '22'

@@ -31,6 +31,23 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+/**
+ * Asking for a reset. Only an email, and the response never says whether that
+ * email has an account: a reset endpoint that answers that question is an
+ * account enumerator with extra steps.
+ */
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+/** Spending a reset token. The token is single use and short lived. */
+export const resetPasswordSchema = z.object({
+  token: z.string().min(16, 'That reset link is not valid'),
+  password: passwordSchema,
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
