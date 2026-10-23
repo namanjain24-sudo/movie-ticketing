@@ -42,11 +42,13 @@ services:
     #
     # That guard has a consequence: the seed lays down seven days of showtimes
     # and then never runs again, so a week after deploying, the catalogue is
-    # still there and nothing can be booked. `db:extend-showtimes` keeps the
-    # schedule rolling. It only ever adds, it tops up one day per boot so it
-    # cannot hold the start command for long, and it is a no-op once the next
-    # ten days are covered.
-    startCommand: npm run db:deploy --workspace @app/api && npm run db:seed:if-empty --workspace @app/api && npm run db:extend-showtimes --workspace @app/api && npm run start --workspace @app/api
+    # still there and nothing can be booked. The schedule top-up that fixes
+    # that is deliberately NOT in this command. It runs from src/index.ts once
+    # the server is listening, because this host sleeps after fifteen minutes
+    # and everything in this line is paid for again on every wake: with the
+    # top-up in here the cold start went from about fifty seconds to a hundred
+    # and fifteen, which is longer than the app is willing to wait.
+    startCommand: npm run db:deploy --workspace @app/api && npm run db:seed:if-empty --workspace @app/api && npm run start --workspace @app/api
     healthCheckPath: /health/ready
     envVars:
       - key: NODE_ENV

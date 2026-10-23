@@ -137,6 +137,20 @@ export const config = {
    * reported to the user as a server that is down.
    */
   coldStartTimeoutMs: 50_000,
+  /**
+   * How long to keep asking a sleeping server to wake up before giving up.
+   *
+   * Measured, not guessed: a cold start on the free plan came back in 115
+   * seconds once, when the start command was doing more than it needed to.
+   * That is fixed, but the budget stays well clear of it, because the cost of
+   * waiting too long is a slow first screen and the cost of giving up too
+   * early is telling someone their connection is broken when it is not.
+   */
+  wakeBudgetMs: 150_000,
+  /** One probe's deadline. Short, because the loop is what does the waiting. */
+  wakeProbeTimeoutMs: 8_000,
+  /** Breathing room between probes, so a booting host is not hammered. */
+  wakeProbeGapMs: 2_000,
   /** How long the reachability probe waits before calling the server down. */
   healthTimeoutMs: 4_000,
 } as const;

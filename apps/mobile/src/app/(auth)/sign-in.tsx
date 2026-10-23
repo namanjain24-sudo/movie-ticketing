@@ -26,7 +26,7 @@ export default function SignIn() {
     defaultValues: { email: '', password: '' },
   });
 
-  const slowSubmit = useSlowSubmit(isSubmitting);
+  const submitHint = useSlowSubmit(isSubmitting);
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -99,9 +99,11 @@ export default function SignIn() {
           </Text>
         ) : null}
 
-        {slowSubmit && !formError ? (
+        {submitHint && !formError ? (
           <Text tone="muted" variant="caption" accessibilityLiveRegion="polite">
-            Waking the server. On the free plan that takes about a minute the first time.
+            {submitHint.kind === 'waking'
+              ? `Waking the server, ${submitHint.seconds}s. The free plan sleeps when nobody is using it; this takes about a minute and then it works.`
+              : 'Still going. One moment.'}
           </Text>
         ) : null}
 

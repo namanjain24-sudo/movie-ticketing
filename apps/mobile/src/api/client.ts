@@ -103,28 +103,69 @@ function unreachable(err: unknown): ApiRequestError {
 let serverAnswered = false;
 let waking: Promise<void> | null = null;
 
-/** Resolves once the server is answering, or gives up on the long budget. */
+/**
+ * Resolves once the server is answering, or gives up on the whole budget.
+ *
+ * Polls rather than taking one long shot. A single fetch held open for a
+ * minute and a half is at the mercy of whatever the OS and the network decide
+ * to do with an idle socket, and it can only ever succeed at the very end.
+ * Short probes on a loop notice the moment the server comes up, survive a
+ * connection being dropped while it boots, and give `onWakeProgress` something
+ * to report.
+ */
 function waitForServer(signal?: AbortSignal): Promise<void> {
   if (serverAnswered) return Promise.resolve();
-  // One probe shared by every caller, so a screen firing two mutations at once
-  // does not wake the server twice.
-  waking ??= fetchWithin(
-    `${config.apiUrl}/health/live`,
-    { method: 'GET', headers: { Accept: 'application/json' } },
-    config.coldStartTimeoutMs,
-    signal,
-  )
-    .then(() => {
-      serverAnswered = true;
-    })
-    .catch(() => {
-      // Still unreachable. Let the real request run and report the failure
-      // itself, rather than inventing one here.
-    })
-    .finally(() => {
-      waking = null;
-    });
+
+  waking ??= (async () => {
+    const until = Date.now() + config.wakeBudgetMs;
+    let attempt = 0;
+    while (Date.now() < until && !signal?.aborted) {
+      attempt += 1;
+      notifyWake(attempt);
+      try {
+        await fetchWithin(
+          `${config.apiUrl}/health/live`,
+          { method: 'GET', headers: { Accept: 'application/json' } },
+          config.wakeProbeTimeoutMs,
+          signal,
+        );
+        serverAnswered = true;
+        return;
+      } catch {
+        // Expected while it boots. Wait a beat so a sleeping host is not
+        // hammered, then ask again.
+        await new Promise((r) => setTimeout(r, config.wakeProbeGapMs));
+      }
+    }
+    // Out of budget. The real request runs anyway and reports its own failure,
+    // rather than this inventing one on its behalf.
+  })().finally(() => {
+    waking = null;
+    notifyWake(0);
+  });
+
   return waking;
+}
+
+/**
+ * Told how many wake probes have gone out, so a screen can explain a long
+ * wait. `0` means the waiting is over, one way or the other.
+ */
+type WakeListener = (attempt: number) => void;
+const wakeListeners = new Set<WakeListener>();
+
+function notifyWake(attempt: number) {
+  for (const listener of wakeListeners) listener(attempt);
+}
+
+export function onWakeProgress(listener: WakeListener): () => void {
+  wakeListeners.add(listener);
+  return () => wakeListeners.delete(listener);
+}
+
+/** True while the client is waiting for a sleeping server to come up. */
+export function isWakingServer(): boolean {
+  return waking !== null;
 }
 
 async function send<T>(path: string, options: RequestOptions, retry: boolean): Promise<T> {

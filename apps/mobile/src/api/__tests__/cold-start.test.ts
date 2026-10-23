@@ -114,16 +114,43 @@ describe('cold start', () => {
   });
 
   it('reports a timeout as a timeout, not as a dead connection', async () => {
-    const { api, ApiRequestError } = loadClient();
-    fetchMock.mockImplementation(async () => {
-      throw aborted();
-    });
+    // Fake timers, because a server that never answers makes `waitForServer`
+    // poll for its whole budget, and that budget is deliberately long enough
+    // to outlast a real cold start.
+    jest.useFakeTimers();
+    try {
+      const { api, ApiRequestError } = loadClient();
+      fetchMock.mockImplementation(async () => {
+        throw aborted();
+      });
 
-    const err = await api.post('/v1/auth/register', {}).catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(ApiRequestError);
-    // The distinction the sign-up screen uses to avoid blaming the user's
-    // connection for a server that is merely starting.
-    expect((err as InstanceType<typeof ApiRequestError>).code).toBe('TIMEOUT');
+      const pending = api.post('/v1/auth/register', {}).catch((e: unknown) => e);
+      await jest.advanceTimersByTimeAsync(200_000);
+      const err = await pending;
+
+      expect(err).toBeInstanceOf(ApiRequestError);
+      // The distinction the sign-up screen uses to avoid blaming the user's
+      // connection for a server that is merely starting.
+      expect((err as InstanceType<typeof ApiRequestError>).code).toBe('TIMEOUT');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('gives up once the wake budget is spent rather than hanging', async () => {
+    jest.useFakeTimers();
+    try {
+      const { api } = loadClient();
+      fetchMock.mockImplementation(async () => {
+        throw new Error('ECONNREFUSED');
+      });
+
+      const pending = api.post('/v1/auth/login', {}).catch(() => 'rejected');
+      await jest.advanceTimersByTimeAsync(200_000);
+      expect(await pending).toBe('rejected');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('does not put a probe in front of a GET: it has its own long retry', async () => {

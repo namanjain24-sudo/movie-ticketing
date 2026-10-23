@@ -19,6 +19,30 @@ if (process.env.WORKER_INDEX === undefined || process.env.WORKER_INDEX === '0') 
   startSweeper();
 }
 
+/**
+ * Topping the schedule up happens after the server is listening, never before.
+ *
+ * This used to sit in the start command, ahead of `npm run start`. On a free
+ * host that sleeps after fifteen minutes of quiet, every single wake then paid
+ * for a migration check, a seed check and a whole day of showtimes before it
+ * could answer one request, and the cold start went from about fifty seconds
+ * to a hundred and fifteen. The phone gave up long before that and told the
+ * user it could not reach the server, which was a lie: the server was right
+ * there, generating seats nobody had asked for yet.
+ *
+ * Nothing waits on this now. A day of screenings ten days out is not something
+ * the request currently queued behind it needs, and a failure is logged rather
+ * than fatal.
+ */
+function topUpScheduleInBackground() {
+  if (process.env.WORKER_INDEX !== undefined && process.env.WORKER_INDEX !== '0') return;
+  setTimeout(() => {
+    void import('../prisma/extend-showtimes')
+      .then((m) => m.extendSchedule())
+      .catch((err) => logger.error({ err }, 'Schedule top-up failed'));
+  }, 5_000).unref();
+}
+
 const server = app.listen(
   {
     port: env.PORT,
@@ -33,6 +57,8 @@ const server = app.listen(
       `API listening on http://localhost:${env.PORT} [${env.NODE_ENV}]` +
         (worker === undefined ? '' : ` worker ${worker}`),
     );
+    // Only once the socket is open and requests can be served.
+    topUpScheduleInBackground();
   },
 );
 

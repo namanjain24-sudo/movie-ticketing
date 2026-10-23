@@ -179,7 +179,7 @@ async function createFromPattern(pattern: Pattern, offset: number, movieId: stri
   return seats.length;
 }
 
-async function main() {
+export async function extendSchedule() {
   const pattern = await readPattern();
   if (pattern.length === 0) {
     // Nothing to copy from. An empty database is the seed's job, not this
@@ -226,9 +226,16 @@ async function main() {
   console.log(`[extend-showtimes] Added ${created} showtimes, ${seats} seat inventory rows.`);
 }
 
-main()
-  .catch((err) => {
-    console.error(err);
-    process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());
+/**
+ * Only when run directly. The API imports `extendSchedule` and calls it after
+ * the server is listening, so it must not start work or close the connection
+ * pool merely by being imported. Same guard as `seed.ts`.
+ */
+if (process.argv[1]?.endsWith('extend-showtimes.ts')) {
+  extendSchedule()
+    .catch((err) => {
+      console.error(err);
+      process.exitCode = 1;
+    })
+    .finally(() => prisma.$disconnect());
+}
