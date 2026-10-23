@@ -269,7 +269,23 @@ export default function Checkout() {
           Math.floor((held.subtotalMinor - (applied?.discountMinor ?? 0)) / POINT_VALUE_MINOR),
         );
   const expired = countdown.hasExpired || held.status === 'EXPIRED' || held.status === 'RELEASED';
-  const waiting = paymentId !== null && settled?.bookingStatus !== 'FAILED';
+  /**
+   * `pay.isPending` belongs here, not just `paymentId`. The id only exists
+   * once the charge has come back, so between tapping Pay and that response
+   * the screen used to count as "not waiting". A countdown crossing zero in
+   * that window swapped the checkout for "Your seats were released. Nothing
+   * was charged." while the request was still in flight and could still
+   * succeed, because hold expiry is decided by the server's clock, not this
+   * one. The screen would then jump back to the checkout once the payment
+   * confirmed, having already told the user they were not charged.
+   */
+  const waiting = (paymentId !== null || pay.isPending) && settled?.bookingStatus !== 'FAILED';
+  /**
+   * Polling that keeps failing is not the same as polling that has not
+   * finished. Without this the CTA span forever on "Confirming payment" with
+   * no way out, which is the worst possible silence right after a charge.
+   */
+  const pollStuck = payment.isError && payment.failureCount >= 3;
   const declined =
     settled?.bookingStatus === 'FAILED' || settled?.bookingStatus === 'CANCELLED'
       ? (settled.failureReason ?? 'The payment was declined.')
@@ -479,7 +495,22 @@ export default function Checkout() {
           </Card>
         ) : null}
 
-        {slowConfirm && waiting && !declined ? (
+        {pollStuck && !declined ? (
+          <Card>
+            <Text variant="label">Cannot reach the server</Text>
+            <Text tone="muted">
+              Your payment may well have gone through; this device just cannot confirm it right now.
+              Do not pay again. Check Tickets once you have a connection, and the booking will be
+              there if it succeeded.
+            </Text>
+            <Button
+              label="Go to Tickets"
+              variant="secondary"
+              style={{ marginTop: spacing.sm }}
+              onPress={() => router.replace('/(tabs)/bookings')}
+            />
+          </Card>
+        ) : slowConfirm && waiting && !declined ? (
           <Card>
             <Text variant="label">Still confirming</Text>
             <Text tone="muted">

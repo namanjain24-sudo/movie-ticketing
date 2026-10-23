@@ -1,5 +1,6 @@
 import type { AuthResponse } from '@app/shared';
 import { authApi } from '../../../api/auth';
+import { ApiRequestError } from '../../../api/client';
 import { secureStorage, STORAGE_KEYS } from '../../../lib/storage';
 import { useAuthStore } from '../auth-store';
 
@@ -74,13 +75,44 @@ describe('auth store', () => {
     expect(b).toBe('access-2');
   });
 
-  it('drops the session when the refresh token is rejected', async () => {
+  it('drops the session when the server rejects the refresh token', async () => {
     useAuthStore.setState({ refreshToken: 'refresh-1', accessToken: 'access-1' });
-    mockedApi.refresh.mockRejectedValue(new Error('401'));
+    // What `client.ts` actually throws on a 401, rather than a bare Error:
+    // the distinction between this and an unreachable server is the whole
+    // point of the branch below.
+    mockedApi.refresh.mockRejectedValue(
+      new ApiRequestError(401, 'INVALID_REFRESH_TOKEN', 'That session has expired'),
+    );
 
     const result = await useAuthStore.getState().refreshSession();
 
     expect(result).toBeNull();
     expect(useAuthStore.getState().refreshToken).toBeNull();
+  });
+
+  it('keeps the session when the server cannot be reached', async () => {
+    useAuthStore.setState({ refreshToken: 'refresh-1', accessToken: 'access-1' });
+    await secureStorage.set(STORAGE_KEYS.refreshToken, 'refresh-1');
+    // A refresh is a POST, so the client never retries it on a cold start.
+    // Treating one dropped round trip as a rejection used to wipe the keychain
+    // and sign the user out for good, on no evidence at all.
+    mockedApi.refresh.mockRejectedValue(
+      new ApiRequestError(0, 'NETWORK', 'Cannot reach the server. Check your connection.'),
+    );
+
+    const result = await useAuthStore.getState().refreshSession();
+
+    expect(result).toBeNull();
+    expect(useAuthStore.getState().refreshToken).toBe('refresh-1');
+    expect(await secureStorage.get(STORAGE_KEYS.refreshToken)).toBe('refresh-1');
+  });
+
+  it('keeps the session when the refresh endpoint is failing', async () => {
+    useAuthStore.setState({ refreshToken: 'refresh-1', accessToken: 'access-1' });
+    mockedApi.refresh.mockRejectedValue(new ApiRequestError(503, 'UNAVAILABLE', 'Try later'));
+
+    expect(await useAuthStore.getState().refreshSession()).toBeNull();
+    // A server having a bad day is not the user's session being invalid.
+    expect(useAuthStore.getState().refreshToken).toBe('refresh-1');
   });
 });

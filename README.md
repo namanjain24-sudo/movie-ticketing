@@ -6,10 +6,37 @@ built to hold 60fps with two thousand seats on a mid-range Android phone.
 
 React Native (Expo) · React · Node/TypeScript · Postgres · Redis
 
+**[Install the Android APK](https://github.com/namanjain24-sudo/movie-ticketing/releases/latest)**
+&nbsp;·&nbsp;
+**[Watch the full walkthrough](https://namanjain24-sudo.github.io/movie-ticketing/#booking)**
+
 > **Status.** The correctness core is built and proven, and the flow it exists
 > for now runs end to end in the app: browse, pick seats, hold, pay against the
 > countdown, ticket. The seat map's Skia performance pass and live availability
 > are next. See [Where this is](#where-this-is).
+
+---
+
+## Booking a ticket
+
+<img src="site/media/booking.gif" alt="Choosing two seats on the seat map. The selected seats turn red and the summary bar updates to show the seats and the running total." width="280" align="right" />
+
+Nine seconds of the real app, cut from a single unedited take: tapping two
+seats, the summary bar picking them up, and the total that is about to be
+held.
+
+The whole two minute and twenty second walkthrough — sign in, browse, pick a
+showtime, choose seats, apply a promo code, pay, arrive at a signed ticket —
+is **[on the site](https://namanjain24-sudo.github.io/movie-ticketing/#booking)**,
+with chapters.
+
+Nothing in it is staged. The hold counts down from real server time, the promo
+code is validated by a real `POST /v1/promos/validate`, and the booking
+reference at the end is a row in Postgres. It was recorded by driving the
+shipping app against a seeded database; the script that does it lives in
+[`docs/shipping-the-app.md`](docs/shipping-the-app.md#recording-the-walkthrough).
+
+<br clear="right" />
 
 ---
 

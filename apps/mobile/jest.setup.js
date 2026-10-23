@@ -77,3 +77,27 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
 jest.mock('expo-linking', () => ({
   createURL: (path) => `mobileapp://${path.replace(/^\//, '')}`,
 }));
+
+/**
+ * `expo-secure-store` has no headless implementation, and under Jest its
+ * native call never settles. Three providers read from it while they mount
+ * (`ThemeProvider`, `AuthProvider`, `OnboardingProvider`), so any test that
+ * renders one leaves a promise pending for the life of the worker. Jest then
+ * reports "a worker process has failed to exit gracefully" and **exits 1 even
+ * though every test passed**, which makes a green suite indistinguishable
+ * from a red one in CI.
+ *
+ * An in-memory store settles immediately and is closer to the real thing than
+ * a call that hangs: reads come back, writes stick for the rest of the file.
+ * Tests that care about persistence still mock `lib/storage` themselves.
+ */
+jest.mock('expo-secure-store', () => {
+  const store = new Map();
+  return {
+    WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'whenUnlockedThisDeviceOnly',
+    getItemAsync: jest.fn(async (key) => (store.has(key) ? store.get(key) : null)),
+    setItemAsync: jest.fn(async (key, value) => void store.set(key, value)),
+    deleteItemAsync: jest.fn(async (key) => void store.delete(key)),
+    isAvailableAsync: jest.fn(async () => true),
+  };
+});

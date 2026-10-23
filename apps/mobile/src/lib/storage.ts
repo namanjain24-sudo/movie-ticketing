@@ -7,6 +7,16 @@ import { Platform } from 'react-native';
  * treated as the least trusted target.
  */
 export const secureStorage = {
+  /**
+   * Never rejects. A keychain read can fail for reasons that have nothing to
+   * do with this app: a corrupt entry, a device still locked during a cold
+   * start, a restore from a backup taken on another device. Both callers gate
+   * the splash screen on this resolving, so a rejection used to leave the app
+   * on the splash permanently, with no error shown and nothing to retry.
+   *
+   * Answering "no token" costs a signed-out session, which takes the user ten
+   * seconds to fix. Throwing costs them the app.
+   */
   async get(key: string): Promise<string | null> {
     if (Platform.OS === 'web') {
       try {
@@ -15,7 +25,11 @@ export const secureStorage = {
         return null;
       }
     }
-    return SecureStore.getItemAsync(key);
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch {
+      return null;
+    }
   },
 
   async set(key: string, value: string): Promise<void> {
@@ -27,9 +41,14 @@ export const secureStorage = {
       }
       return;
     }
-    await SecureStore.setItemAsync(key, value, {
-      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-    });
+    try {
+      await SecureStore.setItemAsync(key, value, {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+      });
+    } catch {
+      // Same bargain as `get`: a session that does not survive a restart is a
+      // nuisance, an unhandled rejection on a hot path is a crash.
+    }
   },
 
   async remove(key: string): Promise<void> {
@@ -41,7 +60,11 @@ export const secureStorage = {
       }
       return;
     }
-    await SecureStore.deleteItemAsync(key);
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {
+      // Nothing to clean up, or nothing we can do about it.
+    }
   },
 };
 

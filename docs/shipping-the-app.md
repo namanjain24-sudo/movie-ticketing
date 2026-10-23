@@ -195,7 +195,7 @@ cd - && git worktree remove /tmp/bo-pages
 The worktree keeps `gh-pages` entirely out of `main`'s working tree, so there
 is no branch to switch to and nothing to accidentally commit to the wrong one.
 
-Two things there are generated rather than hand made, and both are
+Three things there are generated rather than hand made, and all three are
 reproducible:
 
 - `site/shots/*.webp` are real screenshots of the app running on the web
@@ -205,6 +205,61 @@ reproducible:
 - `site/fonts/*.woff2` are Geist and Geist Mono, subset from the `geist` npm
   package to the glyphs this page uses. 32 KB and 33 KB. The licence sits
   beside them.
+- `site/media/tutorial.*` is the walkthrough, below.
+
+### Recording the walkthrough
+
+`scripts/record-walkthrough.mjs` drives the shipping app through a whole
+booking and records it. Nothing in the result is staged: the hold counts down
+real server time, the promo code goes through a real
+`POST /v1/promos/validate`, and the booking reference at the end is a row that
+is still in Postgres afterwards. The script refuses to narrate anything it has
+not verified, which is why the promo chapter reads the PAY button before and
+after applying the code and only claims a discount once that total has moved.
+
+```bash
+npm run infra                                   # Postgres and Redis
+npm run db:seed --workspace @app/api            # prints a usable showtime id
+npm run api                                     # :4000
+npm run mobile -- --web                         # metro on :8081
+npx playwright-core install ffmpeg              # once
+node scripts/record-walkthrough.mjs <showtimeId> [movieSlug]
+```
+
+It writes `site/media/raw/*.webm` at the phone's true 390x844, plus
+`chapters.json`. Playwright captures CSS pixels, so asking for a bigger frame
+pads it rather than adding detail; the site never scales the video past 1:1
+for the same reason.
+
+Encode what the site serves from that take. `-ss 9` drops the metro bundle
+wait at the head, so every timestamp in `chapters.json` needs 9 subtracting
+before it goes into the chapter list in `site/index.html`:
+
+```bash
+cd site/media
+V=raw/<take>.webm
+ffmpeg -ss 9 -i "$V" -c:v libvpx-vp9 -crf 33 -b:v 0 -row-mt 1 \
+  -deadline good -cpu-used 2 -pix_fmt yuv420p -an tutorial.webm
+ffmpeg -ss 9 -i "$V" -c:v libx264 -crf 24 -preset slow \
+  -pix_fmt yuv420p -movflags +faststart -an tutorial.mp4
+ffmpeg -ss 76 -i "$V" -frames:v 1 /tmp/p.png && cwebp -q 84 /tmp/p.png -o poster.webp
+
+# the README's loop: nine seconds of seat picking
+ffmpeg -ss 79.5 -t 9.5 -i "$V" \
+  -vf "fps=11,scale=280:-1:flags=lanczos,palettegen=max_colors=128:stats_mode=diff" /tmp/pal.png
+ffmpeg -ss 79.5 -t 9.5 -i "$V" -i /tmp/pal.png \
+  -lavfi "fps=11,scale=280:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle" \
+  booking.gif
+```
+
+`+faststart` is not optional: without the moov atom at the front the browser
+cannot seek the mp4, and every chapter link silently lands at zero.
+
+**Serving it needs HTTP Range support.** GitHub Pages has it. `python3 -m
+http.server` does not, and a video served without it plays from the start and
+refuses to seek, which looks exactly like a broken chapter list. Preview the
+site with something that honours `Range` before concluding the player is
+broken.
 
 ---
 

@@ -32,7 +32,11 @@ export default function NotificationsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void loadNotificationHistory().then(setEntries);
+      // `null` is "still reading" and renders nothing, so a rejected read left
+      // a permanently blank screen. An unreadable history is an empty one.
+      void loadNotificationHistory()
+        .then(setEntries)
+        .catch(() => setEntries([]));
     }, []),
   );
 

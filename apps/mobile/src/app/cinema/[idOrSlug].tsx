@@ -175,6 +175,24 @@ export default function CinemaScreen() {
               <Skeleton style={{ height: 72, borderRadius: 10 }} />
               <Skeleton style={{ height: 72, borderRadius: 10 }} />
             </View>
+          ) : showtimes.isError ? (
+            /**
+             * `here` is `showtimes.data?.find(...)`, which is undefined when
+             * the request failed exactly as it is when the day is genuinely
+             * empty. Without this branch a 500 or a dropped connection was
+             * reported to the user as "nothing scheduled here on this day",
+             * which is a statement about the cinema's programme that we have
+             * no evidence for, and offered nothing to retry.
+             */
+            <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}>
+              <Text tone="muted">Could not load this day&rsquo;s showtimes.</Text>
+              <Button
+                label="Try again"
+                variant="secondary"
+                fullWidth={false}
+                onPress={() => void showtimes.refetch()}
+              />
+            </View>
           ) : !here || here.showtimes.length === 0 ? (
             <View style={{ paddingHorizontal: spacing.lg }}>
               <Text tone="muted">Nothing scheduled here on this day.</Text>

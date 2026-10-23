@@ -30,6 +30,7 @@ export default function Profile() {
     data: user,
     isPending,
     isError,
+    error,
     refetch,
   } = useQuery({ queryKey: queryKeys.me, queryFn: authApi.me });
 
@@ -55,7 +56,13 @@ export default function Profile() {
   if (isPending) return <ProfileSkeleton />;
   if (isError || !user) {
     return (
-      <ErrorState error={null} title="Could not load your profile" onRetry={() => void refetch()} />
+      <ErrorState
+        error={error}
+        title="Could not load your profile"
+        onRetry={() => void refetch()}
+        // The tab bar is already a way out of here.
+        exit={false}
+      />
     );
   }
 

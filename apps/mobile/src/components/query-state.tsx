@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { ApiRequestError } from '../api/client';
 import { config } from '../lib/config';
@@ -34,13 +35,32 @@ export function ErrorState({
   error,
   onRetry,
   title = 'Something went wrong',
+  exit = true,
 }: {
   error: unknown;
   onRetry?: () => void;
   title?: string;
+  /**
+   * Whether to offer a way out as well as a way to retry. On by default,
+   * because the screens that fail hardest are the deep-linkable ones.
+   */
+  exit?: boolean;
 }) {
   const { colors, radius, spacing } = useTheme();
   const unreachable = error instanceof ApiRequestError && error.isNetworkError;
+
+  /**
+   * Every screen that renders this has `headerShown: false`, so when the error
+   * replaces the screen's own chrome there is no back button left on it. That
+   * is survivable when the user walked here, and a dead end when they did not:
+   * a shared ticket link opens `booking/[reference]` as the only entry in the
+   * stack, and if the reference is stale or belongs to somebody else the
+   * result used to be a full-screen error with a "Try again" that could never
+   * succeed and nothing behind it to swipe back to. Force quitting was the
+   * only way out.
+   */
+  const canGoBack = router.canGoBack();
+  const leave = () => (canGoBack ? router.back() : router.replace('/'));
 
   return (
     <View
@@ -86,9 +106,19 @@ export function ErrorState({
         </View>
       ) : null}
 
-      {onRetry ? (
-        <Button label="Try again" variant="secondary" fullWidth={false} onPress={onRetry} />
-      ) : null}
+      <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing['2xs'] }}>
+        {onRetry ? (
+          <Button label="Try again" variant="secondary" fullWidth={false} onPress={onRetry} />
+        ) : null}
+        {exit ? (
+          <Button
+            label={canGoBack ? 'Go back' : 'Go to home'}
+            variant="ghost"
+            fullWidth={false}
+            onPress={leave}
+          />
+        ) : null}
+      </View>
     </View>
   );
 }

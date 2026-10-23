@@ -34,11 +34,21 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    void secureStorage.get(STORAGE_KEYS.onboardingSeen).then((raw) => {
-      if (cancelled) return;
-      setSeen(raw === 'true');
-      setReady(true);
-    });
+    // `ready` gates the navigator alongside auth and theme, so it has to be
+    // set on every outcome. A rejected read here used to hold the splash
+    // screen open indefinitely.
+    void secureStorage
+      .get(STORAGE_KEYS.onboardingSeen)
+      .then((raw) => {
+        if (!cancelled) setSeen(raw === 'true');
+      })
+      .catch(() => {
+        // Unreadable means unseen: showing the intro twice is a far smaller
+        // cost than never getting past it.
+      })
+      .finally(() => {
+        if (!cancelled) setReady(true);
+      });
     return () => {
       cancelled = true;
     };

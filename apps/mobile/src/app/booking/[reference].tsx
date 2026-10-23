@@ -96,6 +96,13 @@ export default function BookingTicket() {
     onSuccess: (result) => {
       queryClient.setQueryData(queryKeys.bookingSplit(bookingId as string), result);
     },
+    // Without this a failed tap did nothing visible at all: the checkbox
+    // simply did not move, which reads as an unresponsive control rather than
+    // as a request that failed. `saveSplit` next to it already says so.
+    onError: (error) =>
+      setSplitError(
+        error instanceof Error ? error.message : 'Could not update that share. Try again.',
+      ),
   });
 
   const addToCalendar = useMutation({
