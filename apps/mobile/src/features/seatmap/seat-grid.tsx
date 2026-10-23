@@ -172,22 +172,43 @@ const Row = memo(
     const labelStyle = useAnimatedStyle(() => ({
       transform: [{ translateX: scrollX.value }],
     }));
+    /**
+     * The gutter's edge earns its line only once seats are actually passing
+     * behind it. Drawn at rest it would be a rule down the left of a map that
+     * has nothing to divide.
+     */
+    const edgeStyle = useAnimatedStyle(() => ({
+      opacity: Math.min(1, scrollX.value / 24),
+    }));
 
     return (
       <View style={styles.row}>
-        {/* Pinned to the viewport's left edge: on a 62-column house the labels
-            would otherwise be the first thing to scroll out of reach. */}
-        <Animated.View style={[styles.label, labelStyle]}>
-          <Text variant="caption" style={{ color: colors.textMuted }}>
-            {row.label}
-          </Text>
-        </Animated.View>
-
         {row.seats.map((seat, index) =>
           seat.x >= firstColumn && seat.x <= lastColumn ? (
             <Seat key={seat.id} seat={seat} status={statuses[index]} onPress={onPressSeat} />
           ) : null,
         )}
+
+        {/*
+          Pinned to the viewport's left edge: on a 62-column house the labels
+          would otherwise be the first thing to scroll out of reach.
+
+          Painted last, and opaque, on purpose. Absolutely positioned siblings
+          stack in source order, so with the label first every seat scrolled
+          past it came out on top of it: row C under seat 7 read as "C7", a
+          letter and a number occupying the same twenty-eight pixels. It is a
+          frozen column, so it has to behave like one and have the seats go
+          behind it. The backdrop reaches back over the scroller's own left
+          padding too, or a sliver of seat would show in the gutter beside it.
+        */}
+        <Animated.View style={[styles.label, { backgroundColor: colors.background }, labelStyle]}>
+          <Text variant="caption" style={{ color: colors.textMuted }}>
+            {row.label}
+          </Text>
+          <Animated.View
+            style={[styles.labelEdge, { backgroundColor: colors.border }, edgeStyle]}
+          />
+        </Animated.View>
       </View>
     );
   },
@@ -198,6 +219,57 @@ const Row = memo(
     prev.lastColumn === next.lastColumn &&
     prev.onPressSeat === next.onPressSeat,
 );
+
+/**
+ * What this block of rows costs, pinned to the viewport like the row labels.
+ *
+ * It used to be laid out across the full content width, which on a sixty-two
+ * column house is a little over two thousand pixels. The consequence was not
+ * subtle once you looked for it: the tier's name scrolled off the left the
+ * moment anyone panned, and the price — the single number that decides which
+ * part of the auditorium someone picks — sat seventeen hundred pixels off the
+ * right hand edge and was therefore never seen at all, on any house wider
+ * than the phone.
+ *
+ * Pinning it costs one shared-value read per header, of which there are three
+ * or four in a map, and it puts the price on screen permanently.
+ */
+const TierHeader = memo(function TierHeader({
+  item,
+  scrollX,
+  viewportWidth,
+}: {
+  item: Extract<GridItem, { kind: 'tier' }>;
+  scrollX: SharedValue<number>;
+  viewportWidth: number;
+}) {
+  const { colors } = useTheme();
+  const pinned = useAnimatedStyle(() => ({ transform: [{ translateX: scrollX.value }] }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.tier,
+        {
+          height: TIER_HEADER_HEIGHT,
+          backgroundColor: colors.background,
+          // Until the scroller has been measured, let it lie across the
+          // content as before rather than collapse to nothing.
+          width: viewportWidth ? viewportWidth - spacing.lg * 2 : undefined,
+        },
+        pinned,
+      ]}
+    >
+      <Text variant="overline" tone="muted">
+        {item.label.toUpperCase()}
+      </Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+      <Text variant="label" numeric>
+        {formatMoney(item.priceMinor, item.currency)}
+      </Text>
+    </Animated.View>
+  );
+});
 
 /**
  * The curve at the top of the auditorium. Drawn rather than labelled, because
@@ -258,7 +330,7 @@ export const SeatGrid = forwardRef<
     onVisibleRowChange?: (label: string) => void;
   }
 >(function SeatGrid({ rows, map, statusOf, onPressSeat, onVisibleRowChange }, ref) {
-  const { colors, spacing } = useTheme();
+  const { spacing } = useTheme();
 
   /**
    * Rows are grouped into priced tier sections, because that is the order a
@@ -386,17 +458,7 @@ export const SeatGrid = forwardRef<
   const renderItem = useCallback(
     ({ item }: { item: GridItem }) => {
       if (item.kind === 'tier') {
-        return (
-          <View style={[styles.tier, { height: TIER_HEADER_HEIGHT }]}>
-            <Text variant="overline" tone="muted">
-              {item.label.toUpperCase()}
-            </Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <Text variant="label" numeric>
-              {formatMoney(item.priceMinor, item.currency)}
-            </Text>
-          </View>
-        );
+        return <TierHeader item={item} scrollX={scrollX} viewportWidth={frame.width} />;
       }
       return (
         <Row
@@ -410,7 +472,7 @@ export const SeatGrid = forwardRef<
         />
       );
     },
-    [colors.border, firstColumn, lastColumn, scrollX, onPressSeat],
+    [frame.width, firstColumn, lastColumn, scrollX, onPressSeat],
   );
 
   return (
@@ -453,6 +515,23 @@ export const SeatGrid = forwardRef<
 
 const styles = StyleSheet.create({
   row: { height: SEAT_PITCH, justifyContent: 'center' },
-  label: { position: 'absolute', left: 0, width: ROW_LABEL_WIDTH },
+  label: {
+    position: 'absolute',
+    // Back over the scroller's own left padding, so no sliver of a
+    // scrolled-past seat shows in the gutter beside the letter.
+    left: -spacing.lg,
+    top: 0,
+    bottom: 0,
+    width: ROW_LABEL_WIDTH + spacing.lg,
+    paddingLeft: spacing.lg,
+    justifyContent: 'center',
+  },
+  labelEdge: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: StyleSheet.hairlineWidth,
+  },
   tier: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });
