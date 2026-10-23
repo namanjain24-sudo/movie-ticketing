@@ -47,9 +47,10 @@
         </a>
         <ul class="nav-links">
           <li><a href="#proof">The proof</a></li>
-          <li><a href="#screens">The app</a></li>
+          <li><a href="#clips">The app</a></li>
           <li><a href="#booking">Booking</a></li>
-          <li><a href="#honesty">No invented data</a></li>
+          <li><a href="#cinemas">Cinemas</a></li>
+          <li><a href="#faq">Questions</a></li>
         </ul>
         <a
           class="btn btn-primary btn-sm"
@@ -179,6 +180,175 @@
               <dd>Chaos scenarios survived with every invariant holding</dd>
             </div>
           </dl>
+        </div>
+      </section>
+
+      <!-- ===== the offers strip: the app's own promos, running ========== -->
+      <section class="promos" aria-labelledby="promos-head">
+        <div class="wrap">
+          <h2 id="promos-head" class="promos-head reveal">
+            Offers that are really in the database
+          </h2>
+          <p class="promos-sub reveal" style="--i: 1">
+            Three codes and an earn rate, all of them live on the server right now. Type a code at
+            checkout and it is validated there, against your actual subtotal, rather than accepted
+            by the app and reconciled afterwards.
+          </p>
+        </div>
+
+        <!-- One marquee on this page, and it is here: a strip of promos is a
+             thing that scrolls in real life too. Duplicated once so the loop
+             has no seam, with the copy hidden from screen readers. -->
+        <div class="promo-track" role="region" aria-label="Current offers">
+          <ul class="promo-run">
+            <li class="promo promo-a">
+              <span class="promo-code mono">WELCOME50</span>
+              <span class="promo-copy">&#8377;50 off your booking</span>
+              <span class="promo-fine">Minimum &#8377;200 on seats</span>
+            </li>
+            <li class="promo promo-b">
+              <span class="promo-code mono">MOVIE20</span>
+              <span class="promo-copy">20% off seats</span>
+              <span class="promo-fine">Up to &#8377;150</span>
+            </li>
+            <li class="promo promo-c">
+              <span class="promo-code mono">FAMILY100</span>
+              <span class="promo-copy">&#8377;100 off four seats or more</span>
+              <span class="promo-fine">Minimum &#8377;800 on seats</span>
+            </li>
+            <li class="promo promo-d">
+              <span class="promo-code mono">POINTS</span>
+              <span class="promo-copy">1 point per &#8377;100, 1 point = &#8377;1</span>
+              <span class="promo-fine">Earned on what you actually paid</span>
+            </li>
+          </ul>
+          <ul class="promo-run" aria-hidden="true">
+            <li class="promo promo-a">
+              <span class="promo-code mono">WELCOME50</span>
+              <span class="promo-copy">&#8377;50 off your booking</span>
+              <span class="promo-fine">Minimum &#8377;200 on seats</span>
+            </li>
+            <li class="promo promo-b">
+              <span class="promo-code mono">MOVIE20</span>
+              <span class="promo-copy">20% off seats</span>
+              <span class="promo-fine">Up to &#8377;150</span>
+            </li>
+            <li class="promo promo-c">
+              <span class="promo-code mono">FAMILY100</span>
+              <span class="promo-copy">&#8377;100 off four seats or more</span>
+              <span class="promo-fine">Minimum &#8377;800 on seats</span>
+            </li>
+            <li class="promo promo-d">
+              <span class="promo-code mono">POINTS</span>
+              <span class="promo-copy">1 point per &#8377;100, 1 point = &#8377;1</span>
+              <span class="promo-fine">Earned on what you actually paid</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ===== the clips: four loops of the real thing ================== -->
+      <section class="clips" id="clips">
+        <div class="wrap">
+          <div class="clips-head reveal">
+            <h2>Four things it does, moving</h2>
+            <p>
+              Silent loops, no edits. Each one is the shipping app driven against a running server,
+              recorded the same way the full walkthrough was.
+            </p>
+          </div>
+
+          <div class="clip-grid" data-stagger>
+            <figure class="clip reveal">
+              <div class="clip-screen">
+                <video
+                  poster="clips/seatmap-poster.webp"
+                  width="390"
+                  height="844"
+                  playsinline
+                  muted
+                  loop
+                  preload="none"
+                  aria-label="The seat map scrolling through Standard, Premium and Recliner tiers of a full auditorium."
+                >
+                  <source src="clips/seatmap.webm" type="video/webm" />
+                  <source src="clips/seatmap.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <figcaption>
+                <b>A whole house, scrollable</b>
+                Tiers are marked and priced on the map. The screen is at the top, so row A means
+                what it says.
+              </figcaption>
+            </figure>
+
+            <figure class="clip reveal">
+              <div class="clip-screen">
+                <video
+                  poster="clips/pick-poster.webp"
+                  width="390"
+                  height="844"
+                  playsinline
+                  muted
+                  loop
+                  preload="none"
+                  aria-label="Two seats being tapped; they turn red and the summary bar picks up the seats and the running total."
+                >
+                  <source src="clips/pick.webm" type="video/webm" />
+                  <source src="clips/pick.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <figcaption>
+                <b>Tap, and it is yours</b>
+                The seat is locked in the database on that tap, not greyed out on your screen.
+              </figcaption>
+            </figure>
+
+            <figure class="clip reveal">
+              <div class="clip-screen">
+                <video
+                  poster="clips/browse-poster.webp"
+                  width="390"
+                  height="844"
+                  playsinline
+                  muted
+                  loop
+                  preload="none"
+                  aria-label="The home screen scrolling past a featured film, offer cards and a filtered grid of films."
+                >
+                  <source src="clips/browse.webm" type="video/webm" />
+                  <source src="clips/browse.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <figcaption>
+                <b>What is actually on</b>
+                Filtered by city, genre and language, with ratings computed from real reviews.
+              </figcaption>
+            </figure>
+
+            <figure class="clip reveal">
+              <div class="clip-screen">
+                <video
+                  poster="clips/cinemas-poster.webp"
+                  width="390"
+                  height="844"
+                  playsinline
+                  muted
+                  loop
+                  preload="none"
+                  aria-label="The cinemas list scrolling through real venues with addresses, amenities and shortcuts."
+                >
+                  <source src="clips/cinemas.webm" type="video/webm" />
+                  <source src="clips/cinemas.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <figcaption>
+                <b>Real venues, real addresses</b>
+                PVR, INOX, Cin&eacute;polis, AMB and single screen landmarks, with the street
+                address and a handoff to your own maps app.
+              </figcaption>
+            </figure>
+          </div>
         </div>
       </section>
 
@@ -429,6 +599,129 @@
                 minutes even on a phone whose time is wrong.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== coverage: the venues the seed actually carries ========== -->
+      <section class="venues" id="cinemas">
+        <div class="wrap">
+          <div class="venues-head reveal">
+            <h2>Eighteen cinemas, seven cities</h2>
+            <p>
+              Real chains at their real addresses, accurate to roughly building precision, because
+              that is what a pin and a distance sort need. The screens, showtimes and prices are
+              synthetic; the venues are not.
+            </p>
+          </div>
+
+          <dl class="venue-list reveal" style="--i: 1">
+            <div>
+              <dt>Mumbai</dt>
+              <dd>
+                Cin&eacute;polis Fun Republic &middot; INOX CR2 Nariman Point &middot; PVR ICON
+                Phoenix Palladium &middot; Regal Cinema Colaba
+              </dd>
+            </div>
+            <div>
+              <dt>Delhi</dt>
+              <dd>
+                Delite Cinema Asaf Ali Road &middot; PVR Director&rsquo;s Cut Ambience Mall &middot;
+                PVR Select Citywalk
+              </dd>
+            </div>
+            <div>
+              <dt>Bengaluru</dt>
+              <dd>
+                Cin&eacute;polis Nexus Koramangala &middot; INOX Garuda Mall &middot; PVR Orion Mall
+              </dd>
+            </div>
+            <div>
+              <dt>Hyderabad</dt>
+              <dd>AMB Cinemas Gachibowli &middot; Prasads IMAX Necklace Road</dd>
+            </div>
+            <div>
+              <dt>Chennai</dt>
+              <dd>Luxe Cinemas Phoenix MarketCity &middot; PVR Sathyam Royapettah</dd>
+            </div>
+            <div>
+              <dt>Kolkata</dt>
+              <dd>INOX Quest Mall Ballygunge &middot; Priya Cinema Deshapriya Park</dd>
+            </div>
+            <div>
+              <dt>Pune</dt>
+              <dd>INOX Bund Garden Road &middot; PVR Phoenix Marketcity Viman Nagar</dd>
+            </div>
+          </dl>
+
+          <ul class="venue-stats reveal" style="--i: 2">
+            <li><b class="mono">23</b> auditoriums</li>
+            <li><b class="mono">2,080</b> seats in the largest house</li>
+            <li><b class="mono">7</b> films now showing</li>
+            <li><b class="mono">10</b> days of schedule, always ahead</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ===== questions people actually ask ========================== -->
+      <section class="faq" id="faq">
+        <div class="wrap">
+          <h2 class="reveal">Before you install it</h2>
+
+          <div class="faq-list reveal" style="--i: 1">
+            <details>
+              <summary>Why does Android warn me about this app?</summary>
+              <p>
+                Because it did not come from the Play Store. Any APK installed directly gets that
+                warning, and you have to allow installs from this source once. The build is made
+                from the source in this repository and carries no analytics SDK and no ad network.
+              </p>
+            </details>
+
+            <details>
+              <summary>Why is the first open slow?</summary>
+              <p>
+                The API runs on a free host that sleeps after fifteen minutes of quiet and takes
+                about a minute to wake. The app waits for it and says so rather than failing, but
+                the minute is real. Every open after that is immediate.
+              </p>
+            </details>
+
+            <details>
+              <summary>Is the payment real?</summary>
+              <p>
+                No. The gateway is a mock that behaves like a real one: it authorises, then confirms
+                by signed webhook, and the booking only becomes confirmed when that webhook arrives.
+                No card details are collected anywhere, and no money moves.
+              </p>
+            </details>
+
+            <details>
+              <summary>Do I have to make an account?</summary>
+              <p>
+                You can sign in as <span class="mono">demo@example.com</span> with the password
+                <span class="mono">DemoPassw0rd</span>. Registering works too and writes to the same
+                live database as everything else.
+              </p>
+            </details>
+
+            <details>
+              <summary>Why is the map blank on the cinemas tab?</summary>
+              <p>
+                It needs a Google Maps key, which the public build does not carry. The list, the
+                addresses, the distances and the handoff to your own maps app all work without it.
+              </p>
+            </details>
+
+            <details>
+              <summary>What happens if I close the app mid-booking?</summary>
+              <p>
+                The hold is a real database state with an expiry, so nothing is lost and nothing is
+                oversold. When it lapses the seats go back. If you were part way through paying, the
+                payment settles or it does not, and either way the booking reflects what actually
+                happened rather than what the app guessed.
+              </p>
+            </details>
           </div>
         </div>
       </section>
