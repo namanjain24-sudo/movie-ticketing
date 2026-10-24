@@ -29,6 +29,15 @@ function loadClient(): Client {
   return mod;
 }
 
+/** The wake budget, read the same isolated way `liveUrl` reads the host. */
+function wakeBudgetMs(): number {
+  let ms!: number;
+  jest.isolateModules(() => {
+    ms = (require('../../lib/config') as typeof import('../../lib/config')).config.wakeBudgetMs;
+  });
+  return ms;
+}
+
 function liveUrl(): string {
   let url!: string;
   jest.isolateModules(() => {
@@ -125,7 +134,10 @@ describe('cold start', () => {
       });
 
       const pending = api.post('/v1/auth/register', {}).catch((e: unknown) => e);
-      await jest.advanceTimersByTimeAsync(200_000);
+      // Derived, not a literal: this used to advance a flat 200 seconds, which
+      // silently stopped clearing the budget the moment the budget grew past
+      // it, and the test failed by timing out rather than by saying so.
+      await jest.advanceTimersByTimeAsync(wakeBudgetMs() + 30_000);
       const err = await pending;
 
       expect(err).toBeInstanceOf(ApiRequestError);
@@ -135,7 +147,7 @@ describe('cold start', () => {
     } finally {
       jest.useRealTimers();
     }
-  });
+  }, 30_000);
 
   it('gives up once the wake budget is spent rather than hanging', async () => {
     jest.useFakeTimers();
@@ -146,12 +158,12 @@ describe('cold start', () => {
       });
 
       const pending = api.post('/v1/auth/login', {}).catch(() => 'rejected');
-      await jest.advanceTimersByTimeAsync(200_000);
+      await jest.advanceTimersByTimeAsync(wakeBudgetMs() + 30_000);
       expect(await pending).toBe('rejected');
     } finally {
       jest.useRealTimers();
     }
-  });
+  }, 30_000);
 
   it('does not put a probe in front of a GET: it has its own long retry', async () => {
     const { api } = loadClient();

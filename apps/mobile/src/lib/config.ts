@@ -140,13 +140,25 @@ export const config = {
   /**
    * How long to keep asking a sleeping server to wake up before giving up.
    *
-   * Measured, not guessed: a cold start on the free plan came back in 115
-   * seconds once, when the start command was doing more than it needed to.
-   * That is fixed, but the budget stays well clear of it, because the cost of
-   * waiting too long is a slow first screen and the cost of giving up too
-   * early is telling someone their connection is broken when it is not.
+   * Measured, not guessed, and measured more than once. A cold start on the
+   * free plan came back in 55 seconds one afternoon and in **328 seconds** the
+   * same evening, with the TCP connection accepted immediately both times and
+   * the response simply withheld while the instance booted. Free-tier start-up
+   * is not a number, it is a distribution with a long tail.
+   *
+   * The budget was 150 seconds, which sat comfortably above the good case and
+   * below the bad one, and that is the worst place to be. When it ran out the
+   * waiting stopped and the real request went out against a server that was
+   * still starting, where it died on the fifteen second deadline — and because
+   * a mutation is never retried, signing in failed outright. A server that was
+   * forty seconds from ready told the user their connection was broken.
+   *
+   * Seven minutes clears the worst start-up observed by better than two to
+   * one. Waiting too long costs a slow first screen, which the counter on the
+   * auth screens explains while it happens. Giving up too early costs a
+   * failure that is not true.
    */
-  wakeBudgetMs: 150_000,
+  wakeBudgetMs: 420_000,
   /** One probe's deadline. Short, because the loop is what does the waiting. */
   wakeProbeTimeoutMs: 8_000,
   /** Breathing room between probes, so a booting host is not hammered. */

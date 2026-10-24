@@ -111,9 +111,7 @@ export default function ForgotPassword() {
 
         {submitHint && !formError ? (
           <Text tone="muted" variant="caption" accessibilityLiveRegion="polite">
-            {submitHint.kind === 'waking'
-              ? `Waking the server, ${submitHint.seconds}s. The free plan sleeps when nobody is using it; this takes about a minute and then it works.`
-              : 'Still going. One moment.'}
+            {submitHint.message}
           </Text>
         ) : null}
 
