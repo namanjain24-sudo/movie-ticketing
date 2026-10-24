@@ -40,7 +40,7 @@ export function DateStrip({
               borderRadius: radius.md,
               alignItems: 'center',
               gap: spacing['2xs'],
-              backgroundColor: selected ? colors.primary : colors.surface,
+              backgroundColor: selected ? colors.primarySolid : colors.surface,
               borderWidth: 1,
               borderColor: selected ? colors.primary : colors.border,
               opacity: pressed && !selected ? 0.7 : 1,

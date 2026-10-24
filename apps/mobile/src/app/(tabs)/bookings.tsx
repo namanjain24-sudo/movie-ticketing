@@ -51,7 +51,7 @@ export default function Bookings() {
               alignItems: 'center',
               paddingVertical: spacing.sm + 2,
               borderRadius: radius.md,
-              backgroundColor: selected ? colors.primary : colors.surface,
+              backgroundColor: selected ? colors.primarySolid : colors.surface,
               borderWidth: 1,
               borderColor: selected ? colors.primary : colors.border,
             }}

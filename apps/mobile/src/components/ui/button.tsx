@@ -58,8 +58,10 @@ export function Button({
   // in the app with no background and a collapsed, text-only height.
   const [isPressed, setIsPressed] = useState(false);
 
+  // `primarySolid`, not `primary`: this fill carries white text at 17px bold,
+  // which WCAG does not count as large, and the brand red is 3.50:1 behind it.
   const background: Record<Variant, string> = {
-    primary: colors.primary,
+    primary: colors.primarySolid,
     secondary: colors.surfaceMuted,
     ghost: 'transparent',
     danger: colors.danger,
@@ -99,7 +101,7 @@ export function Button({
         styles.base,
         {
           backgroundColor:
-            isPressed && variant === 'primary' ? colors.primaryPressed : background[variant],
+            isPressed && variant === 'primary' ? colors.primarySolidPressed : background[variant],
           borderRadius: radius.md,
           paddingHorizontal: spacing.lg,
           minHeight: HEIGHT[size],

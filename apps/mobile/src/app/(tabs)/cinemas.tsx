@@ -263,7 +263,7 @@ export default function Cinemas() {
               paddingHorizontal: spacing.md,
               paddingVertical: 6,
               borderRadius: radius.full,
-              backgroundColor: mapOpen ? colors.primary : colors.chromeSurface,
+              backgroundColor: mapOpen ? colors.primarySolid : colors.chromeSurface,
             }}
           >
             <Ionicons name={mapOpen ? 'list' : 'map-outline'} size={15} color={colors.onChrome} />

@@ -6,7 +6,21 @@ import type { TextStyle } from 'react-native';
  */
 
 const palette = {
-  // Signature accent. Marks the primary action and nothing else.
+  /**
+   * Signature accent. Marks the primary action and nothing else.
+   *
+   * `red500` is the brand, and it is what you see as a stroke, an icon, a tab
+   * tint or a line of text on a dark background — 5.15:1 against `ink900`,
+   * comfortably readable.
+   *
+   * It is not what you see *behind white text*. White on `red500` is 3.50:1,
+   * and WCAG AA wants 4.5:1 for anything that is not large text — which the
+   * button label at 17px bold is not, and the seat number at 10px very much
+   * is not. `red600` is 4.71:1 with white and `red700` is 6.38:1, so filled
+   * controls use those and the brand colour keeps every other job. See
+   * `primarySolid` below.
+   */
+  red700: '#B81E3D',
   red600: '#D92E50',
   red500: '#F84464',
   red400: '#FF6B84',
@@ -57,6 +71,11 @@ export type ColorName =
   | 'textMuted'
   | 'textInverse'
   | 'primary'
+  // A fill that carries white text, as opposed to `primary`, which is a
+  // brand colour for strokes, icons and text. White on `primary` is 3.50:1
+  // and fails WCAG AA at the sizes this app actually uses.
+  | 'primarySolid'
+  | 'primarySolidPressed'
   | 'primaryPressed'
   | 'primaryMuted'
   | 'onPrimary'
@@ -110,6 +129,8 @@ export const lightColors: Colors = {
   textInverse: palette.white,
 
   primary: palette.red500,
+  primarySolid: palette.red600,
+  primarySolidPressed: palette.red700,
   primaryPressed: palette.red600,
   primaryMuted: palette.red100,
   onPrimary: palette.white,
@@ -128,7 +149,12 @@ export const lightColors: Colors = {
 
   seatFree: palette.white,
   seatFreeBorder: palette.green500,
-  seatGone: palette.ink200,
+  // ink300, not ink200, for the same reason dark mode uses ink600 rather than
+  // ink700: a sold block has to read as "blocked" against the page behind it,
+  // and ink200 sat at 1.16:1 there — a sold-out house looked like an empty
+  // one. This lands at 1.51:1, within a hair of dark mode's 1.53:1, so the
+  // two themes say "taken" with the same emphasis.
+  seatGone: palette.ink300,
   scrim: 'rgba(16,16,21,0.55)',
 
   accent: palette.violet500,
@@ -155,6 +181,8 @@ export const darkColors: Colors = {
   textInverse: palette.ink900,
 
   primary: palette.red500,
+  primarySolid: palette.red600,
+  primarySolidPressed: palette.red700,
   primaryPressed: palette.red400,
   // A translucent red tint rather than ink700: that flat grey is also
   // `seatGone`'s fill, and a seat you are holding must never read as a seat
@@ -208,8 +236,17 @@ export const scannerInk = palette.ink900;
  * light source, and two stops is all that takes.
  */
 export const gradients = {
-  /** The commit action, and nothing else. */
-  primary: ['#FF6B84', '#D92E50'] as const,
+  /**
+   * The commit action, and nothing else.
+   *
+   * It used to run `red400` → `red600`, and white on `red400` is 2.73:1 — the
+   * worst contrast in the app, on the most prominent button in it, the hero's
+   * "Book tickets". A gradient is only as readable as its lightest stop, so
+   * both ends now sit in the half of the brand that white survives on:
+   * `red600` at 4.71:1 and `red700` at 6.38:1. It still travels, it still has
+   * a light source, and the label can be read in daylight.
+   */
+  primary: [palette.red600, palette.red700] as const,
   /** Accent surfaces: rating pills, live badges, the map's own chrome. */
   accent: ['#9C86FF', '#5B3BE0'] as const,
   /** Behind a poster, so artwork fades into the page rather than stopping. */

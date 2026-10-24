@@ -113,7 +113,7 @@ export default function TabsLayout() {
             />
           ),
           tabBarBadge: upcomingCount > 0 ? upcomingCount : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.primary },
+          tabBarBadgeStyle: { backgroundColor: colors.primarySolid },
         }}
       />
       <Tabs.Screen

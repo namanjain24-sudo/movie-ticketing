@@ -90,7 +90,7 @@ export default function Profile() {
               width: 76,
               height: 76,
               borderRadius: 38,
-              backgroundColor: colors.primary,
+              backgroundColor: colors.primarySolid,
               alignItems: 'center',
               justifyContent: 'center',
             }}

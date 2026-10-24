@@ -148,7 +148,7 @@ export default function ReviewsScreen() {
                 paddingHorizontal: spacing.md,
                 paddingVertical: spacing.sm,
                 borderRadius: radius.full,
-                backgroundColor: colors.primary,
+                backgroundColor: colors.primarySolid,
               }}
             >
               <Text variant="label" tone="onPrimary" numeric>

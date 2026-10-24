@@ -76,7 +76,7 @@ export function ShowtimeFilters({
         paddingHorizontal: spacing.md,
         borderRadius: radius.full,
         borderWidth: 1,
-        backgroundColor: selected ? colors.primary : colors.surface,
+        backgroundColor: selected ? colors.primarySolid : colors.surface,
         borderColor: selected ? colors.primary : colors.border,
         opacity: pressed && !selected ? 0.7 : 1,
       })}

@@ -326,7 +326,7 @@ export default function Checkout() {
           justifyContent: 'center',
           gap: spacing.sm,
           paddingVertical: spacing.sm,
-          backgroundColor: countdown.isUrgent ? colors.primary : colors.surfaceMuted,
+          backgroundColor: countdown.isUrgent ? colors.primarySolid : colors.surfaceMuted,
         }}
       >
         <Ionicons

@@ -115,7 +115,7 @@ function SeatMotif() {
               borderBottomRightRadius: 3,
               borderWidth: 1.5,
               borderColor: chosen ? colors.primary : colors.onChromeMuted,
-              backgroundColor: chosen ? colors.primary : 'transparent',
+              backgroundColor: chosen ? colors.primarySolid : 'transparent',
               alignItems: 'center',
               justifyContent: 'center',
             }}
