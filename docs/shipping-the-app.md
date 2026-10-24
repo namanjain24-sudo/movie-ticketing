@@ -203,6 +203,18 @@ cd - && git worktree remove /tmp/bo-pages
 The worktree keeps `gh-pages` entirely out of `main`'s working tree, so there
 is no branch to switch to and nothing to accidentally commit to the wrong one.
 
+`cp -R`, not `rsync --delete`. A mirroring sync looks tidier and will quietly
+remove `site/.nojekyll` on the way through, because a dotfile at the root is
+easy to leave out of the source directory and never notice. That file is what
+stops Pages running Jekyll over the output, and Jekyll ignores anything whose
+name begins with an underscore, so losing it can drop assets with no error
+anywhere. It now lives in `site/` precisely so a mirroring deploy carries it
+rather than deleting it.
+
+The page also makes one request on load, to `/health/live` on the API, to
+start a sleeping free instance waking while the visitor downloads the APK.
+See `site.js` for why it is `no-cors` and why that is not a mistake.
+
 Three things there are generated rather than hand made, and all three are
 reproducible:
 
