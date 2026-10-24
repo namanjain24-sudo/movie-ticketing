@@ -139,6 +139,25 @@ not reach the bundler and `src/lib/config.ts` fell back to `10.0.2.2:4000`,
 the Android emulator's alias for the host machine. That build works on an
 emulator and is dead on every real phone.
 
+**A zero does not always mean the string is missing.** Hermes stores a
+pure-ASCII string as one byte per character and anything else as UTF-16, so
+`grep -a` finds the first kind and silently misses the second. A string with
+an em dash, a rupee sign or an accent in it will read as absent from a build
+that contains it. This cost me a few minutes on 1.0.5, where one of three
+message variants reads `0` for every ASCII fragment in it and is perfectly
+present:
+
+```bash
+unzip -p app-release.apk assets/index.android.bundle > /tmp/bundle.hbc
+python3 - <<'PY'
+data = open('/tmp/bundle.hbc', 'rb').read()
+s = "leave this screen and come back"
+print('ascii', data.count(s.encode('ascii')), 'utf16', data.count(s.encode('utf-16-le')))
+PY
+```
+
+Either count being non-zero means it shipped.
+
 `expo prebuild` also rewrites a couple of `package.json` scripts. Revert them.
 
 ### Or on Expo's machines
