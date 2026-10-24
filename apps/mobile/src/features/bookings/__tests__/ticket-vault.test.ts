@@ -78,11 +78,12 @@ describe('ticket vault', () => {
   });
 
   /**
-   * The reason this is one key per ticket rather than a list. `expo-secure-store`
-   * documents a 2048 byte ceiling per value on Android, and a real ten-seat
-   * booking from the API is already over that before any list wraps it.
+   * The reason this is one key per ticket, and a projection rather than the
+   * API's payload. A real ten-seat booking from the API is already over two
+   * kilobytes before any list wraps it, and Expo warns that some iOS releases
+   * have historically refused values around that size. Bounded is the point.
    */
-  it('stays well under what Android will store, even at ten seats', async () => {
+  it('stays under a kilobyte even at ten seats', async () => {
     const seats = Array.from({ length: 10 }, (_, i) => ({
       showSeatId: `s${i}`,
       rowLabel: 'H',

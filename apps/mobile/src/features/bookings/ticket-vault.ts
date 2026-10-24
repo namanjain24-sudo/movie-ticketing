@@ -37,14 +37,22 @@ export interface SavedTicket {
 }
 
 /**
- * One key per ticket rather than a single list.
+ * One key per ticket rather than a single list, and a trimmed projection
+ * rather than the API's own payload.
  *
- * `expo-secure-store` documents a 2048 byte ceiling per value on Android, and
- * a real two-seat booking comes back from the API at about 1150 bytes — a ten
- * seat one is over two thousand. A list of them in one key would have failed
- * silently, and it would have failed first for the people with the most seats.
- * So: a trimmed projection, one entry each, and an index of references that
- * stays tiny no matter how many tickets it names.
+ * A list in one key is a value with no upper bound on its size, which is the
+ * shape of thing that works in testing and fails for the one person who has
+ * used the app the most. Expo's own documentation is careful rather than
+ * absolute about this — "historically, some iOS releases refused values above
+ * roughly 2048 bytes", with nothing enforced in the library — and Android
+ * stores these in `SharedPreferences`, which has no such limit. So this is not
+ * a line anyone is standing on top of; it is a reason not to build something
+ * that grows without a ceiling when a fixed-size alternative costs nothing.
+ *
+ * For scale: a real two-seat booking comes back from the API at 1,149 bytes,
+ * and a ten-seat one is over two thousand on its own. The projection below is
+ * under a kilobyte at ten seats, and the index stays tiny no matter how many
+ * tickets it names.
  */
 const MAX_TICKETS = 12;
 const entryKey = (reference: string) => `${STORAGE_KEYS.savedTicketPrefix}${reference}`;

@@ -817,10 +817,16 @@ answer and a great one.
   did not, because a seat map that is stale on disk is actively harmful in a
   way a ticket is not. What is stored is one confirmed booking, trimmed to
   what a stub prints, written on confirmation and deleted the moment it stops
-  being confirmed. One key per ticket, because `expo-secure-store` documents a
-  2 KB ceiling per value on Android and a real ten-seat booking is already
-  over it — a list would have failed silently, and first for the people with
-  the most seats. The offline screen says when the copy was taken rather than
+  being confirmed. One key per ticket, not one list, because a list is a value
+  with no upper bound on its size — the shape of thing that works in testing
+  and fails for whoever has used the app most. Expo is careful rather than
+  absolute here ("historically, some iOS releases refused values above roughly
+  2048 bytes", nothing enforced in the library, and Android uses
+  `SharedPreferences`, which has no such limit), so this is not a line to
+  stand on; it is a reason not to build something unbounded when a fixed-size
+  alternative costs nothing. A real ten-seat booking from the API is already
+  over 2 KB; the stored projection is under 1 KB at ten seats. The offline
+  screen says when the copy was taken rather than
   claiming to be current, because a booking cancelled on another device would
   still be sitting there saying confirmed.
 
