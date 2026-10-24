@@ -149,6 +149,39 @@
     steps.forEach((s) => stepObserver.observe(s));
   }
 
+  // --- wake the demo API ----------------------------------------------------
+
+  /*
+    The API runs on Render's free plan, which stops the service after fifteen
+    idle minutes and takes the better part of a minute to start again. Measured
+    on this deployment: 55 seconds asleep, 6 seconds awake, for the same sign
+    in.
+
+    Almost everybody who opens the app first opens this page, and then spends
+    minutes downloading and installing a 54 MB APK. That is the whole cold
+    start and more, sitting there unused. So the page spends it: one request on
+    load, and by the time the app is installed the server is already up.
+
+    `no-cors` on purpose. The API authorises no browser origin at all —
+    `CORS_ORIGINS` is `mobileapp://`, so that a site cannot be talked into
+    making credentialed calls on a visitor's behalf — and that is worth
+    keeping. An opaque response is unreadable, which is fine: nothing here
+    wants to read it. The request still reaches the server, and waking it is
+    the entire point.
+
+    `keepalive` so it survives the navigation when somebody lands on the page
+    and immediately taps Download.
+  */
+  const API = 'https://boxoffice-api-i1ra.onrender.com/health/live';
+  try {
+    void fetch(API, { mode: 'no-cors', cache: 'no-store', keepalive: true }).catch(() => {
+      // Offline, blocked, or the host is having a bad day. The app waits for
+      // the server by itself; this is only ever a head start.
+    });
+  } catch {
+    // Older browsers without fetch. Same bargain.
+  }
+
   // --- year -----------------------------------------------------------------
 
   const year = document.getElementById('year');

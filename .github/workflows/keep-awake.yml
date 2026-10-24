@@ -1,20 +1,35 @@
 # Keeps the demo API from going to sleep.
 #
-# Render's free plan stops the service after fifteen minutes with no traffic,
-# and starting it again takes the better part of a minute. The app handles
-# that honestly now, but a minute is still a minute, and the first person to
-# open the app at a demo should not be the one who pays it.
+# Render's free plan stops the service after fifteen minutes with no traffic
+# and takes the better part of a minute to start again. Measured on this
+# deployment: 55 seconds asleep against 6 seconds awake, for the same sign-in.
 #
-# This is a best-effort nudge, not a monitor. GitHub delays scheduled
-# workflows under load, so it is set well inside the fifteen minute window and
-# never fails the run: a missed ping costs one slow open, and a red tick on
-# the repository for that would be noise.
+# This used to be `cron: '*/10 * * * *'` and a single curl, on the assumption
+# that GitHub would run it roughly every ten minutes. It does not. Six runs
+# landed in the nineteen hours I checked, with gaps of two to five hours
+# between them — GitHub deprioritises high-frequency schedules on shared
+# runners, and its documentation is explicit that `schedule` is best effort.
+# Ten minutes of intent was producing one ping every few hours, so the service
+# was asleep for almost all of its life and the first person to open the app
+# paid for it every time.
+#
+# So the run does the repeating itself rather than asking the scheduler to.
+# One run pings for fifty minutes, which is a short and ordinary job, and the
+# schedule asks for one every half hour. When GitHub honours that, runs
+# overlap harmlessly. When GitHub drops four of them, the one that does start
+# still covers the best part of an hour instead of a single second.
+#
+# It is still best effort and it is still not a monitor. The reliable fixes
+# are a paid Render instance, which does not sleep at all, or a purpose-built
+# uptime pinger; this is what can be done from inside the repository. A missed
+# ping costs one slow open, so the run never fails and never puts a red tick
+# on the repository for that.
 name: Keep the demo API awake
 
 on:
   schedule:
-    # Every ten minutes. Cron here is UTC and best effort.
-    - cron: '*/10 * * * *'
+    # Every half hour, UTC, best effort. See above for why the run also loops.
+    - cron: '0,30 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -23,15 +38,27 @@ permissions:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Overlapping runs are the normal case here rather than a mistake, so
+    # there is deliberately no concurrency group cancelling them: two pingers
+    # are harmless, and one of them may be the only one GitHub actually
+    # started.
+    timeout-minutes: 55
     steps:
-      - name: Wake the API
+      - name: Keep the API awake for the next fifty minutes
         run: |
-          # --max-time covers a genuine cold start, which is the case this
-          # exists to prevent and therefore the one it has to sit through.
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 180 \
-            https://boxoffice-api-i1ra.onrender.com/health/ready || echo 000)
-          echo "health/ready -> $code"
-          if [ "$code" != "200" ]; then
-            echo "::warning::API answered $code. It will wake on the next real request."
-          fi
+          URL=https://boxoffice-api-i1ra.onrender.com/health/ready
+          # Ten rounds, five minutes apart: well inside Render's fifteen
+          # minute idle window even if a round is slow.
+          for i in $(seq 1 10); do
+            # --max-time covers a genuine cold start, which is the case this
+            # exists to prevent and therefore the one it has to sit through.
+            start=$(date +%s)
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 180 "$URL" || echo 000)
+            took=$(( $(date +%s) - start ))
+            echo "$(date -u +%H:%M:%S) round $i/10 -> $code in ${took}s"
+            if [ "$code" != "200" ]; then
+              echo "::warning::API answered $code. It will wake on the next real request."
+            fi
+            if [ "$i" -lt 10 ]; then sleep 300; fi
+          done
+          echo "Done. The next run takes over."
