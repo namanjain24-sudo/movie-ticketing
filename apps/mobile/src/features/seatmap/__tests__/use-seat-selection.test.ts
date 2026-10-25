@@ -19,6 +19,7 @@ function seat(overrides: Partial<SeatMapSeat> & { id: string }): SeatMapSeat {
 function buildMap(seats: SeatMapSeat[], maxSeatsPerBooking = 3): SeatMap {
   return {
     showtimeId: 'show_1',
+    event: null,
     movie: { id: 'm1', title: 'Film', posterUrl: '' },
     cinema: { id: 'c1', name: 'Cinema', city: 'Mumbai' },
     screen: { id: 's1', name: 'Screen 1', rowCount: 2, columnCount: 3 },

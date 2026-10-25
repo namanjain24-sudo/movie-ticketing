@@ -16,6 +16,7 @@ export async function resetDb(): Promise<void> {
       "WebhookEvent", "IdempotencyRecord", "Payment", "ShowSeat", "Booking",
       "Hold", "ShowtimeTierPrice", "Showtime", "Seat", "Screen", "Cinema",
       "Review", "WatchlistItem", "PromoCode", "ConcessionItem", "Movie",
+      "Event",
       "RefreshToken", "User"
     RESTART IDENTITY CASCADE
   `);
@@ -177,4 +178,119 @@ export async function waitFor(
     await new Promise((r) => setTimeout(r, intervalMs));
   }
   throw new Error('Timed out waiting for condition');
+}
+
+export interface TestEventShow {
+  eventId: string;
+  eventSlug: string;
+  showtimeId: string;
+  venueId: string;
+  city: string;
+  /** ShowSeat ids per band, keyed by the band's label. */
+  seatsByStand: Record<string, string[]>;
+}
+
+/**
+ * A ground with named stands at different prices, and one fixture on it.
+ *
+ * Deliberately tiny — two stands of three seats — because what these tests
+ * are about is that a band carries its own name and price through to the
+ * ticket, not that a bowl can hold thirty thousand people.
+ */
+export async function createEventShow(
+  options: {
+    kind?: 'SPORT' | 'CONCERT' | 'COMEDY' | 'WORKSHOP' | 'THEATRE';
+    city?: string;
+    startsInMinutes?: number;
+    stands?: { tier: SeatTier; label: string; priceMinor: number; seats: number }[];
+    isPublished?: boolean;
+  } = {},
+): Promise<TestEventShow> {
+  const suffix = randomUUID().slice(0, 8);
+  const city = options.city ?? 'Testville';
+  const startsAt = new Date(Date.now() + (options.startsInMinutes ?? 120) * 60_000);
+  const stands = options.stands ?? [
+    { tier: 'VIP' as SeatTier, label: 'Garware Pavilion', priceMinor: 850_000, seats: 3 },
+    { tier: 'GENERAL' as SeatTier, label: 'North Stand', priceMinor: 120_000, seats: 3 },
+  ];
+
+  const event = await prisma.event.create({
+    data: {
+      slug: `test-event-${suffix}`,
+      kind: options.kind ?? 'SPORT',
+      title: 'Test Fixture',
+      tagline: 'A fixture that exists only to have seats sold for it.',
+      description: 'Seeded by the test suite.',
+      posterUrl: 'https://example.test/event.png',
+      durationMins: 180,
+      performers: ['Home Side', 'Away Side'],
+      organiser: 'Test League',
+      highlights: ['Gates open two hours before'],
+      tags: ['Cricket'],
+      isPublished: options.isPublished ?? true,
+    },
+  });
+
+  const venue = await prisma.cinema.create({
+    data: {
+      slug: `test-ground-${suffix}`,
+      kind: 'STADIUM',
+      name: 'Test Ground',
+      brand: 'Test Association',
+      city,
+      address: '1 Test Road',
+      latitude: 0,
+      longitude: 0,
+    },
+  });
+
+  const widest = Math.max(...stands.map((s) => s.seats));
+  const screen = await prisma.screen.create({
+    data: { cinemaId: venue.id, name: 'Test Ground', rowCount: stands.length, columnCount: widest },
+  });
+
+  const showtime = await prisma.showtime.create({
+    data: {
+      eventId: event.id,
+      screenId: screen.id,
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + 180 * 60_000),
+      salesCloseAt: new Date(startsAt.getTime() + 10 * 60_000),
+      language: 'Live',
+      tierPrices: {
+        create: stands.map((s) => ({ tier: s.tier, priceMinor: s.priceMinor, label: s.label })),
+      },
+    },
+  });
+
+  const seatsByStand: Record<string, string[]> = {};
+  for (const [rowIndex, stand] of stands.entries()) {
+    const made = [];
+    for (let i = 0; i < stand.seats; i += 1) {
+      const seat = await prisma.seat.create({
+        data: {
+          screenId: screen.id,
+          rowLabel: `${stand.label.slice(0, 2).toUpperCase()}-A`,
+          number: i + 1,
+          rowIndex,
+          columnIndex: i,
+          tier: stand.tier,
+        },
+      });
+      const showSeat = await prisma.showSeat.create({
+        data: { showtimeId: showtime.id, seatId: seat.id, priceMinor: stand.priceMinor },
+      });
+      made.push(showSeat.id);
+    }
+    seatsByStand[stand.label] = made;
+  }
+
+  return {
+    eventId: event.id,
+    eventSlug: event.slug,
+    showtimeId: showtime.id,
+    venueId: venue.id,
+    city,
+    seatsByStand,
+  };
 }

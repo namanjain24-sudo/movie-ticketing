@@ -11,6 +11,7 @@ jest.mock('../../../lib/maps', () => ({
 
 const REGAL: CinemaDirectoryEntry = {
   id: 'cin_1',
+  kind: 'CINEMA' as const,
   slug: 'regal-cinema-colaba',
   name: 'Regal Cinema, Colaba',
   brand: 'Independent',

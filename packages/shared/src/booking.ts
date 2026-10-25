@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { eventKindSchema } from './event';
 import { seatTierSchema, showFormatSchema } from './catalog';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +21,15 @@ export const heldSeatSchema = z.object({
   rowLabel: z.string(),
   number: z.number().int(),
   tier: seatTierSchema,
+  /**
+   * What the venue calls this seat's band, when it calls it something.
+   *
+   * Null for a film, where the band really is called Standard or Premium and
+   * the tier already says so. Set for a ground, where it is the Garware
+   * Pavilion or the North Stand — which is the part somebody actually needs
+   * at the turnstile, and which a tier name cannot carry.
+   */
+  tierLabel: z.string().nullable().default(null),
   priceMinor: z.number().int(),
 });
 export type HeldSeat = z.infer<typeof heldSeatSchema>;
@@ -175,7 +185,25 @@ export const bookingSchema = z.object({
     startsAt: z.string(),
     format: showFormatSchema,
     language: z.string(),
-    movie: z.object({ id: z.string(), title: z.string(), posterUrl: z.string() }),
+    /**
+     * What the ticket is for. Exactly one of these, mirroring the row: a
+     * ticket to a match has no film attached, and a blank one would be worse
+     * than an absent one on the stub that gets scanned at the gate.
+     */
+    movie: z
+      .object({ id: z.string(), title: z.string(), posterUrl: z.string() })
+      .nullable()
+      .default(null),
+    event: z
+      .object({
+        id: z.string(),
+        slug: z.string(),
+        kind: eventKindSchema,
+        title: z.string(),
+        posterUrl: z.string(),
+      })
+      .nullable()
+      .default(null),
     cinema: z.object({ id: z.string(), name: z.string(), city: z.string(), address: z.string() }),
     screen: z.object({ id: z.string(), name: z.string() }),
   }),

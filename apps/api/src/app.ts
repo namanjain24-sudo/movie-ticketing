@@ -11,6 +11,7 @@ import { authRouter } from './modules/auth/auth.routes';
 import { usersRouter } from './modules/users/users.routes';
 import { healthRouter } from './modules/health/health.routes';
 import { catalogRouter } from './modules/catalog/catalog.routes';
+import { eventsRouter } from './modules/events/events.routes';
 import { reviewsRouter } from './modules/reviews/reviews.routes';
 import { holdsRouter } from './modules/holds/holds.routes';
 import { promosRouter } from './modules/promos/promos.routes';
@@ -78,6 +79,7 @@ export function createApp(): Express {
   app.use('/v1/auth', authRouter);
   app.use('/v1/users', usersRouter);
   app.use('/v1', catalogRouter);
+  app.use('/v1', eventsRouter);
   app.use('/v1', reviewsRouter);
   app.use('/v1', holdsRouter);
   app.use('/v1', promosRouter);

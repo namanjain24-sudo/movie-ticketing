@@ -10,7 +10,7 @@ import { ErrorState } from '../../components/query-state';
 import { AppBar, Button, Poster, Skeleton, Text } from '../../components/ui';
 import { CinemaMap } from '../../features/cinemas/cinema-map';
 import { DateStrip } from '../../features/catalog/date-strip';
-import { groupByMovie } from '../../features/catalog/group-by-movie';
+import { groupBySubject } from '../../features/catalog/group-by-subject';
 import { ShowtimeChip } from '../../features/catalog/showtime-chip';
 import { toDateKey, upcomingDays } from '../../lib/format';
 import { callNumber, openDirections, openPlace } from '../../lib/maps';
@@ -199,27 +199,28 @@ export default function CinemaScreen() {
             </View>
           ) : (
             <View style={{ paddingHorizontal: spacing.lg, gap: spacing.xl }}>
-              {groupByMovie(here.showtimes).map(({ movie, showtimes: slots }, index) => (
+              {groupBySubject(here.showtimes).map(({ subject, showtimes: slots }, index) => (
                 <Animated.View
-                  key={movie.id}
+                  key={subject.id}
                   entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}
                   style={{ gap: spacing.sm }}
                 >
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`${movie.title}. Open this film`}
-                    onPress={() => router.push(`/movie/${movie.slug}`)}
+                    accessibilityLabel={`${subject.title}. Open this ${subject.kindLabel.toLowerCase()}`}
+                    onPress={() => subject.href && router.push(subject.href)}
+                    disabled={!subject.href}
                     hitSlop={4}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
                   >
                     <Poster
-                      uri={movie.posterUrl}
-                      title={movie.title}
+                      uri={subject.posterUrl}
+                      title={subject.title}
                       rounded={radius.sm}
                       style={{ width: 32, aspectRatio: 2 / 3 }}
                     />
                     <Text variant="label" numberOfLines={1} style={{ flex: 1 }}>
-                      {movie.title}
+                      {subject.title}
                     </Text>
                     <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
                   </Pressable>

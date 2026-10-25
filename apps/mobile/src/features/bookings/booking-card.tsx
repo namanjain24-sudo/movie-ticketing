@@ -16,6 +16,7 @@ import { notify } from '../../lib/notify';
 import { shareLink } from '../../lib/share-link';
 import { AnimatedPressable, usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
+import { subjectOf } from '../catalog/subject';
 
 const ACTION_WIDTH = 68;
 
@@ -43,6 +44,8 @@ export function BookingCard({
   const { showtime } = booking;
   const cancelled = booking.status === 'CANCELLED' || booking.status === 'FAILED';
   const press = usePressScale();
+  // A booking is for a film or for an event; `subjectOf` answers which.
+  const subject = subjectOf(showtime);
   const swipeRef = useRef<SwipeableMethods>(null);
 
   const addToCalendar = useMutation({
@@ -50,7 +53,7 @@ export function BookingCard({
     onSuccess: (result) => {
       swipeRef.current?.close();
       if (result === 'added') {
-        notify('Added to calendar', `${showtime.movie.title} is on your calendar.`);
+        notify('Added to calendar', `${subject?.title ?? 'That booking'} is on your calendar.`);
       } else if (result === 'permission-denied') {
         notify('No calendar access', 'Allow calendar access in Settings to add this showtime.');
       } else if (result === 'unsupported') {
@@ -64,7 +67,7 @@ export function BookingCard({
   const card = (
     <AnimatedPressable
       accessibilityRole="button"
-      accessibilityLabel={`${showtime.movie.title}, ${formatMonthDay(
+      accessibilityLabel={`${subject?.title ?? ''}, ${formatMonthDay(
         showtime.startsAt,
       )} at ${formatTime(showtime.startsAt)}, seats ${booking.seats
         .map((s) => `${s.rowLabel}${s.number}`)
@@ -91,8 +94,8 @@ export function BookingCard({
       ]}
     >
       <Poster
-        uri={showtime.movie.posterUrl}
-        title={showtime.movie.title}
+        uri={subject?.posterUrl ?? ''}
+        title={subject?.title ?? ''}
         rounded={radius.md}
         style={{ width: 64, aspectRatio: 2 / 3 }}
       />
@@ -100,7 +103,7 @@ export function BookingCard({
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <Text variant="label" numberOfLines={1} style={{ flex: 1 }}>
-            {showtime.movie.title}
+            {subject?.title}
           </Text>
           {cancelled ? <Badge label={booking.status} tone="neutral" /> : null}
         </View>
@@ -192,7 +195,7 @@ export function BookingCard({
               swipeRef.current?.close();
               void Share.share({
                 message:
-                  `${showtime.movie.title} · ${formatMonthDay(showtime.startsAt)}, ` +
+                  `${subject?.title ?? ''} · ${formatMonthDay(showtime.startsAt)}, ` +
                   `${formatTime(showtime.startsAt)}\n${showtime.cinema.name}, ${showtime.screen.name}\n` +
                   `Seats ${booking.seats.map((s) => `${s.rowLabel}${s.number}`).join(', ')}\n` +
                   `Booking ${booking.reference}\n${shareLink(`/booking/${booking.reference}`)}`,

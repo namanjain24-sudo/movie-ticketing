@@ -4,6 +4,7 @@ import { withoutSavedCinema, withSavedCinema } from '../favorite-cinemas-cache';
 function cinema(id: string): CinemaDirectoryEntry {
   return {
     id,
+    kind: 'CINEMA' as const,
     slug: `cinema-${id}`,
     name: `Cinema ${id}`,
     brand: 'PVR',

@@ -33,6 +33,7 @@ import { shareLink } from '../../lib/share-link';
 import { successFeedback, tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 import { gradients, scannerBackground, scannerInk } from '../../theme/tokens';
+import { subjectOf, subjectTitle } from '../../features/catalog/subject';
 
 export default function BookingTicket() {
   const { reference } = useLocalSearchParams<{ reference: string }>();
@@ -117,7 +118,10 @@ export default function BookingTicket() {
     mutationFn: () => addShowtimeToCalendar(booking.data!),
     onSuccess: (result) => {
       if (result === 'added') {
-        notify('Added to calendar', `${booking.data?.showtime.movie.title} is on your calendar.`);
+        notify(
+          'Added to calendar',
+          `${booking.data ? subjectTitle(booking.data.showtime) : 'That booking'} is on your calendar.`,
+        );
       } else if (result === 'permission-denied') {
         notify('No calendar access', 'Allow calendar access in Settings to add this showtime.');
       } else if (result === 'unsupported') {
@@ -185,6 +189,8 @@ export default function BookingTicket() {
 
   const ticket = booking.data;
   const { showtime } = ticket;
+  // A film or an event; the ticket renders the same either way.
+  const subject = subjectOf(showtime);
   const cancelled = ticket.status === 'CANCELLED' || ticket.status === 'FAILED';
   // `discountMinor` is the two folded together; the points portion is exact
   // (pointsRedeemed is in the same minor units a promo discount is), so
@@ -240,7 +246,7 @@ export default function BookingTicket() {
         >
           <View style={{ backgroundColor: colors.surface, padding: spacing.lg, gap: spacing.sm }}>
             <Text variant="heading" numberOfLines={2}>
-              {showtime.movie.title}
+              {subject?.title}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <Badge label={SHOW_FORMAT_LABELS[showtime.format]} tone="primary" />
@@ -478,7 +484,7 @@ export default function BookingTicket() {
                     );
                     void Share.share({
                       message:
-                        `Splitting ${showtime.movie.title}:\n${lines.join('\n')}\n` +
+                        `Splitting ${subject?.title ?? 'this booking'}:\n${lines.join('\n')}\n` +
                         shareLink(`/booking/${ticket.reference}`),
                     });
                   }}
@@ -505,7 +511,7 @@ export default function BookingTicket() {
             onPress={() =>
               void Share.share({
                 message:
-                  `${showtime.movie.title} · ${formatMonthDay(showtime.startsAt)}, ` +
+                  `${subject?.title ?? ''} · ${formatMonthDay(showtime.startsAt)}, ` +
                   `${formatTime(showtime.startsAt)}\n${showtime.cinema.name}, ${showtime.screen.name}\n` +
                   `Seats ${ticket.seats.map((s) => `${s.rowLabel}${s.number}`).join(', ')}\n` +
                   `Booking ${ticket.reference}\n${shareLink(`/booking/${ticket.reference}`)}`,

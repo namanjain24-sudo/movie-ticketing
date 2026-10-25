@@ -37,8 +37,22 @@ function booking(overrides: Partial<Booking> = {}): Booking {
     totalMinor: 93000,
     currency: 'INR',
     seats: [
-      { showSeatId: 's1', rowLabel: 'H', number: 10, tier: 'PREMIUM', priceMinor: 45000 },
-      { showSeatId: 's2', rowLabel: 'H', number: 11, tier: 'PREMIUM', priceMinor: 45000 },
+      {
+        showSeatId: 's1',
+        rowLabel: 'H',
+        number: 10,
+        tier: 'PREMIUM',
+        tierLabel: null,
+        priceMinor: 45000,
+      },
+      {
+        showSeatId: 's2',
+        rowLabel: 'H',
+        number: 11,
+        tier: 'PREMIUM',
+        tierLabel: null,
+        priceMinor: 45000,
+      },
     ],
     addOns: [],
     showtime: {
@@ -47,6 +61,7 @@ function booking(overrides: Partial<Booking> = {}): Booking {
       format: 'THREE_D',
       language: 'Hindi',
       movie: { id: 'm1', title: 'Drishyam: The Conclusion', posterUrl: 'https://x/poster.jpg' },
+      event: null,
       cinema: {
         id: 'c1',
         name: 'AMB Cinemas, Gachibowli',
@@ -95,6 +110,7 @@ describe('ticket vault', () => {
       rowLabel: 'H',
       number: i + 1,
       tier: 'PREMIUM' as const,
+      tierLabel: null,
       priceMinor: 45000,
     }));
     await saveTicket(booking({ seats, reference: 'BK-BIG001' }));

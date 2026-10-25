@@ -120,9 +120,10 @@ export default function Bookings() {
                 <BookingCard
                   booking={item}
                   onPress={() => router.push(`/booking/${item.reference}`)}
+                  // Only a film can be seen again. A past fixture is past.
                   onRebook={
-                    tab === 'past'
-                      ? () => router.push(`/movie/${item.showtime.movie.id}`)
+                    tab === 'past' && item.showtime.movie
+                      ? () => router.push(`/movie/${item.showtime.movie!.id}`)
                       : undefined
                   }
                 />

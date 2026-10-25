@@ -377,12 +377,21 @@ export function bookingFeeMinor(): number {
   return env.BOOKING_FEE_MINOR;
 }
 
+/**
+ * `tierLabel` is deliberately left null here.
+ *
+ * A hold is the checkout screen's view, which already has the seat map open
+ * and its band labels with it; carrying them again would mean another join on
+ * the hot path that `SELECT ... FOR UPDATE` runs inside. The ticket is where
+ * the stand name has to be, and `bookings.service` fills it in there.
+ */
 export function toHeldSeats(seats: LockedSeatRow[]): HeldSeat[] {
   return seats.map((s) => ({
     showSeatId: s.id,
     rowLabel: s.rowLabel,
     number: s.number,
     tier: s.tier,
+    tierLabel: null,
     priceMinor: s.priceMinor,
   }));
 }

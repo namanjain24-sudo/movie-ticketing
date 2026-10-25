@@ -27,6 +27,7 @@ const LOAD_TEST_SLUG = 'loadtest-arena';
 const CINEMA_SELECT = {
   id: true,
   slug: true,
+  kind: true,
   name: true,
   brand: true,
   city: true,
@@ -148,6 +149,8 @@ export async function listCities(): Promise<string[]> {
  */
 export async function listShowtimes(params: {
   movieId?: string;
+  /** Narrows to one event's shows, exactly as `movieId` does for a film. */
+  eventId?: string;
   city?: string;
   date?: string;
 }): Promise<CinemaShowtimes[]> {
@@ -156,6 +159,7 @@ export async function listShowtimes(params: {
   const showtimes = await prisma.showtime.findMany({
     where: {
       ...(params.movieId ? { movieId: params.movieId } : {}),
+      ...(params.eventId ? { eventId: params.eventId } : {}),
       ...(params.city ? { screen: { cinema: { city: params.city } } } : {}),
       startsAt: { gte: start, lt: end },
     },
@@ -171,6 +175,7 @@ export async function listShowtimes(params: {
       tierPrices: { select: { priceMinor: true } },
       screen: { select: { cinema: { select: CINEMA_SELECT } } },
       movie: { select: { id: true, slug: true, title: true, posterUrl: true } },
+      event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
       _count: { select: { showSeats: true } },
     },
   });
@@ -193,7 +198,10 @@ export async function listShowtimes(params: {
       salesCloseAt: s.salesCloseAt.toISOString(),
       fromPriceMinor: Math.min(...s.tierPrices.map((t) => t.priceMinor)),
       availability: band(availability.get(s.id) ?? 0, s._count.showSeats),
+      // Exactly one of these is set on the row; the listing passes both
+      // through rather than choosing, so a screen can render either.
       movie: s.movie,
+      event: s.event,
     });
     grouped.set(cinema.id, entry);
   }
@@ -311,16 +319,23 @@ export async function listCinemas(params: {
     },
     select: {
       movieId: true,
+      eventId: true,
       screen: { select: { cinemaId: true } },
       tierPrices: { select: { priceMinor: true } },
     },
   });
 
+  // Named `subjects` rather than `films`: a venue's "what's on" count is now
+  // films and events together, and counting only films would quietly report a
+  // stadium with three matches on as having nothing.
   const films = new Map<string, Set<string>>();
   const cheapest = new Map<string, number>();
   for (const show of upcoming) {
     const cinemaId = show.screen.cinemaId;
-    (films.get(cinemaId) ?? films.set(cinemaId, new Set()).get(cinemaId)!).add(show.movieId);
+    const subjectId = show.movieId ?? show.eventId;
+    if (subjectId) {
+      (films.get(cinemaId) ?? films.set(cinemaId, new Set()).get(cinemaId)!).add(subjectId);
+    }
     for (const price of show.tierPrices) {
       const current = cheapest.get(cinemaId);
       if (current === undefined || price.priceMinor < current)
@@ -409,7 +424,11 @@ export async function getSeatMap(params: {
       currency: true,
       salesCloseAt: true,
       movie: { select: { id: true, title: true, posterUrl: true } },
-      tierPrices: { select: { tier: true, priceMinor: true }, orderBy: { priceMinor: 'asc' } },
+      event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
+      tierPrices: {
+        select: { tier: true, priceMinor: true, label: true },
+        orderBy: { priceMinor: 'asc' },
+      },
       screen: {
         select: {
           id: true,
@@ -460,6 +479,7 @@ export async function getSeatMap(params: {
   return {
     showtimeId: showtime.id,
     movie: showtime.movie,
+    event: showtime.event,
     cinema: showtime.screen.cinema,
     screen: {
       id: showtime.screen.id,
@@ -475,7 +495,17 @@ export async function getSeatMap(params: {
     tiers: showtime.tierPrices.map((t) => ({
       tier: t.tier as SeatTier,
       priceMinor: t.priceMinor,
-      label: SEAT_TIER_LABELS[t.tier as SeatTier],
+      /**
+       * The venue's own word for the band where it has one, and the generic
+       * tier name where it does not.
+       *
+       * Every film falls through to the generic name, because a cinema's
+       * bands really are called Standard and Premium. A ground's are not: the
+       * band is the Garware Pavilion or the North Stand, and a seat map that
+       * said "VIP" and "General" instead would be no use to somebody looking
+       * for their gate.
+       */
+      label: t.label ?? SEAT_TIER_LABELS[t.tier as SeatTier],
     })),
     seats,
     serverTime: now.toISOString(),

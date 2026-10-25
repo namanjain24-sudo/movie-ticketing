@@ -1,6 +1,7 @@
 import type { Booking } from '@app/shared';
 import * as Calendar from 'expo-calendar';
 import { Platform } from 'react-native';
+import { subjectTitle } from '../features/catalog/subject';
 
 export type AddToCalendarResult = 'added' | 'permission-denied' | 'unsupported' | 'error';
 
@@ -50,7 +51,7 @@ export async function addShowtimeToCalendar(booking: Booking): Promise<AddToCale
     const seats = booking.seats.map((s) => `${s.rowLabel}${s.number}`).join(', ');
 
     await calendar.createEvent({
-      title: booking.showtime.movie.title,
+      title: subjectTitle(booking.showtime),
       startDate,
       endDate,
       location: `${booking.showtime.cinema.name}, ${booking.showtime.cinema.address}`,

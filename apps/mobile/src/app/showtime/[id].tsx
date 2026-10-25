@@ -22,6 +22,7 @@ import { rejectFeedback, successFeedback, tapFeedback } from '../../lib/haptics'
 import { idempotencyKey } from '../../lib/idempotency';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
+import { subjectTitle } from '../../features/catalog/subject';
 
 export default function SeatMapScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -153,7 +154,7 @@ export default function SeatMapScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <AppBar
-        title={map.movie.title}
+        title={subjectTitle(map)}
         subtitle={`${map.cinema.name} · ${map.screen.name}`}
         onBack={() => router.back()}
         actions={

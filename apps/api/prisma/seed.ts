@@ -6,6 +6,7 @@ import type { CatalogueEntry } from '../src/scripts/fetch-catalogue';
 // The application's own client, so the seed connects through the same adapter
 // and pool configuration the API uses rather than a second, divergent setup.
 import { prisma } from '../src/db';
+import { seedEvents } from './seed-events';
 
 /**
  * Seed data shaped like real cinemas, because the seat map is judged on how it
@@ -94,11 +95,18 @@ function generateLayout(spec: LayoutSpec): {
   return { seats, rowCount: spec.rows, columnCount };
 }
 
+/**
+ * A cinema sells three bands. The wider `SeatTier` also carries a stadium's
+ * words (VIP, Gold, Silver, General), which no screen uses, so this table is
+ * typed to the three rather than being forced to invent prices for the rest.
+ */
+type CinemaTier = Extract<SeatTier, 'STANDARD' | 'PREMIUM' | 'RECLINER'>;
+
 const TIER_PRICES = {
   standard: { STANDARD: 22_000, PREMIUM: 34_000, RECLINER: 55_000 },
   premium: { STANDARD: 30_000, PREMIUM: 45_000, RECLINER: 75_000 },
   imax: { STANDARD: 45_000, PREMIUM: 65_000, RECLINER: 95_000 },
-} satisfies Record<string, Record<SeatTier, number>>;
+} satisfies Record<string, Record<CinemaTier, number>>;
 
 /**
  * Real films, with their synopses and posters fetched once by
@@ -547,6 +555,8 @@ async function main() {
   await prisma.screen.deleteMany();
   await prisma.cinema.deleteMany();
   await prisma.movie.deleteMany();
+  // After the showtimes that point at them, like every other subject here.
+  await prisma.event.deleteMany();
 
   console.log('Seeding promo codes…');
   await prisma.promoCode.createMany({
@@ -808,6 +818,13 @@ async function main() {
   console.log(
     `        ${CINEMAS.length} cinemas across ${new Set(CINEMAS.map((c) => c.city)).size} cities, ${reviewCount} reviews`,
   );
+  // Live events: real venues, real stands, the same booking mechanic.
+  const events = await seedEvents(prisma);
+  console.log(
+    `        ${events.events} events at ${events.venues} venues, ` +
+      `${events.shows} shows, ${events.seats} seat inventory rows`,
+  );
+
   console.log(`Demo login: ${demo.email} / DemoPassw0rd`);
   console.log(`Load-test showtime id: ${loadShowtime?.id}`);
 }
@@ -844,7 +861,7 @@ async function createShowtime(input: {
       format: input.format,
       language: input.language,
       tierPrices: {
-        create: (Object.keys(prices) as SeatTier[]).map((tier) => ({
+        create: (Object.keys(prices) as CinemaTier[]).map((tier) => ({
           tier,
           priceMinor: prices[tier],
         })),
@@ -865,7 +882,9 @@ async function createShowtime(input: {
     data: seats.map((seat) => ({
       showtimeId: showtime.id,
       seatId: seat.id,
-      priceMinor: prices[seat.tier],
+      // Every seat on a cinema screen is one of the three cinema bands; the
+      // wider enum exists for stands this function never builds.
+      priceMinor: prices[seat.tier as CinemaTier],
     })),
   });
 

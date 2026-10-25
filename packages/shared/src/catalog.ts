@@ -1,6 +1,23 @@
 import { z } from 'zod';
+import { eventKindSchema, venueKindSchema } from './event';
 
-export const SEAT_TIERS = ['STANDARD', 'PREMIUM', 'RECLINER'] as const;
+/**
+ * Price bands, named for what the venue calls them.
+ *
+ * The first three are a cinema's words. The rest are a stadium's or an
+ * arena's: a concert does not sell a "recliner", it sells the VIP pit or the
+ * upper tier. Added rather than substituted — every existing seat is one of
+ * the first three, and nothing in the booking mechanic reads the tier at all.
+ */
+export const SEAT_TIERS = [
+  'STANDARD',
+  'PREMIUM',
+  'RECLINER',
+  'VIP',
+  'GOLD',
+  'SILVER',
+  'GENERAL',
+] as const;
 export const seatTierSchema = z.enum(SEAT_TIERS);
 export type SeatTier = z.infer<typeof seatTierSchema>;
 
@@ -20,6 +37,10 @@ export const SEAT_TIER_LABELS: Record<SeatTier, string> = {
   STANDARD: 'Standard',
   PREMIUM: 'Premium',
   RECLINER: 'Recliner',
+  VIP: 'VIP',
+  GOLD: 'Gold',
+  SILVER: 'Silver',
+  GENERAL: 'General',
 };
 
 // ---------------------------------------------------------------------------
@@ -111,7 +132,21 @@ export const showtimeSummarySchema = z.object({
    * several different films at once, so the film has to travel with each
    * showtime rather than being assumed from the request.
    */
-  movie: z.object({ id: z.string(), slug: z.string(), title: z.string(), posterUrl: z.string() }),
+  movie: z
+    .object({ id: z.string(), slug: z.string(), title: z.string(), posterUrl: z.string() })
+    .nullable()
+    .default(null),
+  /** Set instead of `movie` when this show is a match, gig or workshop. */
+  event: z
+    .object({
+      id: z.string(),
+      slug: z.string(),
+      kind: eventKindSchema,
+      title: z.string(),
+      posterUrl: z.string(),
+    })
+    .nullable()
+    .default(null),
 });
 export type ShowtimeSummary = z.infer<typeof showtimeSummarySchema>;
 
@@ -124,6 +159,8 @@ export type ShowtimeSummary = z.infer<typeof showtimeSummarySchema>;
 export const cinemaSchema = z.object({
   id: z.string(),
   slug: z.string(),
+  /** What sort of place it is. `CINEMA` for everything that existed before. */
+  kind: venueKindSchema.default('CINEMA'),
   name: z.string(),
   /** The chain: PVR, INOX, Cinépolis, or `Independent` for a single screen. */
   brand: z.string(),
@@ -209,7 +246,27 @@ export type SeatMapSeat = z.infer<typeof seatMapSeatSchema>;
 
 export const seatMapSchema = z.object({
   showtimeId: z.string(),
-  movie: z.object({ id: z.string(), title: z.string(), posterUrl: z.string() }),
+  /**
+   * What is on. Exactly one of these is present, the same way exactly one of
+   * `movieId`/`eventId` is set on the row — a seat map for a match has no
+   * film, and inventing an empty one would make every screen that renders a
+   * title have to tell the difference between "no film" and "a film with no
+   * name".
+   */
+  movie: z
+    .object({ id: z.string(), title: z.string(), posterUrl: z.string() })
+    .nullable()
+    .default(null),
+  event: z
+    .object({
+      id: z.string(),
+      slug: z.string(),
+      kind: eventKindSchema,
+      title: z.string(),
+      posterUrl: z.string(),
+    })
+    .nullable()
+    .default(null),
   cinema: z.object({ id: z.string(), name: z.string(), city: z.string() }),
   screen: z.object({
     id: z.string(),

@@ -1,5 +1,6 @@
 import type { Booking } from '@app/shared';
 import { STORAGE_KEYS, secureStorage } from '../../lib/storage';
+import { subjectTitle } from '../catalog/subject';
 
 /**
  * A ticket you can still open with no signal.
@@ -63,7 +64,7 @@ export function toSavedTicket(booking: Booking): SavedTicket {
     reference: booking.reference,
     status: booking.status,
     qrPayload: booking.qrPayload,
-    movieTitle: showtime.movie.title,
+    movieTitle: subjectTitle(showtime),
     cinema: `${showtime.cinema.name}, ${showtime.cinema.city}`,
     screen: showtime.screen.name,
     startsAt: showtime.startsAt,

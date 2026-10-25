@@ -87,6 +87,8 @@ const bookingSelect = {
       format: true,
       language: true,
       movie: { select: { id: true, title: true, posterUrl: true } },
+      event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
+      tierPrices: { select: { tier: true, label: true } },
       screen: {
         select: {
           id: true,
@@ -105,6 +107,10 @@ async function loadOne(where: { id: string } | { reference: string }) {
 }
 
 function toDto(row: NonNullable<BookingRow>): Booking {
+  // One lookup per booking rather than per seat: a band's label is a property
+  // of the showtime, and every seat in a band shares it.
+  const bandLabels = new Map(row.showtime.tierPrices.map((t) => [t.tier, t.label] as const));
+
   return {
     id: row.id,
     reference: row.reference,
@@ -128,6 +134,10 @@ function toDto(row: NonNullable<BookingRow>): Booking {
       rowLabel: ss.seat.rowLabel,
       number: ss.seat.number,
       tier: ss.seat.tier as SeatTier,
+      // The stand, where the venue names its bands. This is the line somebody
+      // reads at a turnstile, so it belongs on the ticket and not only on the
+      // seat map they bought from.
+      tierLabel: bandLabels.get(ss.seat.tier) ?? null,
       priceMinor: ss.priceMinor,
     })),
     addOns: row.addOns.map((a) => ({
@@ -142,6 +152,7 @@ function toDto(row: NonNullable<BookingRow>): Booking {
       format: row.showtime.format as ShowFormat,
       language: row.showtime.language,
       movie: row.showtime.movie,
+      event: row.showtime.event,
       cinema: row.showtime.screen.cinema,
       screen: { id: row.showtime.screen.id, name: row.showtime.screen.name },
     },

@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { recordNotificationHistory } from './history';
 import { holdNudgeTime, releaseCheckTime, showtimeReminderTime } from './scheduling';
+import { subjectTitle } from '../catalog/subject';
 
 /**
  * Everything here is best-effort. A booking or a checkout must never fail
@@ -56,7 +57,7 @@ const holdNudgeId = (holdId: string) => `hold-nudge-${holdId}`;
 export async function scheduleShowtimeReminder(booking: Booking) {
   const fireAt = showtimeReminderTime(booking.showtime.startsAt);
   if (!fireAt) return;
-  const title = `${booking.showtime.movie.title} starts soon`;
+  const title = `${subjectTitle(booking.showtime)} starts soon`;
   const body = `Doors at ${booking.showtime.cinema.name}. Head out in time.`;
   await attempt(async () => {
     await Notifications.scheduleNotificationAsync({

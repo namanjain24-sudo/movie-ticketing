@@ -94,6 +94,68 @@ model Movie {
   @@index([isNowShowing, releaseDate])
 }
 
+// ---------------------------------------------------------------------------
+// Live events: matches, concerts, comedy, workshops, theatre
+// ---------------------------------------------------------------------------
+
+enum EventKind {
+  SPORT
+  CONCERT
+  COMEDY
+  WORKSHOP
+  THEATRE
+}
+
+/// Anything ticketed that is not a film.
+///
+/// Deliberately a sibling of `Movie` rather than a generalisation of it. A
+/// `Showtime` now points at exactly one of the two, which is enforced by a
+/// check constraint rather than by hope — see the migration. The entire
+/// booking mechanic below (`ShowSeat`, `Hold`, `Booking`, `Payment`) only ever
+/// knows a `showtimeId`, so a concert is held, paid for and ticketed by the
+/// same row locks that a film is, with nothing duplicated and nothing about
+/// films changed.
+///
+/// The category-specific fields are shared columns rather than a JSON blob or
+/// five near-identical tables, because the five kinds want the same *shapes*
+/// under different names: somebody on stage, somebody running it, a list of
+/// things worth knowing before you buy.
+model Event {
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  kind         EventKind
+  title        String
+  /// One line under the title: "India vs Australia", "The Farewell Tour".
+  tagline      String?
+  description  String
+  posterUrl    String
+  backdropUrl  String?
+  /// How long it runs. A match has a scheduled length like anything else.
+  durationMins Int
+  /// Who is on: the two teams, the line-up, the comedian, the instructor.
+  /// Ordered, because for a match the home side is first.
+  performers   String[]
+  /// Who is putting it on: a league, a tour, an academy, a promoter.
+  organiser    String?
+  /// Worth knowing before buying: what a workshop teaches, what a match is
+  /// deciding, what is included in the ticket.
+  highlights   String[]
+  /// Loose tags for browsing — "Cricket", "Indie", "Beginner friendly".
+  tags         String[]
+  /// Minimum age the door will admit, where there is one.
+  minAge       Int?
+  /// Published events are the only ones the catalogue returns, so a draft can
+  /// exist with its shows attached before anyone can find it.
+  isPublished  Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  showtimes Showtime[]
+
+  @@index([kind, isPublished])
+  @@index([isPublished])
+}
+
 /// A rating and an optional note, written by a signed-in user about a film.
 ///
 /// `@@unique([userId, movieId])` is the whole moderation policy: one person,
@@ -196,9 +258,26 @@ model BookingAddOn {
   @@unique([bookingId, concessionItemId])
 }
 
+/// What sort of place this is.
+///
+/// `CINEMA` is the default and what every existing row is. The others exist
+/// because a stadium is not a cinema and the data should not say it is. The
+/// model keeps its historical name; renaming it would change the field name in
+/// every API response and break every APK already on a phone, which is a
+/// separate and much larger piece of work than adding events.
+enum VenueKind {
+  CINEMA
+  STADIUM
+  ARENA
+  THEATRE
+  STUDIO
+  OUTDOOR
+}
+
 model Cinema {
-  id        String   @id @default(cuid())
-  slug      String   @unique
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  kind      VenueKind @default(CINEMA)
   name      String
   /// The chain the venue belongs to (PVR, INOX, Cinépolis…). Kept separate
   /// from `name` so the app can group and filter by operator without parsing
@@ -216,8 +295,8 @@ model Cinema {
   /// text rather than an enum, because this list changes with marketing and
   /// nothing in the booking mechanic depends on its contents.
   amenities String[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   screens   Screen[]
   favorites CinemaFavorite[]
@@ -257,10 +336,22 @@ model Screen {
   @@unique([cinemaId, name])
 }
 
+/// What a seat costs relative to its neighbours, named for what the venue
+/// calls it.
+///
+/// The first three are a cinema's words and are what every existing seat is.
+/// The rest are what a stadium or an arena says instead — a concert does not
+/// sell you a "recliner", it sells you the VIP pit or the upper tier. They are
+/// added rather than substituted: the tier is a label on a price band, and the
+/// booking mechanic never reads it.
 enum SeatTier {
   STANDARD
   PREMIUM
   RECLINER
+  VIP
+  GOLD
+  SILVER
+  GENERAL
 }
 
 /// One physical seat. `rowIndex` and `columnIndex` are grid coordinates for the
@@ -293,8 +384,13 @@ enum ShowFormat {
 
 model Showtime {
   id           String     @id @default(cuid())
-  movieId      String
-  movie        Movie      @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  /// Exactly one of `movieId` and `eventId` is set, enforced by a check
+  /// constraint in the migration because a nullable pair cannot say "one of"
+  /// on its own. Every existing row is a film and is untouched.
+  movieId      String?
+  movie        Movie?     @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  eventId      String?
+  event        Event?     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   screenId     String
   screen       Screen     @relation(fields: [screenId], references: [id], onDelete: Cascade)
   startsAt     DateTime
@@ -317,6 +413,7 @@ model Showtime {
   /// check the dashboard could forget to run.
   @@unique([screenId, startsAt])
   @@index([movieId, startsAt])
+  @@index([eventId, startsAt])
   @@index([startsAt])
 }
 
@@ -326,6 +423,16 @@ model ShowtimeTierPrice {
   showtime   Showtime @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
   tier       SeatTier
   priceMinor Int
+  /// What this venue calls this band, when it calls it something specific.
+  ///
+  /// A cinema's bands are Standard, Premium and Recliner, which the tier name
+  /// already says, so this is null for every film and the generic label is
+  /// used. A stadium's are not generic: the band is the Sachin Tendulkar Stand
+  /// or the Garware Pavilion, and a ticket that said "Premium" instead would
+  /// be no use to somebody looking for their gate. Per showtime rather than
+  /// per venue because the same bowl is divided differently for a match and
+  /// for a concert.
+  label      String?
 
   @@unique([showtimeId, tier])
 }
