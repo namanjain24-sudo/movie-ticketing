@@ -38,9 +38,17 @@
   --accent-line: rgba(248, 68, 100, 0.38);
   /* The same hue, deepened, and used only as a solid fill under white text.
      White on #f84464 is 3.50:1, which clears WCAG AA for large text and fails
-     it for a 14px button label. #e13354 is 4.54:1 at any size, and the two
-     reds never touch: one fills buttons, the other draws type and strokes. */
-  --accent-solid: #e13354;
+     it for a 14px button label.
+
+     This said #e13354 and claimed 4.54:1. Measured, it is 4.37:1 — still
+     short of AA, so the fix did not quite land and the comment asserted that
+     it had. #d92e50 is 4.71:1, and is the same value the app uses for exactly
+     this job, so the button on the page and the button in the product are now
+     one colour rather than two that nearly match.
+
+     The two reds never touch: one fills buttons, the other draws type and
+     strokes. */
+  --accent-solid: #d92e50;
 
   /* Seat states, borrowed from the app so the film matches the screenshots. */
   --seat-free: #3f9b58;
@@ -1292,4 +1300,115 @@ img {
   color: var(--text-dim);
   font-size: 15px;
   max-width: 68ch;
+}
+
+/* ---------------------------------------------------------------------------
+   The sponsor rail.
+
+   Sits between the offers strip and the clips, which is where a real ad slot
+   would go: after the thing that sells the product and before the thing that
+   proves it. Styled as a quieter card than the clips so it reads as an aside
+   rather than as part of the argument.
+--------------------------------------------------------------------------- */
+
+.ads {
+  padding: clamp(56px, 8vw, 104px) 0;
+  border-top: 1px solid var(--line);
+}
+
+.ads-kicker {
+  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 10px;
+}
+
+.ads-head {
+  font-size: clamp(26px, 4vw, 42px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+
+.ads-sub {
+  max-width: 62ch;
+  color: var(--text-dim);
+  margin: 0 0 clamp(28px, 4vw, 44px);
+}
+
+.ad-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: clamp(14px, 2vw, 20px);
+}
+
+.ad {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--r-surface);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 220ms var(--ease);
+}
+
+.ad:hover {
+  border-color: var(--line-strong);
+}
+
+/* A fixed height, because the canvas scenes are composed for one. Letting it
+   grow with the column would put the caption off the bottom of a wide card. */
+.ad-canvas {
+  display: block;
+  width: 100%;
+  height: 150px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+  border-bottom: 1px solid var(--line);
+}
+
+.ad-body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.ad-body h3 {
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.ad-body p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  flex: 1;
+}
+
+.ad-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.ad-link:hover {
+  text-decoration: underline;
+}
+
+/* A project with nothing public to link to still gets a line, because a card
+   that ends on a paragraph looks unfinished next to three that do not. */
+.ad-link--quiet {
+  color: var(--text-faint);
+  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
