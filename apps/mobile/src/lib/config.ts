@@ -159,6 +159,22 @@ export const config = {
    * failure that is not true.
    */
   wakeBudgetMs: 420_000,
+  /**
+   * How long an answer from the server counts as proof it is still up.
+   *
+   * The free plan stops the service after fifteen idle minutes, so "it
+   * answered once" is not a fact about the future. This used to be forever —
+   * a boolean latched on the first response — which meant that after any
+   * normal pause (open the app, read about a film, talk to somebody, then tap
+   * Sign in) the mutation went straight at a sleeping host on a fifteen second
+   * deadline and failed, because a mutation is never retried.
+   *
+   * Thirty seconds, because the cost of being wrong in each direction is not
+   * symmetric. Re-probing needlessly costs one round trip against a server
+   * that is already awake. Not probing when it has gone to sleep costs the
+   * whole action, finally, with a message blaming the user's connection.
+   */
+  awakeConfidenceMs: 30_000,
   /** One probe's deadline. Short, because the loop is what does the waiting. */
   wakeProbeTimeoutMs: 8_000,
   /** Breathing room between probes, so a booting host is not hammered. */

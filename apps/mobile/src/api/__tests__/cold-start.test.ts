@@ -29,6 +29,16 @@ function loadClient(): Client {
   return mod;
 }
 
+/** How long an answer counts for, read the same isolated way as the host. */
+function awakeConfidenceMs(): number {
+  let ms!: number;
+  jest.isolateModules(() => {
+    ms = (require('../../lib/config') as typeof import('../../lib/config')).config
+      .awakeConfidenceMs;
+  });
+  return ms;
+}
+
 /** The wake budget, read the same isolated way `liveUrl` reads the host. */
 function wakeBudgetMs(): number {
   let ms!: number;
@@ -93,7 +103,7 @@ describe('cold start', () => {
     expect(fetchMock.mock.calls.filter((c) => c[1]?.method === 'POST')).toHaveLength(1);
   });
 
-  it('does not wait again once the server has answered', async () => {
+  it('does not wait again when the server answered a moment ago', async () => {
     const { api } = loadClient();
     fetchMock.mockImplementation(async () => ok({ ok: true }));
 
@@ -103,6 +113,42 @@ describe('cold start', () => {
 
     // The second mutation costs exactly one request: no second probe.
     expect(fetchMock.mock.calls.length).toBe(after + 1);
+  });
+
+  /**
+   * The bug this replaced, reproduced on an Android device before it was
+   * found in the code.
+   *
+   * "The server has answered" used to be a boolean, latched true by the first
+   * response and never cleared — which assumed the server could not go back
+   * to sleep. It can, after fifteen idle minutes, and that is an utterly
+   * ordinary gap: open the app, read about a film, talk to somebody, tap Sign
+   * in. The latch said awake, the wait was skipped, and the POST went at a
+   * sleeping host on a fifteen second deadline. A mutation is never retried,
+   * so it failed outright and blamed the connection — while a probe sent at
+   * the same moment got an answer 86 seconds later, well inside the budget
+   * the app had refused to spend.
+   */
+  it('waits again after a pause long enough for the server to have slept', async () => {
+    jest.useFakeTimers();
+    try {
+      const { api } = loadClient();
+      fetchMock.mockImplementation(async () => ok({ ok: true }));
+
+      await api.post('/v1/first', {});
+      const after = fetchMock.mock.calls.length;
+
+      // Long enough that an answer is no longer evidence of anything.
+      jest.setSystemTime(Date.now() + awakeConfidenceMs() + 1_000);
+
+      await api.post('/v1/second', {});
+
+      // A probe *and* the mutation, rather than the mutation alone.
+      expect(fetchMock.mock.calls.length).toBe(after + 2);
+      expect(fetchMock.mock.calls[after]?.[0]).toBe(liveUrl());
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('shares one probe between the launch warm-up and a mutation', async () => {

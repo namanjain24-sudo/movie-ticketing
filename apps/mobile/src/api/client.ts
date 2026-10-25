@@ -97,11 +97,34 @@ function unreachable(err: unknown): ApiRequestError {
  * longer budget; a mutation cannot, because a request that timed out may still
  * have been received, which is why `send` never retries one.
  *
- * So the waiting is moved in front of the mutation instead of after it. Once
- * anything has come back, this is a no-op for the rest of the session.
+ * So the waiting is moved in front of the mutation instead of after it.
+ *
+ * `lastAnsweredAt`, not a boolean. It was a boolean, latched true the first
+ * time anything came back and never cleared, which quietly assumed the server
+ * could not go back to sleep. It can, after fifteen idle minutes, and that is
+ * an ordinary gap: open the app, look at a film, talk to somebody, then tap
+ * Sign in. The latch said "awake", the wait was skipped, the POST went
+ * straight at a sleeping host on a fifteen second deadline, and a mutation is
+ * never retried — so it failed outright with "cannot reach the server" while
+ * the server was merely starting. Reproduced on a device: the host answered a
+ * probe 86 seconds later, well inside the budget the app refused to spend.
+ *
+ * An answer is now evidence with a shelf life. Inside `awakeConfidenceMs` a
+ * mutation goes straight out; past it, one cheap probe decides — a round trip
+ * on a warm server, and the full patient wait on a cold one.
  */
-let serverAnswered = false;
+let lastAnsweredAt = 0;
 let waking: Promise<void> | null = null;
+
+/** The server answered recently enough to still believe it is up. */
+function answeredRecently(): boolean {
+  return Date.now() - lastAnsweredAt < config.awakeConfidenceMs;
+}
+
+/** Called wherever the server proves it is up. */
+function noteServerAnswered(): void {
+  lastAnsweredAt = Date.now();
+}
 
 /**
  * Resolves once the server is answering, or gives up on the whole budget.
@@ -114,7 +137,7 @@ let waking: Promise<void> | null = null;
  * to report.
  */
 function waitForServer(signal?: AbortSignal): Promise<void> {
-  if (serverAnswered) return Promise.resolve();
+  if (answeredRecently()) return Promise.resolve();
 
   waking ??= (async () => {
     const until = Date.now() + config.wakeBudgetMs;
@@ -129,7 +152,7 @@ function waitForServer(signal?: AbortSignal): Promise<void> {
           config.wakeProbeTimeoutMs,
           signal,
         );
-        serverAnswered = true;
+        noteServerAnswered();
         return;
       } catch {
         // Expected while it boots. Wait a beat so a sleeping host is not
@@ -185,8 +208,9 @@ async function send<T>(path: string, options: RequestOptions, retry: boolean): P
   };
 
   // A mutation sent at a sleeping server fails on a fifteen second deadline
-  // and cannot be retried, so wake the server first and send it once.
-  if (method !== 'GET' && !serverAnswered) await waitForServer(signal);
+  // and cannot be retried, so make sure it is awake first and send it once.
+  // `waitForServer` is a no-op when the server answered a moment ago.
+  if (method !== 'GET') await waitForServer(signal);
 
   let response: Response;
   try {
@@ -214,8 +238,9 @@ async function send<T>(path: string, options: RequestOptions, retry: boolean): P
     }
   }
 
-  // Anything that came back, including a 4xx, proves the server is up.
-  serverAnswered = true;
+  // Anything that came back, including a 4xx, proves the server is up — for
+  // now. See `lastAnsweredAt`: it can be asleep again in fifteen minutes.
+  noteServerAnswered();
 
   // One silent refresh-and-retry, then give up and sign the user out.
   if (response.status === 401 && retry && !options.public && hooks) {
