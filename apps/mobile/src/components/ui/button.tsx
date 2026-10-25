@@ -124,6 +124,13 @@ export function Button({
           <Text
             variant={size === 'sm' ? 'label' : 'heading'}
             tone={labelTone}
+            // A button label is one line, always. On a 320dp screen "Sign out"
+            // was reflowing to "Sign / out" inside a button nearly three
+            // hundred points wide, which looks like a broken control rather
+            // than a long word. Labels here are two or three words, so there
+            // is nothing a wrap could usefully do that shrinking cannot.
+            numberOfLines={1}
+            adjustsFontSizeToFit
             style={emphasis === 'commit' ? styles.shout : undefined}
           >
             {label}
