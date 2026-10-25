@@ -20,17 +20,46 @@ type AuthState = {
   refreshSession: () => Promise<string | null>;
 };
 
-async function persist(tokens: AuthResponse['tokens']) {
+async function persist(tokens: AuthResponse['tokens'], user?: User) {
   await Promise.all([
     secureStorage.set(STORAGE_KEYS.accessToken, tokens.accessToken),
     secureStorage.set(STORAGE_KEYS.refreshToken, tokens.refreshToken),
+    ...(user ? [secureStorage.set(STORAGE_KEYS.user, JSON.stringify(user))] : []),
   ]);
+}
+
+/**
+ * The signed-in user, as last seen.
+ *
+ * Kept next to the tokens because `isSignedIn` is `user !== null`, and `user`
+ * used to be obtainable only from a live `GET /users/me`. That made the whole
+ * session contingent on the network at launch: `restore` would keep the tokens
+ * when the call failed — and its comment says, correctly, that being unable to
+ * reach the server says nothing about whether the session is good — but it
+ * left `user` null, so the tabs layout redirected to sign-in anyway. Opening
+ * the app on a plane, or during the minute a free host takes to wake, threw
+ * you out of a session that was perfectly valid.
+ *
+ * It is a cache for routing, not an authority. Every request still carries the
+ * access token and the server still decides; a 401 still refreshes or signs
+ * out. All this does is let the app open.
+ */
+async function readStoredUser(): Promise<User | null> {
+  const raw = await secureStorage.get(STORAGE_KEYS.user);
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as User;
+    return value?.id && value.email ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 async function clearPersisted() {
   await Promise.all([
     secureStorage.remove(STORAGE_KEYS.accessToken),
     secureStorage.remove(STORAGE_KEYS.refreshToken),
+    secureStorage.remove(STORAGE_KEYS.user),
   ]);
 }
 
@@ -51,16 +80,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // set it. A throw that skipped it left the app on the splash screen for
     // good.
     try {
-      const [accessToken, refreshToken] = await Promise.all([
+      const [accessToken, refreshToken, storedUser] = await Promise.all([
         secureStorage.get(STORAGE_KEYS.accessToken),
         secureStorage.get(STORAGE_KEYS.refreshToken),
+        readStoredUser(),
       ]);
 
       if (!refreshToken) return;
 
-      set({ accessToken, refreshToken });
+      // Optimistically signed in, on the strength of a token this device
+      // stored. The calls below either confirm it or take it away again.
+      set({ accessToken, refreshToken, user: storedUser });
       try {
-        set({ user: await authApi.me() });
+        const user = await authApi.me();
+        set({ user });
+        void secureStorage.set(STORAGE_KEYS.user, JSON.stringify(user));
         return;
       } catch (err) {
         /**
@@ -69,9 +103,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
          * no signal on the way into the cinema, or a free host that has spun
          * down and takes most of a minute to wake.
          *
-         * Keep the tokens and let the app open. The first request that gets a
-         * real 401 will refresh or sign out properly, with the server actually
-         * having answered.
+         * Keep the tokens *and the stored user*, and let the app open. The
+         * tokens alone were not enough: routing keys off `user`, so keeping
+         * them while leaving `user` null still redirected to sign-in, which
+         * is the opposite of what this branch is for.
+         *
+         * The first request that gets a real 401 will refresh or sign out
+         * properly, with the server actually having answered.
          */
         if (err instanceof ApiRequestError && err.isNetworkError) return;
       }
@@ -81,7 +119,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const fresh = await get().refreshSession();
       if (!fresh) return;
       try {
-        set({ user: await authApi.me() });
+        const user = await authApi.me();
+        set({ user });
+        void secureStorage.set(STORAGE_KEYS.user, JSON.stringify(user));
       } catch (err) {
         if (err instanceof ApiRequestError && err.isNetworkError) return;
         await clearPersisted();
@@ -94,13 +134,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signIn: async (email, password) => {
     const { user, tokens } = await authApi.login({ email, password });
-    await persist(tokens);
+    await persist(tokens, user);
     set({ user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
   },
 
   signUp: async (name, email, password) => {
     const { user, tokens } = await authApi.register({ name, email, password });
-    await persist(tokens);
+    await persist(tokens, user);
     set({ user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
   },
 
@@ -125,7 +165,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     inFlightRefresh = (async () => {
       try {
         const { user, tokens } = await authApi.refresh(token);
-        await persist(tokens);
+        await persist(tokens, user);
         set({ user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
         return tokens.accessToken;
       } catch (err) {

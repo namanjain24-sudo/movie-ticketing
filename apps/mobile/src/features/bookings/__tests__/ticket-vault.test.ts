@@ -1,6 +1,12 @@
 import type { Booking } from '@app/shared';
 import { secureStorage } from '../../../lib/storage';
-import { forgetTicket, readSavedTicket, saveTicket, toSavedTicket } from '../ticket-vault';
+import {
+  forgetTicket,
+  listSavedTickets,
+  readSavedTicket,
+  saveTicket,
+  toSavedTicket,
+} from '../ticket-vault';
 
 /** `mock`-prefixed so the factory below may close over it. */
 const mockStore = new Map<string, string>();
@@ -148,5 +154,44 @@ describe('ticket vault', () => {
 
   it('formats seats the way the stub prints them', () => {
     expect(toSavedTicket(booking()).seats).toBe('H10, H11');
+  });
+});
+
+describe('listing what this phone kept', () => {
+  /**
+   * The gap airplane mode on a real device exposed: the saved ticket was
+   * reachable only by its own URL, and the one route to that URL is the
+   * bookings list, which needs the network.
+   */
+  it('gives back every saved ticket, newest first', async () => {
+    await saveTicket(booking({ reference: 'BK-OLD001' }));
+    await saveTicket(booking({ reference: 'BK-MID001' }));
+    await saveTicket(booking({ reference: 'BK-NEW001' }));
+
+    const tickets = await listSavedTickets();
+
+    expect(tickets.map((t) => t.reference)).toEqual(['BK-NEW001', 'BK-MID001', 'BK-OLD001']);
+  });
+
+  it('is empty rather than broken when nothing has been saved', async () => {
+    expect(await listSavedTickets()).toEqual([]);
+  });
+
+  it('skips an entry the index names but storage has lost', async () => {
+    await saveTicket(booking({ reference: 'BK-KEPT01' }));
+    await saveTicket(booking({ reference: 'BK-GONE01' }));
+    mockStore.delete('tickets.saved.BK-GONE01');
+
+    const tickets = await listSavedTickets();
+
+    expect(tickets.map((t) => t.reference)).toEqual(['BK-KEPT01']);
+  });
+
+  it('does not list a ticket that was forgotten', async () => {
+    await saveTicket(booking({ reference: 'BK-KEPT01' }));
+    await saveTicket(booking({ reference: 'BK-DROP01' }));
+    await forgetTicket('BK-DROP01');
+
+    expect((await listSavedTickets()).map((t) => t.reference)).toEqual(['BK-KEPT01']);
   });
 });

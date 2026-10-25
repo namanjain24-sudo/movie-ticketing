@@ -1,13 +1,15 @@
 import type { Booking } from '@app/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { bookingApi } from '../../api/booking';
 import { EmptyState, ErrorState } from '../../components/query-state';
 import { AppBar, Skeleton, Text } from '../../components/ui';
 import { BookingCard } from '../../features/bookings/booking-card';
+import { SavedTicketsList } from '../../features/bookings/saved-tickets-list';
+import { listSavedTickets, type SavedTicket } from '../../features/bookings/ticket-vault';
 import { SponsoredCard } from '../../features/promos/sponsored-card';
 import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
@@ -30,6 +32,21 @@ export default function Bookings() {
 
   const list: Booking[] =
     (tab === 'upcoming' ? bookings.data?.upcoming : bookings.data?.past) ?? [];
+
+  /**
+   * Read once at mount, so the fallback below is ready the moment the list
+   * fails rather than after a second spinner. Cheap: a dozen small reads.
+   */
+  const [saved, setSaved] = useState<SavedTicket[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    void listSavedTickets().then((tickets) => {
+      if (!cancelled) setSaved(tickets);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const header = (
     <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.lg }}>
@@ -77,11 +94,21 @@ export default function Bookings() {
           <Skeleton style={{ height: 116, borderRadius: 14 }} />
         </View>
       ) : bookings.isError ? (
-        <ErrorState
-          error={bookings.error}
-          title="Could not load your bookings"
-          onRetry={() => void bookings.refetch()}
-        />
+        // A phone that kept tickets has something better to offer than an
+        // error, and this is the screen those tickets are reached through.
+        saved.length > 0 ? (
+          <SavedTicketsList
+            tickets={saved}
+            retrying={bookings.isRefetching}
+            onRetry={() => void bookings.refetch()}
+          />
+        ) : (
+          <ErrorState
+            error={bookings.error}
+            title="Could not load your bookings"
+            onRetry={() => void bookings.refetch()}
+          />
+        )
       ) : (
         <Animated.View key={tab} entering={FadeIn.duration(180)} style={{ flex: 1 }}>
           <FlatList

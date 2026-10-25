@@ -11,6 +11,7 @@ import { ErrorState } from '../../components/query-state';
 import { AppBar, Button, Skeleton, Text, TextField } from '../../components/ui';
 import { useWatchlist } from '../../features/watchlist/use-watchlist';
 import { useAuthStore } from '../../features/auth/auth-store';
+import { appVersion } from '../../lib/config';
 import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme, type ThemePreference } from '../../theme';
@@ -201,6 +202,16 @@ export default function Profile() {
             router.replace('/(auth)/sign-in');
           }}
         />
+
+        {/*
+          Which build this is. An APK is side-loaded and never updates itself,
+          so "have you got the one with the fix in it" is a real question with
+          no way to answer it from inside the app — and the answer decides
+          whether a bug report is about today's code or last week's.
+        */}
+        <Text variant="caption" tone="muted" align="center" selectable>
+          Boxoffice {appVersion}
+        </Text>
       </ScrollView>
     </View>
   );

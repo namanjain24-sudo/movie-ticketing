@@ -108,6 +108,21 @@ export async function saveTicket(booking: Booking): Promise<void> {
   }
 }
 
+/**
+ * Every ticket this device has kept, newest first.
+ *
+ * The saved ticket was reachable only by its own URL, and the one route to
+ * that URL is the bookings list — which needs the network. So on a phone with
+ * no signal the copy existed, was correct, and could not be opened by anybody
+ * who did not already know the booking reference. Tested in airplane mode on
+ * a real device, which is the only way that shows up.
+ */
+export async function listSavedTickets(): Promise<SavedTicket[]> {
+  const references = await readIndex();
+  const tickets = await Promise.all(references.map((r) => readSavedTicket(r)));
+  return tickets.filter((t): t is SavedTicket => t !== null);
+}
+
 export async function readSavedTicket(reference: string): Promise<SavedTicket | null> {
   const raw = await secureStorage.get(entryKey(reference));
   if (!raw) return null;

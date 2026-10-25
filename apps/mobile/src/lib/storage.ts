@@ -71,6 +71,8 @@ export const secureStorage = {
 export const STORAGE_KEYS = {
   accessToken: 'auth.accessToken',
   refreshToken: 'auth.refreshToken',
+  /** The signed-in user, so a launch with no network still opens the app. */
+  user: 'auth.user',
   themePreference: 'settings.themePreference',
   recentFilmSearches: 'search.recentFilms',
   recentCinemaSearches: 'search.recentCinemas',

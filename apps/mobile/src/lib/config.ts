@@ -166,3 +166,15 @@ export const config = {
   /** How long the reachability probe waits before calling the server down. */
   healthTimeoutMs: 4_000,
 } as const;
+
+/**
+ * The build's own version, for the one line on the profile screen that says
+ * which one this is.
+ *
+ * An APK is side-loaded and never updates itself, so "have you got the build
+ * with the fix in it" is a real question that nothing in the app could answer
+ * — and the answer decides whether a bug report is about today's code or last
+ * week's. `expoConfig.version` is `app.json`'s `version`, embedded at build
+ * time, so it is right in a release build and not only in development.
+ */
+export const appVersion: string = Constants.expoConfig?.version ?? 'unknown build';
