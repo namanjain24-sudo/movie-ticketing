@@ -247,6 +247,105 @@
         </div>
       </section>
 
+      <!-- ===== the sponsor rail: the author's own projects ==============
+           Labelled as house ads, because they are. An ad rail that implied
+           somebody had paid for the placement would be a lie told for
+           decoration, and this page's whole argument is that it does not do
+           that. Each slot is a canvas drawing the idea in three beats — a
+           few kilobytes rather than a few megabytes of video, crisp at any
+           density, and with the copy beside it as real text.
+      -->
+      <section class="ads" id="ads" aria-labelledby="ads-head">
+        <div class="wrap">
+          <p class="ads-kicker reveal">House ads · built by the same person</p>
+          <h2 id="ads-head" class="ads-head reveal" style="--i: 1">
+            Other things on this workbench
+          </h2>
+          <p class="ads-sub reveal" style="--i: 2">
+            Nobody paid for these slots. They are the author's own projects, put where a sponsor
+            would go, because a page that argues for honest software should not pretend to have
+            advertisers it does not have.
+          </p>
+
+          <div class="ad-rail" id="adRail" data-stagger>
+            <article class="ad reveal" data-ad="archforge">
+              <canvas
+                class="ad-canvas"
+                role="img"
+                aria-label="A typed prompt becomes a wired architecture diagram of eighteen components, with capacity maths and a score."
+              ></canvas>
+              <div class="ad-body">
+                <h3>ArchForge</h3>
+                <p>
+                  Describe a system in one sentence and get a verified architecture back — every box
+                  and arrow following real system-design principles, with capacity maths and a
+                  six-pillar review. Not an AI sketch.
+                </p>
+                <a
+                  class="ad-link"
+                  href="https://archforge.vercel.app"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Try it live<span aria-hidden="true"> →</span>
+                </a>
+              </div>
+            </article>
+
+            <article class="ad reveal" data-ad="hindsight">
+              <canvas
+                class="ad-canvas"
+                role="img"
+                aria-label="A call is sealed in a box, a market line is drawn, and the call is then graded against what happened."
+              ></canvas>
+              <div class="ad-body">
+                <h3>Hindsight</h3>
+                <p>
+                  Sealed before the outcome, graded after. A financial intelligence pipeline where
+                  every claim traces to a source URL and every accuracy number comes from a harness
+                  you can run yourself.
+                </p>
+                <span class="ad-link ad-link--quiet">Research project</span>
+              </div>
+            </article>
+
+            <article class="ad reveal" data-ad="clipstudio">
+              <canvas
+                class="ad-canvas"
+                role="img"
+                aria-label="Clips land on three timeline tracks and a playhead sweeps across them before export."
+              ></canvas>
+              <div class="ad-body">
+                <h3>ClipStudio</h3>
+                <p>
+                  A timeline video editor that runs entirely in the browser. Keyframes, chroma key,
+                  captions transcribed locally, and a real MP4 encoded on your machine through
+                  WebCodecs. Nothing is uploaded to render.
+                </p>
+                <span class="ad-link ad-link--quiet">Runs in the tab</span>
+              </div>
+            </article>
+
+            <article class="ad reveal" data-ad="marque">
+              <canvas
+                class="ad-canvas"
+                role="img"
+                aria-label="A request falls down five architectural layers, from client to store, and a campaign comes out."
+              ></canvas>
+              <div class="ad-body">
+                <h3>Marque.ai</h3>
+                <p>
+                  A goal goes in at the top, falls through intent classification, brand memory and a
+                  signal check, and a campaign comes out. React, FastAPI and Postgres, dockerised
+                  end to end.
+                </p>
+                <span class="ad-link ad-link--quiet">Full stack</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <!-- ===== the clips: four loops of the real thing ================== -->
       <section class="clips" id="clips">
         <div class="wrap">
@@ -828,6 +927,7 @@
     </footer>
 
     <script src="film.js" defer></script>
+    <script src="ads.js" defer></script>
     <script src="site.js" defer></script>
   </body>
 </html>
