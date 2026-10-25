@@ -1,4 +1,10 @@
-import { SEAT_TIER_LABELS, formatMoney, type SeatMap, type SeatMapSeat } from '@app/shared';
+import {
+  SEAT_TIER_LABELS,
+  formatMoney,
+  type EventKind,
+  type SeatMap,
+  type SeatMapSeat,
+} from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   forwardRef,
@@ -34,7 +40,23 @@ import type { SeatRenderStatus, SeatRow } from './use-seat-selection';
 export const SEAT_SIZE = 28;
 export const SEAT_GAP = 6;
 export const SEAT_PITCH = SEAT_SIZE + SEAT_GAP;
+/**
+ * The frozen gutter's width.
+ *
+ * A cinema row is "A" or "AA" and 28 points is ample. A stand's is not: rows
+ * at Wankhede read "GP-A" for the Garware Pavilion and "MCA-F" for the MCA
+ * Pavilion, because a bare "A" in a six-stand bowl says nothing about which
+ * stand it is. At 28 points those wrapped onto two lines, which made every
+ * row in the map taller than its seats. So the gutter is measured from the
+ * labels it actually has to hold.
+ */
 export const ROW_LABEL_WIDTH = 28;
+
+/** Roughly what a caption-sized character costs, plus the gutter's padding. */
+export function rowLabelWidthFor(rows: { label: string }[]): number {
+  const longest = rows.reduce((max, r) => Math.max(max, r.label.length), 1);
+  return Math.max(ROW_LABEL_WIDTH, Math.ceil(longest * 7.5) + 8);
+}
 const TIER_HEADER_HEIGHT = 46;
 /** Columns rendered beyond each edge, so a fast pan never shows a hole. */
 const COLUMN_BUFFER = 5;
@@ -85,10 +107,12 @@ function SeatBody({
 const Seat = memo(function Seat({
   seat,
   status,
+  labelWidth,
   onPress,
 }: {
   seat: SeatMapSeat;
   status: SeatRenderStatus;
+  labelWidth: number;
   onPress: (seat: SeatMapSeat) => void;
 }) {
   const { colors, radius } = useTheme();
@@ -100,7 +124,7 @@ const Seat = memo(function Seat({
     // Placed by its own grid coordinate, which is what preserves the
     // auditorium's aisles, its centring, and the taper towards the screen.
     position: 'absolute' as const,
-    left: ROW_LABEL_WIDTH + seat.x * SEAT_PITCH,
+    left: labelWidth + seat.x * SEAT_PITCH,
     width: SEAT_SIZE,
     height: SEAT_SIZE,
     // A seat is a seat: square at the back, rounded at the front edge.
@@ -158,6 +182,7 @@ const Row = memo(
     statuses,
     firstColumn,
     lastColumn,
+    labelWidth,
     scrollX,
     onPressSeat,
   }: {
@@ -168,6 +193,8 @@ const Row = memo(
     signature: string;
     firstColumn: number;
     lastColumn: number;
+    /** Measured from the longest label in the map; see `rowLabelWidthFor`. */
+    labelWidth: number;
     /** Horizontal offset, so the row can pin its label to the viewport edge. */
     scrollX: SharedValue<number>;
     onPressSeat: (seat: SeatMapSeat) => void;
@@ -189,7 +216,13 @@ const Row = memo(
       <View style={styles.row}>
         {row.seats.map((seat, index) =>
           seat.x >= firstColumn && seat.x <= lastColumn ? (
-            <Seat key={seat.id} seat={seat} status={statuses[index]} onPress={onPressSeat} />
+            <Seat
+              key={seat.id}
+              seat={seat}
+              status={statuses[index]}
+              labelWidth={labelWidth}
+              onPress={onPressSeat}
+            />
           ) : null,
         )}
 
@@ -205,8 +238,14 @@ const Row = memo(
           behind it. The backdrop reaches back over the scroller's own left
           padding too, or a sliver of seat would show in the gutter beside it.
         */}
-        <Animated.View style={[styles.label, { backgroundColor: colors.background }, labelStyle]}>
-          <Text variant="caption" style={{ color: colors.textMuted }}>
+        <Animated.View
+          style={[
+            styles.label,
+            { backgroundColor: colors.background, width: labelWidth + spacing.lg },
+            labelStyle,
+          ]}
+        >
+          <Text variant="caption" numberOfLines={1} style={{ color: colors.textMuted }}>
             {row.label}
           </Text>
           <Animated.View
@@ -221,6 +260,7 @@ const Row = memo(
     prev.signature === next.signature &&
     prev.firstColumn === next.firstColumn &&
     prev.lastColumn === next.lastColumn &&
+    prev.labelWidth === next.labelWidth &&
     prev.onPressSeat === next.onPressSeat,
 );
 
@@ -279,7 +319,23 @@ const TierHeader = memo(function TierHeader({
  * The curve at the top of the auditorium. Drawn rather than labelled, because
  * "which way am I facing" is a spatial question and deserves a spatial answer.
  */
-export function ScreenCurve() {
+/**
+ * What the curve is pointing at, in the venue's own word.
+ *
+ * "SCREEN THIS WAY" is right in a cinema and wrong everywhere else: a cricket
+ * ground has a pitch and a gig has a stage, and an arrow labelled "screen" at
+ * Wankhede is the map telling somebody it does not know where it is.
+ */
+const FACING_LABEL: Record<EventKind | 'FILM', string> = {
+  FILM: 'SCREEN THIS WAY',
+  SPORT: 'PITCH THIS WAY',
+  CONCERT: 'STAGE THIS WAY',
+  COMEDY: 'STAGE THIS WAY',
+  THEATRE: 'STAGE THIS WAY',
+  WORKSHOP: 'FRONT OF ROOM',
+};
+
+export function ScreenCurve({ facing = 'FILM' }: { facing?: EventKind | 'FILM' }) {
   const { colors, spacing } = useTheme();
 
   return (
@@ -312,7 +368,7 @@ export function ScreenCurve() {
         />
       </View>
       <Text variant="overline" tone="muted" style={{ marginTop: spacing['2xs'] }}>
-        SCREEN THIS WAY
+        {FACING_LABEL[facing]}
       </Text>
     </View>
   );
@@ -387,7 +443,10 @@ export const SeatGrid = forwardRef<
     return { heights, starts };
   }, [items]);
 
-  const contentWidth = ROW_LABEL_WIDTH + map.screen.columnCount * SEAT_PITCH;
+  // Measured from the labels this map actually has: "A" at a cinema, "MCA-F"
+  // at a ground with six stands.
+  const labelWidth = useMemo(() => rowLabelWidthFor(rows), [rows]);
+  const contentWidth = labelWidth + map.screen.columnCount * SEAT_PITCH;
 
   /**
    * The row list needs its viewport in real pixels. `flex: 1` is not enough
@@ -471,12 +530,13 @@ export const SeatGrid = forwardRef<
           signature={item.signature}
           firstColumn={firstColumn}
           lastColumn={lastColumn}
+          labelWidth={labelWidth}
           scrollX={scrollX}
           onPressSeat={onPressSeat}
         />
       );
     },
-    [frame.width, firstColumn, lastColumn, scrollX, onPressSeat],
+    [frame.width, firstColumn, lastColumn, labelWidth, scrollX, onPressSeat],
   );
 
   return (
@@ -526,7 +586,6 @@ const styles = StyleSheet.create({
     left: -spacing.lg,
     top: 0,
     bottom: 0,
-    width: ROW_LABEL_WIDTH + spacing.lg,
     paddingLeft: spacing.lg,
     justifyContent: 'center',
   },

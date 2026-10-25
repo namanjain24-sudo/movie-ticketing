@@ -1,4 +1,5 @@
 import type {
+  EventListQuery,
   CinemaListQuery,
   MovieListQuery,
   ReviewListQuery,
@@ -39,6 +40,11 @@ export const queryKeys = {
   cinemaBrands: ['cinema-brands'] as const,
   cinema: (idOrSlug: string) => ['cinema', idOrSlug] as const,
   showtimes: (query: ShowtimeListQuery = {}) => ['showtimes', query] as const,
+  events: (query: EventListQuery = {}) => ['events', query] as const,
+  event: (idOrSlug: string) => ['event', idOrSlug] as const,
+  eventCities: (eventId: string) => ['event-cities', eventId] as const,
+  eventShows: (eventId: string, query: { city?: string; date?: string } = {}) =>
+    ['event-shows', eventId, query] as const,
   seatMap: (showtimeId: string) => ['seatmap', showtimeId] as const,
   watchlist: ['watchlist'] as const,
   favoriteCinemas: ['favorite-cinemas'] as const,

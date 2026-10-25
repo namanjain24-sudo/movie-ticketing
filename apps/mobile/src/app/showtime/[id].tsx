@@ -1,4 +1,9 @@
-import { SHOW_FORMAT_LABELS, formatMoney, type SeatMapSeat } from '@app/shared';
+import {
+  EVENT_KIND_SINGULAR,
+  SHOW_FORMAT_LABELS,
+  formatMoney,
+  type SeatMapSeat,
+} from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -172,7 +177,11 @@ export default function SeatMapScreen() {
                 {formatMonthDay(map.startsAt)}
               </Text>
               <Text variant="caption" style={{ color: colors.onChromeMuted }} numeric>
-                {formatTime(map.startsAt)} · {SHOW_FORMAT_LABELS[map.format]}
+                {/* A match is not in 2D. The format column is a film's, and
+                    carries a default that means nothing for an event, so the
+                    event's own kind goes here instead. */}
+                {formatTime(map.startsAt)} ·{' '}
+                {map.event ? EVENT_KIND_SINGULAR[map.event.kind] : SHOW_FORMAT_LABELS[map.format]}
               </Text>
             </View>
           </View>
@@ -192,7 +201,7 @@ export default function SeatMapScreen() {
       <View style={{ flex: 1, paddingTop: spacing.lg }}>
         {/* Outside the horizontal scroller: on a wide auditorium a centred
             label inside it would sit off-screen until the user panned. */}
-        <ScreenCurve />
+        <ScreenCurve facing={map.event?.kind ?? 'FILM'} />
         {visibleRow ? (
           <View
             style={{

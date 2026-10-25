@@ -29,7 +29,40 @@
  * venue actually uses. The seat map already groups by tier and prints the
  * band's price above it, so a stadium map reads as the stands do.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { EventKind, PrismaClient, SeatTier, VenueKind } from '@prisma/client';
+
+/**
+ * Images, resolved from the real Wikipedia article for each subject and
+ * cached by `fetch:event-images`.
+ *
+ * Not written out by hand. The first version of this file had poster URLs
+ * typed from memory and four of five were 404s — a guessed URL is not a
+ * shortcut to real data, it is a broken image that looks like real data in
+ * the diff. Re-run the script to refresh them.
+ */
+interface EventImage {
+  imageUrl: string;
+  article: string;
+  source: 'wikipedia' | 'placeholder';
+}
+
+const IMAGES: Record<string, EventImage> = JSON.parse(
+  readFileSync(resolve(import.meta.dirname, 'event-images.json'), 'utf8'),
+) as Record<string, EventImage>;
+
+/**
+ * The cached image for a slug, or an empty string.
+ *
+ * Empty rather than a placeholder service: `Poster` draws initials on a
+ * tinted card when it has no URL, which always works, whereas the
+ * placeholder host this used to point at does not resolve on every network
+ * and was the only entry in the catalogue that actually failed to load.
+ */
+export function imageFor(slug: string): string {
+  return IMAGES[slug]?.imageUrl ?? '';
+}
 
 export interface StandSpec {
   /** The price band this stand is sold in. */
@@ -307,7 +340,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'The one everybody books first',
     description:
       'Two of the most decorated sides in Indian franchise cricket, and the fixture that fills a ground faster than any other. Gates open two hours before the first ball; the North Stand is standing room in all but name by then.',
-    posterUrl: 'https://upload.wikimedia.org/wikipedia/en/c/cd/Mumbai_Indians_Logo.svg',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 210,
     performers: ['Mumbai Indians', 'Chennai Super Kings'],
@@ -341,8 +374,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'Chinnaswamy under lights',
     description:
       'A short boundary, a quick outfield and two batting line-ups with no interest in a low score. The Chinnaswamy has the best sightlines of any ground in the country from the Grand Stand.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/en/thumb/2/2e/Royal_Challengers_Bengaluru_Logo.svg/330px-Royal_Challengers_Bengaluru_Logo.svg.png',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 210,
     performers: ['Royal Challengers Bengaluru', 'Kolkata Knight Riders'],
@@ -366,8 +398,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'Five days, one ground, no clock',
     description:
       'The oldest format at the oldest big ground in the country. Day one tickets, first ball at half past nine, with the Club House end taking the morning shade.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Flag_of_India.svg/320px-Flag_of_India.svg.png',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 420,
     performers: ['India', 'Australia'],
@@ -391,8 +422,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'Chepauk, full house',
     description:
       'Chepauk in yellow, which is most of the point. The I and J stands take the best of the evening breeze off the Bay.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/en/thumb/2/2b/Chennai_Super_Kings_Logo.svg/330px-Chennai_Super_Kings_Logo.svg.png',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 210,
     performers: ['Chennai Super Kings', 'Rajasthan Royals'],
@@ -416,8 +446,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'One voice, one stage, no support act',
     description:
       'Close to three hours with the playback voice of a generation, a full live band and none of the production tricks. The Fan Pit is standing, directly at the stage; everything behind it is seated.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Arijit_Singh_2019.jpg/400px-Arijit_Singh_2019.jpg',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 180,
     performers: ['Arijit Singh'],
@@ -447,8 +476,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'Mumbai hip-hop, at home',
     description:
       'The rapper who took Mumbai street rap to a national stage, playing the city he writes about. Loud, fast, and over in ninety minutes.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Divine_rapper.jpg/400px-Divine_rapper.jpg',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 120,
     performers: ['DIVINE'],
@@ -471,8 +499,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'Sakht launda, live and unedited',
     description:
       'An hour and a half of the storytelling that made him the biggest draw in Hindi stand-up. New material, no interval, phones in pouches at the door.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Zakir_Khan_in_2019.jpg/400px-Zakir_Khan_in_2019.jpg',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 90,
     performers: ['Zakir Khan'],
@@ -497,8 +524,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'Work in progress, mostly working',
     description:
       'A new hour being built in front of an audience, which is the only way an hour ever gets built. English, with the occasional tangent that does not come back.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Kanan_Gill_2017.jpg/400px-Kanan_Gill_2017.jpg',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 75,
     performers: ['Kanan Gill'],
@@ -517,8 +543,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'Whiteboard, not slides',
     description:
       'A full day building three systems end to end on a whiteboard: a URL shortener, a news feed, and a ticket booking system with seat locking. You design, the room argues, and the trade-offs get written down.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Whiteboard_with_diagrams.jpg/400px-Whiteboard_with_diagrams.jpg',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 480,
     performers: ['Working engineers from product companies'],
@@ -543,8 +568,7 @@ export const EVENTS: EventSpec[] = [
     tagline: 'For people who have never sung in front of anyone',
     description:
       'Three hours on what a raag actually is, how a taal is counted, and why the same note sounds different depending on what came before it. No instrument and no training needed.',
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Tanpura.jpg/400px-Tanpura.jpg',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 180,
     performers: ['Practising Hindustani vocalists'],
@@ -568,8 +592,7 @@ export const EVENTS: EventSpec[] = [
     tagline: "Girish Karnad's study of an idealist in power",
     description:
       "Karnad's 1964 play about Muhammad bin Tughlaq — a ruler whose best ideas destroyed the most. Two acts, one interval, performed on Prithvi's thrust stage with the audience on three sides.",
-    posterUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Theatre_stage_curtain.jpg/400px-Theatre_stage_curtain.jpg',
+    posterUrl: '',
     backdropUrl: null,
     durationMins: 150,
     performers: ['Repertory cast'],
@@ -809,8 +832,10 @@ export async function seedEvents(
         title: spec.title,
         tagline: spec.tagline,
         description: spec.description,
-        posterUrl: spec.posterUrl,
-        backdropUrl: spec.backdropUrl,
+        posterUrl: imageFor(spec.slug),
+        // The ground, where there is one: a match card reads better over
+        // the stadium than over a team crest.
+        backdropUrl: spec.backdropUrl ?? IMAGES[spec.venueSlugs[0] ?? '']?.imageUrl ?? null,
         durationMins: spec.durationMins,
         performers: spec.performers,
         organiser: spec.organiser,

@@ -86,6 +86,22 @@ export default function TabsLayout() {
           ),
         }}
       />
+      {/* Live events sit next to films, because they are the other half of
+          what this app sells, not a sub-section of the cinema directory. */}
+      <Tabs.Screen
+        name="events"
+        options={{
+          title: 'Events',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon
+              name={focused ? 'musical-notes' : 'musical-notes-outline'}
+              color={color}
+              size={size}
+              focused={focused}
+            />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="cinemas"
         options={{
