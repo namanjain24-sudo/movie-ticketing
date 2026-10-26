@@ -241,6 +241,68 @@ describe('a fixture is sold by the same mechanic as a film', () => {
   });
 });
 
+describe('the venue directory', () => {
+  beforeEach(resetDb);
+
+  /**
+   * The Cinemas tab is this endpoint. Once events arrived it was handing that
+   * tab a cricket ground and a coworking space, each rendered as
+   * "1 screen · 1 films on" — three wrong words out of six. Defaulting to
+   * cinemas is also the right answer for every APK already on a phone, which
+   * calls this and has no idea the other kinds exist.
+   */
+  it('lists cinemas only, by default', async () => {
+    await createShowtime();
+    await createEventShow();
+
+    const res = await request(app).get('/v1/cinemas').expect(200);
+
+    expect(res.body.cinemas).toHaveLength(1);
+    expect(res.body.cinemas[0].kind).toBe('CINEMA');
+    expect(res.body.cinemas.map((c: { name: string }) => c.name)).not.toContain('Test Ground');
+  });
+
+  it('returns the whole directory when asked for it', async () => {
+    await createShowtime();
+    await createEventShow();
+
+    const res = await request(app).get('/v1/cinemas?kind=all').expect(200);
+
+    const kinds = res.body.cinemas.map((c: { kind: string }) => c.kind).sort();
+    expect(kinds).toEqual(['CINEMA', 'STADIUM']);
+  });
+
+  it('can list one other kind on its own', async () => {
+    await createShowtime();
+    await createEventShow();
+
+    const res = await request(app).get('/v1/cinemas?kind=STADIUM').expect(200);
+
+    expect(res.body.cinemas).toHaveLength(1);
+    expect(res.body.cinemas[0].name).toBe('Test Ground');
+  });
+
+  it('still returns a saved ground when it is asked for by id', async () => {
+    // A venue someone has saved is shown whatever kind it is; filtering an
+    // explicit list of ids would silently drop their own saved ground.
+    const event = await createEventShow();
+
+    const res = await request(app).get('/v1/cinemas?kind=all').expect(200);
+    expect(res.body.cinemas.map((c: { id: string }) => c.id)).toContain(event.venueId);
+  });
+
+  it('counts what is actually on, films or fixtures', async () => {
+    const event = await createEventShow();
+
+    const res = await request(app).get('/v1/cinemas?kind=STADIUM').expect(200);
+
+    // One fixture on, not zero — the count used to be films only, which
+    // reported a ground with a match on as having nothing.
+    expect(res.body.cinemas[0].nowShowingCount).toBe(1);
+    void event;
+  });
+});
+
 describe('the exactly-one-subject rule', () => {
   beforeEach(resetDb);
 

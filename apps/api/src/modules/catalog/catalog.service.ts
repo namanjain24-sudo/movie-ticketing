@@ -10,7 +10,7 @@ import type {
   ShowFormat,
   SeatTier,
 } from '@app/shared';
-import { SEAT_TIER_LABELS } from '@app/shared';
+import { SEAT_TIER_LABELS, type VenueKind } from '@app/shared';
 import { prisma } from '../../db';
 import { env } from '../../env';
 import { HttpError } from '../../http/errors';
@@ -286,13 +286,26 @@ export async function listCinemas(params: {
   search?: string;
   lat?: number;
   lng?: number;
+  /**
+   * What sort of venue to list. Defaults to cinemas.
+   *
+   * This endpoint is the Cinemas tab, and once events arrived it was handing
+   * that tab a cricket ground and a coworking space, each described as
+   * "1 screen · 1 films on". Defaulting to `CINEMA` is also the right answer
+   * for every APK already on a phone, which calls this and has no idea the
+   * other kinds exist. Pass `all` to get the whole directory.
+   */
+  kind?: VenueKind | 'all';
   /** Narrows to exactly these cinemas — favorite-cinemas.service.ts's only use of this. */
   ids?: string[];
 }): Promise<CinemaDirectoryEntry[]> {
+  const kind = params.kind ?? 'CINEMA';
   const cinemas = await prisma.cinema.findMany({
     where: {
       // The load-test venue is inventory, not a place anyone can go.
       slug: { not: LOAD_TEST_SLUG },
+      // `ids` is an explicit list — a saved venue is shown whatever it is.
+      ...(kind === 'all' || params.ids ? {} : { kind }),
       ...(params.ids ? { id: { in: params.ids } } : {}),
       ...(params.city ? { city: params.city } : {}),
       ...(params.brand ? { brand: params.brand } : {}),

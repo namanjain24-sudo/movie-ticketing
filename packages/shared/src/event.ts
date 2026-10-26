@@ -65,6 +65,32 @@ export const VENUE_KINDS = ['CINEMA', 'STADIUM', 'ARENA', 'THEATRE', 'STUDIO', '
 export const venueKindSchema = z.enum(VENUE_KINDS);
 export type VenueKind = z.infer<typeof venueKindSchema>;
 
+/**
+ * What a venue calls its seated spaces, and what it has on.
+ *
+ * A cinema has screens and films; a ground has stands and matches. The venue
+ * card printed "1 screen · 1 films on" for Wankhede until these existed,
+ * which is three wrong words in six.
+ */
+export const VENUE_SPACE_LABELS: Record<VenueKind, { one: string; many: string }> = {
+  CINEMA: { one: 'screen', many: 'screens' },
+  STADIUM: { one: 'stand', many: 'stands' },
+  ARENA: { one: 'hall', many: 'halls' },
+  THEATRE: { one: 'stage', many: 'stages' },
+  STUDIO: { one: 'room', many: 'rooms' },
+  OUTDOOR: { one: 'area', many: 'areas' },
+};
+
+/** What is on there: films at a cinema, events everywhere else. */
+export const VENUE_PROGRAMME_LABELS: Record<VenueKind, { one: string; many: string }> = {
+  CINEMA: { one: 'film', many: 'films' },
+  STADIUM: { one: 'fixture', many: 'fixtures' },
+  ARENA: { one: 'show', many: 'shows' },
+  THEATRE: { one: 'show', many: 'shows' },
+  STUDIO: { one: 'session', many: 'sessions' },
+  OUTDOOR: { one: 'event', many: 'events' },
+};
+
 export const VENUE_KIND_LABELS: Record<VenueKind, string> = {
   CINEMA: 'Cinema',
   STADIUM: 'Stadium',

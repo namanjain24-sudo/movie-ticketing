@@ -1,5 +1,5 @@
 import type { CinemaDirectoryEntry } from '@app/shared';
-import { formatMoney } from '@app/shared';
+import { VENUE_PROGRAMME_LABELS, VENUE_SPACE_LABELS, formatMoney } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View } from 'react-native';
 import { Text } from '../../components/ui';
@@ -21,6 +21,8 @@ export function CinemaCard({
   onPress: () => void;
 }) {
   const { colors, radius, spacing, elevation } = useTheme();
+  const spaces = VENUE_SPACE_LABELS[cinema.kind];
+  const programme = VENUE_PROGRAMME_LABELS[cinema.kind];
   const distance = formatDistance(cinema.distanceKm);
   const press = usePressScale();
   const favorites = useFavoriteCinemas();
@@ -146,9 +148,14 @@ export function CinemaCard({
           paddingTop: spacing.sm,
         }}
       >
+        {/* A ground has stands and fixtures, not screens and films. This read
+            "1 screen · 1 films on" for Wankhede, which is three wrong words
+            out of six. */}
         <Text variant="caption" tone="muted" numeric style={{ flex: 1 }}>
-          {cinema.screenCount} {cinema.screenCount === 1 ? 'screen' : 'screens'}
-          {cinema.nowShowingCount > 0 ? ` · ${cinema.nowShowingCount} films on` : ' · nothing on'}
+          {cinema.screenCount} {spaces[cinema.screenCount === 1 ? 'one' : 'many']}
+          {cinema.nowShowingCount > 0
+            ? ` · ${cinema.nowShowingCount} ${programme[cinema.nowShowingCount === 1 ? 'one' : 'many']} on`
+            : ' · nothing on'}
         </Text>
 
         {/* Siblings of the card's Pressable, not children: these go somewhere

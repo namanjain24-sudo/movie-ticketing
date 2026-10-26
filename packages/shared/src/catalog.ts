@@ -195,6 +195,12 @@ export const cinemaDirectoryEntrySchema = cinemaSchema.extend({
 export type CinemaDirectoryEntry = z.infer<typeof cinemaDirectoryEntrySchema>;
 
 export const cinemaListQuerySchema = z.object({
+  /**
+   * What sort of venue. Defaults to cinemas on the server, which is what the
+   * Cinemas tab means and what every released build assumes. `all` returns
+   * grounds and studios too.
+   */
+  kind: z.union([venueKindSchema, z.literal('all')]).optional(),
   city: z.string().optional(),
   brand: z.string().optional(),
   search: z.string().optional(),
