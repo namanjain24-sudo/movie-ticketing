@@ -153,6 +153,8 @@ export default function Events() {
               paddingHorizontal: spacing.lg,
               paddingBottom: spacing['2xl'],
               gap: spacing.md,
+              // So ListEmptyComponent has the screen's height to centre in.
+              flexGrow: 1,
             }}
             showsVerticalScrollIndicator={false}
             refreshControl={

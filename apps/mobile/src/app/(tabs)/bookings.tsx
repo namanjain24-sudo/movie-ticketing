@@ -133,6 +133,8 @@ export default function Bookings() {
               paddingHorizontal: spacing.lg,
               paddingBottom: spacing['2xl'],
               gap: spacing.md,
+              // So ListEmptyComponent has the screen's height to centre in.
+              flexGrow: 1,
             }}
             showsVerticalScrollIndicator={false}
             refreshControl={
@@ -156,8 +158,7 @@ export default function Bookings() {
               ) : null
             }
             ListEmptyComponent={
-              <View style={{ paddingTop: spacing.xl }}>
-                <EmptyState
+              <EmptyState
                   icon="ticket-outline"
                   title={tab === 'upcoming' ? 'No upcoming tickets' : 'Nothing in your history yet'}
                   message={
@@ -171,7 +172,6 @@ export default function Bookings() {
                       : undefined
                   }
                 />
-              </View>
             }
           />
         </Animated.View>
