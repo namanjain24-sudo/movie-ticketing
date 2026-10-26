@@ -920,6 +920,22 @@ img {
   flex-wrap: wrap;
   gap: 12px;
 }
+/* The primary button is a direct link to the file, so say so: a download that
+   starts on its own reads as a broken page to anyone expecting a release page. */
+.get-note {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-faint);
+}
+.get-note a {
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.get-note a:hover {
+  color: var(--text);
+}
+
 /* Three rows, label left and answer right, rather than a third three column
    grid: the honesty section already owns that shape on this page. */
 .get-facts {

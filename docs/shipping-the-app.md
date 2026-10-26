@@ -182,8 +182,9 @@ Commit the `app.json` change `eas init` makes — the project id belongs in git.
 ## 4. Get it to people
 
 Send them
-<https://github.com/namanjain24-sudo/movie-ticketing/releases/latest>, or the
-site, which links to the same place.
+<https://github.com/namanjain24-sudo/movie-ticketing/releases/latest/download/boxoffice-android.apk>,
+which downloads the current APK directly, or the site, whose buttons are that
+same link.
 
 Tell whoever installs it: **Settings → allow install from this source** is
 expected for any APK that did not come from the Play Store.
@@ -191,11 +192,28 @@ expected for any APK that did not come from the Play Store.
 To cut a new version: build, then
 
 ```bash
+cp app-release.apk boxoffice-android.apk
 gh release create v1.0.1 --title "Boxoffice 1.0.1 for Android" \
-  boxoffice-1.0.1-android.apk
+  boxoffice-android.apk
 ```
 
-`/releases/latest` follows along on its own; the site needs no change.
+**The asset name must stay exactly `boxoffice-android.apk`, with no version in
+it.** That is what makes
+
+```
+/releases/latest/download/boxoffice-android.apk
+```
+
+a permanent link, and that link is what every Download button on the site
+points at. Name the file `boxoffice-1.0.1-android.apk` and the buttons 404 on
+the day you ship.
+
+Up to and including v1.0.7 the buttons pointed at `/releases/latest`, which is
+the release *page*, not the file. On a phone GitHub collapses the assets list,
+so the APK was two taps and a scroll past where people stopped looking, and
+the commonest report was that the download did not work at all. The version
+still lives in the release title and in the manifest; only the file name is
+fixed.
 
 ### The demo login
 
