@@ -186,6 +186,26 @@ export const holdLimiter = rateLimit({
 });
 
 /**
+ * The support agent. Every message is a paid API call, so this is counted on
+ * success as well as failure — unlike sign-in, where only wrong guesses
+ * should spend the budget. Keyed by account through `clientKey`, because the
+ * cost belongs to the account asking rather than to the network it is on.
+ */
+export const supportLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: env.isProduction ? env.RATE_LIMIT_SUPPORT_PER_HOUR : env.RATE_LIMIT_SUPPORT_PER_HOUR * 100,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: clientKey,
+  message: {
+    error: {
+      code: ERROR_CODES.RATE_LIMITED,
+      message: 'That is a lot of questions. Try again in a little while.',
+    },
+  },
+});
+
+/**
  * Password resets. Every one of these sends mail and names an address, so an
  * unlimited supply is both a spam cannon aimed at somebody else's inbox and a
  * cheap way to probe which addresses exist. Counted on success as well as

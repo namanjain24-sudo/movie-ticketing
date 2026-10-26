@@ -1511,6 +1511,35 @@ img {
   overflow: hidden;
 }
 
+/* The agent section mirrors the stands section's language deliberately — it
+   is the same claim told about a different feature — but flips the figure to
+   the left so two identical layouts do not sit one under the other. Below
+   920px the grid is one column and source order is what reads, so the figure
+   goes back under the copy where a caption belongs. */
+.agent {
+  background: linear-gradient(180deg, rgba(53, 214, 232, 0.035), transparent 60%);
+}
+
+@media (min-width: 921px) {
+  .agent .stands-grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 920px) {
+  .agent-figure {
+    order: 2;
+  }
+}
+
+#supportFilm {
+  display: block;
+  width: 100%;
+  /* Two bubbles, a four-line server panel and the wire between them. */
+  height: 330px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent);
+}
+
 #standsFilm {
   display: block;
   width: 100%;

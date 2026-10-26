@@ -249,6 +249,16 @@ k6 is not committed. `brew install k6`, or drop the binary at `.tooling/k6`.
   showtime reminders, hold-expiry nudges, release-day check-ins. Client-only, and
   it says "scheduled", never "delivered": nothing here can observe a background
   notification actually firing.
+- **Support agent.** `POST /v1/support/ask`, answered by a model on Groq that is
+  never asked what it remembers about ticketing. The server builds the context
+  first — this account's own bookings, and the policy numbers read straight out
+  of `env`, the same ones the booking code enforces — and the prompt's first rule
+  is to answer from that and say plainly when the answer is not in it. The query
+  is scoped by user id, so another customer's booking is not in the context for
+  any prompt to reach. The key is server-side and has to stay there: anything
+  `EXPO_PUBLIC_` is inlined into the bundle in plain text and would ship inside
+  the APK. With no key configured the endpoint still answers, from the same
+  grounded notes, and the reply says which of the two replied.
 
 ## What is in the box
 
@@ -280,6 +290,7 @@ apps/
       catalog/      Movies, showtimes, the seat map read
       bookings/     Tickets, signed QR payloads, splitting the bill
       loyalty/      The points ledger, and what reverses an entry
+      support/      The grounded context the support agent answers from
       favorites/    Saved cinemas, shaped like the film watchlist
       realtime/     Seat delta publisher
     src/lib/        Transaction retry, lock timeout, idempotency
@@ -297,7 +308,7 @@ docs/               Architecture and the load-test report
 locking, logical expiry plus sweeper, the idempotency layer, payment
 orchestration with webhooks and reconciliation, the seat map and catalogue read
 APIs, tickets with signed QR payloads, the loyalty ledger and the split-the-bill
-tracker, 182 tests, 13 invariants, the k6 scenario, seven chaos scenarios, and
+tracker, the grounded support agent, 241 tests, 13 invariants, the k6 scenario, seven chaos scenarios, and
 the load report.
 
 **Done, app.** The booking flow end to end: now showing with a city filter,
@@ -314,7 +325,8 @@ Around that core: a one-time intro before sign-in, loyalty points earned and
 redeemed in the same checkout, splitting a paid booking's cost with friends,
 saved cinemas beside saved films, a browsable history of scheduled
 notifications, a whole-auditorium overview sheet with tap-to-jump for wide
-seat maps, and "Book again" on a past ticket. Every screen that waits on the
+seat maps, an in-app support chat that answers from this account's own
+bookings, and "Book again" on a past ticket. Every screen that waits on the
 network now waits behind a skeleton shaped like itself rather than a spinner.
 
 **Cancellation** is part of the lifecycle, not an afterthought. The seats are

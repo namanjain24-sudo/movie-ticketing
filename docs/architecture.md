@@ -152,6 +152,42 @@ that this project has no good answer to. The measured hold latency (85 ms at
 p99 with a thousand concurrent users) says Postgres is not the bottleneck yet,
 so the complexity would buy nothing. See `docs/load-testing.md`.
 
+## The support agent, and what it is allowed to know
+
+A model answering support questions about a booking system is an easy thing to
+get wrong in an expensive way: an invented refund rule or a hallucinated
+booking reference is worse than no answer at all, because the customer believes
+it.
+
+So the model is never the source. `modules/support/support.service.ts` builds
+the context before the call: this account's five most recent bookings, read
+through a query scoped by `userId`, and the policy numbers taken from `env` —
+`HOLD_TTL_SECONDS`, `CANCELLATION_WINDOW_MINUTES`, `BOOKING_FEE_MINOR`, the
+same values the booking code enforces, so the answer cannot drift from the
+behaviour. The prompt's first rule is to answer from that and to say plainly
+when the answer is not in it.
+
+Scoping the query is what makes the isolation structural rather than a matter
+of instruction-following. Another customer's booking is not in the context, so
+there is no sentence anybody can type that fetches it — the usual
+prompt-injection argument never gets a chance to apply.
+
+`lib/groq.ts` is one `fetch` and no SDK. It returns `null` instead of throwing
+when the key is missing or the call fails, and the service falls back to a
+short grounded answer over the same context. The response names its own source
+(`model`, `grounded`, `grounded-fallback`) and the chat says so, rather than
+passing the short answer off as the considered one. A missing key is a mode,
+not an error — the same bargain the mailer makes, so the whole thing runs from
+a fresh clone.
+
+The key is on this side and has to stay here. Anything prefixed
+`EXPO_PUBLIC_` is inlined into the mobile bundle in plain text; the API URL in
+the shipped APK can be found with `unzip | grep`, and a key put there would be
+just as findable. The phone talks to this API; only this API talks to Groq.
+Every message is a paid call, so `supportLimiter` counts them per account on
+success as well as failure — the opposite of the sign-in limiter, where only
+wrong guesses should spend the budget.
+
 ## Decisions that differ from the original plan
 
 **Express, not Fastify.** The scaffold was already Express 5 and the bottleneck
@@ -178,6 +214,7 @@ apps/api/src/
     payments/     gateway boundary, webhooks, reconciliation
     catalog/      movies, showtimes, the seat map read
     bookings/     tickets and signed QR payloads
+    support/      the grounded context the support agent answers from
     realtime/     seat delta publisher
     chaos/        guarded control surface for the chaos suite
   lib/

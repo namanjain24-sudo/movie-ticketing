@@ -12,6 +12,7 @@ import { usersRouter } from './modules/users/users.routes';
 import { healthRouter } from './modules/health/health.routes';
 import { catalogRouter } from './modules/catalog/catalog.routes';
 import { eventsRouter } from './modules/events/events.routes';
+import { supportRouter } from './modules/support/support.routes';
 import { reviewsRouter } from './modules/reviews/reviews.routes';
 import { holdsRouter } from './modules/holds/holds.routes';
 import { promosRouter } from './modules/promos/promos.routes';
@@ -80,6 +81,7 @@ export function createApp(): Express {
   app.use('/v1/users', usersRouter);
   app.use('/v1', catalogRouter);
   app.use('/v1', eventsRouter);
+  app.use('/v1', supportRouter);
   app.use('/v1', reviewsRouter);
   app.use('/v1', holdsRouter);
   app.use('/v1', promosRouter);

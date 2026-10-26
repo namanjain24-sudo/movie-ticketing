@@ -89,6 +89,30 @@ const envSchema = z.object({
   /// an unlimited supply is both a spam cannon and an enumeration oracle.
   RATE_LIMIT_RESET_PER_HOUR: z.coerce.number().int().positive().default(5),
 
+  // --- Support agent --------------------------------------------------------
+  /**
+   * Groq, for the in-app support chat.
+   *
+   * Unset means the chat answers from its own grounded context and says so,
+   * the same bargain `RESEND_API_KEY` makes: this project must run with no
+   * third-party account at all, and a feature that bricks without one is a
+   * feature that cannot be demonstrated from a fresh clone.
+   *
+   * Server side only, and it has to stay that way. Anything prefixed
+   * `EXPO_PUBLIC_` is inlined into the mobile bundle in plain text, so a key
+   * put there would ship to every phone and be extractable from the APK with
+   * `unzip | grep`. The phone talks to this API; only this API talks to Groq.
+   */
+  GROQ_API_KEY: z.string().optional(),
+  /// Groq's OpenAI-compatible endpoint.
+  GROQ_BASE_URL: z.string().default('https://api.groq.com/openai/v1'),
+  /// Which model answers. Small and fast beats clever here: the agent's job
+  /// is to read a context this server assembled and not to reason from
+  /// scratch.
+  GROQ_MODEL: z.string().default('llama-3.3-70b-versatile'),
+  /// Support messages per account per hour. Every one is a paid API call.
+  RATE_LIMIT_SUPPORT_PER_HOUR: z.coerce.number().int().positive().default(30),
+
   // --- Rate limits ----------------------------------------------------------
   /// Per account where the request carries a session, per address otherwise;
   /// `middleware/rate-limit.ts` explains why that distinction matters more
