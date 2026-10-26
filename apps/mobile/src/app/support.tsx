@@ -137,7 +137,15 @@ export default function SupportScreen() {
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+        // Twice, deliberately. A reply's height settles over more than one
+        // layout pass — the bubble's text measures, then the note underneath
+        // it — and a single scroll fired on the first pass leaves the end of
+        // the newest answer sitting under the composer, which on a real
+        // device read as the answer having been cut off.
+        onContentSizeChange={() => {
+          listRef.current?.scrollToEnd({ animated: true });
+          requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+        }}
         renderItem={({ item }) => <ChatBubble message={item} />}
         ListFooterComponent={
           sending ? (
@@ -153,9 +161,13 @@ export default function SupportScreen() {
       {messages.length === 1 ? (
         <Animated.View
           entering={FadeInDown.delay(120).duration(260)}
+          // Stacked rather than wrapped. A `flexWrap` row measured each chip
+          // against what was left of the line above it, so the second chip
+          // was sized for a gap it then wrapped out of and rendered as "What
+          // have I" — a question truncated into nonsense. One per row, each
+          // sized to its own text, cannot do that.
           style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
+            alignItems: 'flex-start',
             gap: spacing.sm,
             paddingHorizontal: spacing.lg,
             paddingBottom: spacing.sm,
@@ -167,6 +179,7 @@ export default function SupportScreen() {
               accessibilityRole="button"
               onPress={() => void send(opener)}
               style={({ pressed }) => ({
+                maxWidth: '100%',
                 paddingVertical: spacing.sm,
                 paddingHorizontal: spacing.md,
                 borderRadius: radius.full,
