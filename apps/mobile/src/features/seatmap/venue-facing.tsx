@@ -67,7 +67,7 @@ function Screen() {
   const { colors } = useTheme();
 
   return (
-    <View style={{ width: '72%', height: 44 }}>
+    <View testID="venue-screen" style={{ width: '72%', height: 44 }}>
       <LinearGradient
         colors={gradients.projector}
         style={{
@@ -108,7 +108,7 @@ function Ground() {
   const H = 64;
 
   return (
-    <View style={{ width: W, height: H }}>
+    <View testID="venue-ground" style={{ width: W, height: H }}>
       <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
         {/* The outfield. Low-opacity success green: the one green in the
             system, and the only colour here that has to read as grass. */}
@@ -179,7 +179,7 @@ function Stage() {
   const H = 48;
 
   return (
-    <View style={{ width: W, height: H }}>
+    <View testID="venue-stage" style={{ width: W, height: H }}>
       <LinearGradient
         colors={gradients.projector}
         style={{ position: 'absolute', top: 18, left: '8%', right: '8%', height: 30 }}
