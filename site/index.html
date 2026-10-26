@@ -47,6 +47,7 @@
         </a>
         <ul class="nav-links">
           <li><a href="#proof">The proof</a></li>
+          <li><a href="#events">Events</a></li>
           <li><a href="#clips">The app</a></li>
           <li><a href="#booking">Booking</a></li>
           <li><a href="#cinemas">Cinemas</a></li>
@@ -68,8 +69,8 @@
           <div>
             <h1 class="reveal">A seat that <em>cannot</em> be sold twice.</h1>
             <p class="hero-sub reveal" style="--i: 1">
-              Book Indian multiplex tickets on a seat map that holds exactly what you picked, for as
-              long as it promised.
+              Films at a multiplex, a stand at Wankhede, a workshop in a room of thirty — one seat
+              map that holds exactly what you picked, for as long as it promised.
             </p>
             <div class="hero-actions reveal" style="--i: 2">
               <a
@@ -244,6 +245,62 @@
               <span class="promo-fine">Earned on what you actually paid</span>
             </li>
           </ul>
+        </div>
+      </section>
+
+      <!-- ===== live events: the same mechanic, a different kind of seat ===
+           Added when the app stopped being films-only. The claim worth making
+           is not "we added events", it is that nothing underneath moved: the
+           row lock that stops a cinema seat selling twice is the one holding
+           a seat in the Garware Pavilion.
+      -->
+      <section class="stands" id="events" aria-labelledby="stands-head">
+        <div class="wrap stands-grid">
+          <div class="stands-copy">
+            <p class="stands-kicker reveal">New · live events</p>
+            <h2 id="stands-head" class="stands-head reveal" style="--i: 1">
+              Not just films any more.
+            </h2>
+            <p class="stands-sub reveal" style="--i: 2">
+              Matches, concerts, stand-up, theatre and workshops, sold by exactly the same booking
+              mechanic. A showtime now names a film <em>or</em> an event — never both, never
+              neither, enforced by a check constraint rather than by hope — and everything below it
+              only ever knew a showtime id, so none of it had to change.
+            </p>
+
+            <ul class="stands-list reveal" style="--i: 3">
+              <li>
+                <strong>Real grounds, real stands.</strong> The Garware Pavilion and the North Stand
+                are what is written on a Wankhede ticket. Eden Gardens has the B. C. Roy Club House;
+                Chepauk has the I, J and K stands.
+              </li>
+              <li>
+                <strong>A stand is a price band, not a separate listing.</strong> One match is one
+                occurrence sold six ways, so the seat map groups by band and prints the band's own
+                price above it.
+              </li>
+              <li>
+                <strong>The ticket says where to stand.</strong> Not "VIP" — "Garware Pavilion ·
+                GP-B-4", which is the part you need at a turnstile.
+              </li>
+              <li>
+                <strong>Concerts get the front.</strong> DY Patil is divided for a gig rather than
+                for cricket: a Fan Pit at the stage, then Gold, Premium, Silver and General behind
+                it.
+              </li>
+            </ul>
+          </div>
+
+          <figure class="stands-figure reveal" style="--i: 2">
+            <canvas
+              id="standsFilm"
+              role="img"
+              aria-label="A cricket ground's six stands fill in one by one with their real names and prices — Garware Pavilion at 8,500 rupees down to the North Stand at 1,200 — then a seat in the Garware Pavilion is picked and locked, and the ticket reads Garware Pavilion GP-B-4."
+            ></canvas>
+            <figcaption id="standsCaption" class="stands-caption" aria-live="off">
+              A ground, not an auditorium. Six stands, six prices.
+            </figcaption>
+          </figure>
         </div>
       </section>
 
@@ -927,6 +984,7 @@
     </footer>
 
     <script src="film.js" defer></script>
+    <script src="stands.js" defer></script>
     <script src="ads.js" defer></script>
     <script src="site.js" defer></script>
   </body>
