@@ -203,4 +203,30 @@ check(
   `HTTP ${a.status}`,
 );
 
+// 11. The support agent answers, and answers about *this* booking.
+//
+// Checked against the booking this run just made rather than against a canned
+// string: the whole claim of the feature is that the context is read from the
+// database a moment before the question, so a reply that does not contain the
+// reference this script just created has not proved anything.
+const support = await call('/support/ask', {
+  method: 'POST',
+  body: { message: 'what have I booked?', history: [] },
+});
+check(
+  'support agent answers',
+  support.status === 200 && typeof support.json?.text === 'string',
+  `HTTP ${support.status}${support.json?.source ? ` via ${support.json.source}` : ''}`,
+);
+if (settled?.reference && support.json?.source !== 'model') {
+  // Only when the server answered directly. With a key configured the model
+  // writes the sentence, and insisting it quotes the reference verbatim would
+  // be testing somebody else's phrasing.
+  check(
+    'support agent reads this account’s booking',
+    String(support.json?.text ?? '').includes(settled.reference),
+    settled.reference,
+  );
+}
+
 console.log(step.join('\n'));
