@@ -19,7 +19,8 @@ import { AppBar, Button, Text } from '../../components/ui';
 import { SeatLegend } from '../../features/seatmap/legend';
 import { findBestSeats } from '../../features/seatmap/best-seats';
 import { SeatCountSheet } from '../../features/seatmap/seat-count-sheet';
-import { ScreenCurve, SeatGrid, type SeatGridHandle } from '../../features/seatmap/seat-grid';
+import { SeatGrid, type SeatGridHandle } from '../../features/seatmap/seat-grid';
+import { VenueFacing } from '../../features/seatmap/venue-facing';
 import { SeatOverview } from '../../features/seatmap/seat-overview';
 import { useSeatSelection } from '../../features/seatmap/use-seat-selection';
 import { formatMonthDay, formatTime } from '../../lib/format';
@@ -160,7 +161,14 @@ export default function SeatMapScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <AppBar
         title={subjectTitle(map)}
-        subtitle={`${map.cinema.name} · ${map.screen.name}`}
+        // A multiplex has a name and an auditorium inside it; a ground is its
+        // own single room, and the seed gives both the venue's name, so the
+        // bar read "Eden Gardens · Eden Gardens". Say it once when they agree.
+        subtitle={
+          map.screen.name === map.cinema.name
+            ? map.cinema.name
+            : `${map.cinema.name} · ${map.screen.name}`
+        }
         titleLines={2}
         onBack={() => router.back()}
         actions={
@@ -202,7 +210,7 @@ export default function SeatMapScreen() {
       <View style={{ flex: 1, paddingTop: spacing.lg }}>
         {/* Outside the horizontal scroller: on a wide auditorium a centred
             label inside it would sit off-screen until the user panned. */}
-        <ScreenCurve facing={map.event?.kind ?? 'FILM'} />
+        <VenueFacing facing={map.event?.kind ?? 'FILM'} />
         {visibleRow ? (
           <View
             style={{

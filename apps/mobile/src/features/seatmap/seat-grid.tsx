@@ -1,7 +1,6 @@
 import {
   SEAT_TIER_LABELS,
   formatMoney,
-  type EventKind,
   type SeatMap,
   type SeatMapSeat,
 } from '@app/shared';
@@ -25,10 +24,9 @@ import Animated, {
   useSharedValue,
   type SharedValue,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../components/ui';
 import { useTheme, type Colors } from '../../theme';
-import { gradients, spacing } from '../../theme/tokens';
+import { spacing } from '../../theme/tokens';
 import { logMountedSeatCount, startSeatmapPerfLog } from './perf-log';
 import type { SeatRenderStatus, SeatRow } from './use-seat-selection';
 
@@ -314,65 +312,6 @@ const TierHeader = memo(function TierHeader({
     </Animated.View>
   );
 });
-
-/**
- * The curve at the top of the auditorium. Drawn rather than labelled, because
- * "which way am I facing" is a spatial question and deserves a spatial answer.
- */
-/**
- * What the curve is pointing at, in the venue's own word.
- *
- * "SCREEN THIS WAY" is right in a cinema and wrong everywhere else: a cricket
- * ground has a pitch and a gig has a stage, and an arrow labelled "screen" at
- * Wankhede is the map telling somebody it does not know where it is.
- */
-const FACING_LABEL: Record<EventKind | 'FILM', string> = {
-  FILM: 'SCREEN THIS WAY',
-  SPORT: 'PITCH THIS WAY',
-  CONCERT: 'STAGE THIS WAY',
-  COMEDY: 'STAGE THIS WAY',
-  THEATRE: 'STAGE THIS WAY',
-  WORKSHOP: 'FRONT OF ROOM',
-};
-
-export function ScreenCurve({ facing = 'FILM' }: { facing?: EventKind | 'FILM' }) {
-  const { colors, spacing } = useTheme();
-
-  return (
-    <View style={{ alignItems: 'center', paddingBottom: spacing.lg }}>
-      <View style={{ width: '72%', height: 44 }}>
-        {/* The projector's light, thrown down from the screen onto the seats.
-            Drawn first so the arc sits on top of it. */}
-        <LinearGradient
-          colors={gradients.projector}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: '4%',
-            right: '4%',
-            height: 44,
-            borderTopLeftRadius: 120,
-            borderTopRightRadius: 120,
-          }}
-          pointerEvents="none"
-        />
-        <View
-          style={{
-            width: '100%',
-            height: 26,
-            borderTopWidth: 3,
-            borderColor: colors.accent,
-            borderTopLeftRadius: 120,
-            borderTopRightRadius: 120,
-          }}
-        />
-      </View>
-      <Text variant="overline" tone="muted" style={{ marginTop: spacing['2xs'] }}>
-        {FACING_LABEL[facing]}
-      </Text>
-    </View>
-  );
-}
 
 export type SeatGridHandle = {
   /** Scrolls the row list so the named row's `y` sits at the top. */
