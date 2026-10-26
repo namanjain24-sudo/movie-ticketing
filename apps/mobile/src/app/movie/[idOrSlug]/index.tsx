@@ -46,7 +46,16 @@ import { HIT_SIZE } from '../../../theme/tokens';
 
 /** How far ahead the date strip runs. The API windows a week by default. */
 const DAYS_AHEAD = 7;
-const BACKDROP_HEIGHT = 260;
+/**
+ * A landscape still earns this much of the screen. The blurred-poster
+ * fallback does not: it carries no information the sharp poster below it is
+ * not already carrying, and at 260 it was handing roughly a fifth of the
+ * first screen to an out-of-focus wash with a back button in it. Most films
+ * in the catalogue have no still, so the fallback is the common case rather
+ * than the exception.
+ */
+const BACKDROP_STILL = 260;
+const BACKDROP_WASH = 196;
 
 export default function MovieDetail() {
   const { idOrSlug } = useLocalSearchParams<{ idOrSlug: string }>();
@@ -55,6 +64,24 @@ export default function MovieDetail() {
   const watchlist = useWatchlist();
   const { record: recordViewed } = useRecentlyViewed();
   const insets = useSafeAreaInsets();
+
+
+  const days = useMemo(() => upcomingDays(DAYS_AHEAD), []);
+  const [date, setDate] = useState(days[0].value);
+  const [filter, setFilter] = useState<ShowtimeFilter>({});
+  const [synopsisOpen, setSynopsisOpen] = useState(false);
+  const [notifyRequested, setNotifyRequested] = useState(false);
+
+  const movie = useQuery({
+    queryKey: queryKeys.movie(idOrSlug),
+    queryFn: () => catalogApi.movie(idOrSlug),
+    enabled: Boolean(idOrSlug),
+  });
+
+  // Declared after the query so it can read which backdrop is being shown.
+  // Both are unconditional hooks and both run before the pending branch
+  // below, so the order is the same on every render.
+  const backdropHeight = movie.data?.backdropUrl ? BACKDROP_STILL : BACKDROP_WASH;
 
   // The backdrop's one authored moment: it stretches on the overscroll bounce
   // and drifts slower than the page as you scroll past it, the way a header
@@ -68,28 +95,16 @@ export default function MovieDetail() {
       {
         translateY: interpolate(
           scrollY.value,
-          [-BACKDROP_HEIGHT, 0, BACKDROP_HEIGHT],
-          [0, 0, BACKDROP_HEIGHT * 0.35],
+          [-backdropHeight, 0, backdropHeight],
+          [0, 0, backdropHeight * 0.35],
           Extrapolation.CLAMP,
         ),
       },
       {
-        scale: interpolate(scrollY.value, [-BACKDROP_HEIGHT, 0], [2, 1], Extrapolation.CLAMP),
+        scale: interpolate(scrollY.value, [-backdropHeight, 0], [2, 1], Extrapolation.CLAMP),
       },
     ],
   }));
-
-  const days = useMemo(() => upcomingDays(DAYS_AHEAD), []);
-  const [date, setDate] = useState(days[0].value);
-  const [filter, setFilter] = useState<ShowtimeFilter>({});
-  const [synopsisOpen, setSynopsisOpen] = useState(false);
-  const [notifyRequested, setNotifyRequested] = useState(false);
-
-  const movie = useQuery({
-    queryKey: queryKeys.movie(idOrSlug),
-    queryFn: () => catalogApi.movie(idOrSlug),
-    enabled: Boolean(idOrSlug),
-  });
 
   // The scheduled-notification list is the only record of this toggle's
   // state — there is no backend field for it (see `scheduleReleaseCheck`'s
@@ -150,7 +165,7 @@ export default function MovieDetail() {
         onScroll={onScroll}
         scrollEventThrottle={16}
       >
-        <View style={{ height: BACKDROP_HEIGHT, backgroundColor: colors.surfaceMuted }}>
+        <View style={{ height: backdropHeight, backgroundColor: colors.surfaceMuted }}>
           {/*
             Not every source ships a landscape still. When only the poster
             exists, it becomes an out-of-focus wash rather than a second, sharp
@@ -511,7 +526,7 @@ function MovieDetailSkeleton() {
   const { spacing, radius } = useTheme();
   return (
     <View style={{ flex: 1 }}>
-      <Skeleton style={{ height: BACKDROP_HEIGHT, borderRadius: 0 }} />
+      <Skeleton style={{ height: BACKDROP_STILL, borderRadius: 0 }} />
 
       <View
         style={{
