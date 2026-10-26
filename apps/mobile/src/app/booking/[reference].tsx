@@ -503,6 +503,22 @@ export default function BookingTicket() {
           />
         )}
 
+        {/* Quiet, and deliberately here rather than only in Profile: somebody
+            reading a ticket and wondering whether they can still cancel it is
+            exactly who the agent was built for, and the agent can see this
+            booking. A text link, not another button — the screen already has
+            three. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Ask about this booking"
+          onPress={() => router.push('/support')}
+          style={{ alignSelf: 'center', paddingVertical: spacing.sm }}
+        >
+          <Text variant="caption" style={{ color: colors.primary }}>
+            Questions about this booking?
+          </Text>
+        </Pressable>
+
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <Button
             label="Share"

@@ -89,5 +89,13 @@ services:
       # third-party account. Set it to a Resend key to deliver them properly.
       # - key: RESEND_API_KEY
       #   sync: false
+      # Also unset on purpose, and the support chat works without it: the API
+      # answers from the same grounded notes it would have handed the model —
+      # this account's bookings, the policy numbers above — and the reply says
+      # which of the two answered. Set it to a Groq key for the considered
+      # answer. It must be set here and never in apps/mobile/.env: anything
+      # prefixed EXPO_PUBLIC_ is inlined into the APK in plain text.
+      # - key: GROQ_API_KEY
+      #   sync: false
       - key: NODE_VERSION
         value: '22'
