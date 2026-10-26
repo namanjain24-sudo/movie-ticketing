@@ -704,6 +704,16 @@ A principle applied throughout, and worth stating as a principle:
 - **Ratings are computed from real reviews.** One per person, editable, never
   stackable. An average with three reviews behind it says three.
 - **Every countdown is anchored to server time.**
+- **The support agent answers from rows, not from recollection.** The server
+  reads this account's bookings and the policy numbers out of `env` and tells
+  the model to answer from those and say plainly when the answer is not in
+  them. The booking query is scoped by `userId`, which is what makes the
+  isolation structural: another customer's ticket is not in the context, so
+  no prompt can reach it. The Groq key is server-side — anything
+  `EXPO_PUBLIC_` is inlined into the bundle in plain text — and with no key
+  configured the endpoint still answers from the same notes and says which of
+  the two replied, rather than passing the short answer off as the considered
+  one.
 
 ---
 
