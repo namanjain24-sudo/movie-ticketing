@@ -5,6 +5,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { motion } from '../theme/tokens';
 
 export const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -15,7 +16,7 @@ export const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
  * a physical thing and the release overshoot is the whole tell that the tap
  * registered.
  */
-export function usePressScale(amount = 0.035) {
+export function usePressScale(amount = motion.pressScale) {
   const pressed = useSharedValue(0);
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * amount }],
@@ -24,10 +25,10 @@ export function usePressScale(amount = 0.035) {
   return {
     style,
     onPressIn: () => {
-      pressed.value = withTiming(1, { duration: 90 });
+      pressed.value = withTiming(1, { duration: motion.duration.fast });
     },
     onPressOut: () => {
-      pressed.value = withSpring(0, { damping: 14, stiffness: 320 });
+      pressed.value = withSpring(0, motion.spring.press);
     },
   };
 }

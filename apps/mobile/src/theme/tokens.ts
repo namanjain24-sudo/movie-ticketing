@@ -345,3 +345,65 @@ export const elevation = {
     elevation: 8,
   },
 } as const;
+
+/**
+ * Motion.
+ *
+ * The app had springs and timings in it before it had a scale for them:
+ * durations of 90, 110, 160, 180 and 220ms, and springs at damping 10, 12 and
+ * 14 against stiffness 160, 180, 220 and 320. Nobody chose four stiffnesses.
+ * They accumulated, one screen at a time, and the difference between 160 and
+ * 180 is not a decision a user can perceive — it is the same drift `spacing`
+ * exists to stop, so this is the same answer.
+ *
+ * Named by the job, not by the number, because the number is what drifts.
+ */
+export const motion = {
+  /**
+   * `fast` answers a finger that is already there: by the time a press-in
+   * animation plays, the thumb has arrived and the only job left is to admit
+   * it. `base` is the default for anything appearing or moving on its own.
+   * `slow` is for something large enough that its travel is informative —
+   * a sheet, a screen, a summary bar rising into place.
+   *
+   * There is deliberately no step between `base` and `slow`. Two durations
+   * 40ms apart read as one duration implemented twice.
+   */
+  duration: {
+    fast: 90,
+    base: 160,
+    slow: 220,
+    /**
+     * Ambient, self-running motion with no input waiting on it: the splash
+     * mark drawing itself, a shimmer crossing a skeleton. Anything on this
+     * tier must be interruptible — it is the one tier long enough that a user
+     * can arrive mid-animation.
+     */
+    ambient: 1100,
+  },
+
+  /**
+   * Three springs, each with a reason to exist.
+   *
+   * `press` is the release overshoot on a tapped surface — stiff and tightly
+   * damped, so it reads as a physical rebound rather than a wobble.
+   * `settle` is for something arriving at a resting place it chose: the seat
+   * that grows and settles, a sheet reaching its detent.
+   * `enter` is softer and slower, for an element appearing from nothing,
+   * where a little overshoot reads as arrival rather than as a glitch.
+   */
+  spring: {
+    press: { damping: 14, stiffness: 320 },
+    settle: { damping: 14, stiffness: 220 },
+    enter: { damping: 12, stiffness: 160 },
+  },
+
+  /**
+   * How far a pressable dips under the thumb. One value, because a card and a
+   * button that answer a press differently read as two apps.
+   */
+  pressScale: 0.035,
+} as const;
+
+export type MotionDuration = keyof typeof motion.duration;
+export type MotionSpring = keyof typeof motion.spring;
