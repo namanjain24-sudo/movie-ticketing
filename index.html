@@ -48,6 +48,7 @@
         <ul class="nav-links">
           <li><a href="#proof">The proof</a></li>
           <li><a href="#events">Events</a></li>
+          <li><a href="#support">Support</a></li>
           <li><a href="#clips">The app</a></li>
           <li><a href="#booking">Booking</a></li>
           <li><a href="#cinemas">Cinemas</a></li>
@@ -301,6 +302,66 @@
               A ground, not an auditorium. Six stands, six prices.
             </figcaption>
           </figure>
+        </div>
+      </section>
+
+      <!-- ===== the support agent ========================================
+           A chatbot is the easiest thing in this project to oversell, so the
+           section claims only the two things that are actually true of it:
+           the answer is assembled from this account's own rows rather than
+           from a model's general memory of ticketing apps, and the key is on
+           the server because anything EXPO_PUBLIC_ ships inside the APK.
+      -->
+      <section class="stands agent" id="support" aria-labelledby="agent-head">
+        <div class="wrap stands-grid">
+          <figure class="stands-figure agent-figure reveal" style="--i: 2">
+            <canvas
+              id="supportFilm"
+              role="img"
+              aria-label="A customer types 'Can I still cancel my 9pm show?'. The server panel fills with this account's own booking BK-46QDDX and the real policy numbers — a 120 minute cancellation window, a 30 rupee fee that is never refunded — and a chip marks the API key as staying on the server. Those facts travel to Groq, and the reply comes back: yes, until 7:30 pm, and the fee is not refunded."
+            ></canvas>
+            <figcaption id="supportCaption" class="stands-caption" aria-live="off">
+              A question, typed in the app.
+            </figcaption>
+          </figure>
+
+          <div class="stands-copy">
+            <p class="stands-kicker reveal">New · support agent</p>
+            <h2 id="agent-head" class="stands-head reveal" style="--i: 1">
+              Help that reads your actual booking.
+            </h2>
+            <p class="stands-sub reveal" style="--i: 2">
+              A support chat in the app, answered by a model on Groq — but the model is never asked
+              what it remembers about ticketing. The API assembles the context first: this account's
+              own bookings, and this deployment's own policy numbers straight out of
+              <em>env</em>. The prompt's first rule is to answer from that and say so plainly when
+              the answer is not in it.
+            </p>
+
+            <ul class="stands-list reveal" style="--i: 3">
+              <li>
+                <strong>It cannot read somebody else's ticket.</strong> The query is scoped by user
+                id, so another customer's booking is not in the context to begin with — there is no
+                sentence you could type that would fetch it.
+              </li>
+              <li>
+                <strong>It cannot invent a deadline.</strong> The cancellation window, the booking
+                fee and the hold timer come from the same configuration the booking code enforces,
+                read seconds before the question is answered.
+              </li>
+              <li>
+                <strong>The key never leaves the server.</strong> Anything prefixed
+                <em>EXPO_PUBLIC_</em> is inlined into the bundle in plain text, so a key on the
+                phone would be sitting inside the APK. The phone talks to this API; only this API
+                talks to Groq.
+              </li>
+              <li>
+                <strong>It still works with no key at all.</strong> Unset is a mode, not an error:
+                the server answers from the same grounded notes and the chat says which of the two
+                replied, rather than passing the short answer off as the considered one.
+              </li>
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -862,6 +923,17 @@
             </details>
 
             <details>
+              <summary>Does the support chat see my data?</summary>
+              <p>
+                It sees your own bookings, because that is the only way it can answer a question
+                about one. The query is scoped to your account, so another customer's ticket is
+                never in the context — and the model is reached by the server, never by the phone,
+                so no key ships inside the APK. Without a key configured the chat still answers,
+                from the same notes, and tells you that is what happened.
+              </p>
+            </details>
+
+            <details>
               <summary>Why is the map blank on the cinemas tab?</summary>
               <p>
                 It needs a Google Maps key, which the public build does not carry. The list, the
@@ -985,6 +1057,7 @@
 
     <script src="film.js" defer></script>
     <script src="stands.js" defer></script>
+    <script src="support.js" defer></script>
     <script src="ads.js" defer></script>
     <script src="site.js" defer></script>
   </body>
