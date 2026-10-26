@@ -134,6 +134,11 @@ export default function Onboarding() {
         onMomentumScrollEnd={onMomentumEnd}
         scrollEventThrottle={16}
         bounces={false}
+        // Without this the row is only as tall as its tallest panel, and a
+        // panel has no height to centre anything in — which is how the intro
+        // ended up with its copy pinned to the top and a third of the screen
+        // empty between that and the button.
+        contentContainerStyle={{ flexGrow: 1 }}
       >
         {PANELS.map((panel, i) => (
           <OnboardingPanel
@@ -201,7 +206,17 @@ function OnboardingPanel({
   });
 
   return (
-    <View style={{ width: SCREEN, paddingTop: insets.top + spacing['3xl'] }}>
+    <View
+      style={{
+        width: SCREEN,
+        // The parent lays its children out in a column, so `flex` grows this
+        // vertically and `width` keeps the horizontal size it is paged by.
+        flex: 1,
+        justifyContent: 'center',
+        paddingTop: insets.top + spacing.xl,
+        paddingBottom: spacing.xl,
+      }}
+    >
       <Animated.View style={[{ alignItems: 'center', gap: spacing['2xl'] }, style]}>
         <View style={{ height: 150, alignItems: 'center', justifyContent: 'center' }}>
           <Motif active={active} />
