@@ -8,6 +8,7 @@ import { bookingApi } from '../../api/booking';
 import { useAuth } from '../../features/auth/auth-provider';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
+import { motion } from '../../theme/tokens';
 
 /** A small settle on arrival, not a bounce on every render — keyed to the one
  * moment that actually changed, which tab is focused.
@@ -31,7 +32,7 @@ function TabIcon({
   const scale = useSharedValue(focused ? 1 : 0.88);
 
   useEffect(() => {
-    scale.value = withSpring(focused ? 1 : 0.88, { damping: 14, stiffness: 220 });
+    scale.value = withSpring(focused ? 1 : 0.88, motion.spring.settle);
   }, [focused, scale]);
 
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));

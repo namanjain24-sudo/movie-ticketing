@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../../theme';
+import { motion } from '../../theme/tokens';
 
 /**
  * A placeholder shaped like the thing that is coming. A spinner says "wait"; a
@@ -27,7 +28,7 @@ export function Skeleton({ style }: { style?: ViewStyle }) {
 
   useEffect(() => {
     progress.value = withRepeat(
-      withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: motion.duration.ambient, easing: Easing.inOut(Easing.ease) }),
       -1,
       false,
     );

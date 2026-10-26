@@ -9,6 +9,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { motion } from '../theme/tokens';
 
 /**
  * Matches app.json's native splash exactly (`backgroundColor` and
@@ -47,7 +48,7 @@ export function AppSplash({ ready, onHidden }: { ready: boolean; onHidden: () =>
   useEffect(() => {
     if (!canExit) {
       if (!reducedMotion) {
-        opacity.value = withTiming(1, { duration: 220 });
+        opacity.value = withTiming(1, { duration: motion.duration.slow });
         scale.value = withSpring(1, { damping: 14, stiffness: 160 });
       }
       return;

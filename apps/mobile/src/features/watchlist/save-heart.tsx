@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../../theme';
+import { motion } from '../../theme/tokens';
 import { useWatchlist } from './use-watchlist';
 
 /**
@@ -27,7 +28,7 @@ export function SaveHeart({ movie }: { movie: MovieSummary }) {
     if (saved)
       pop.value = withSequence(
         withTiming(1.35, { duration: 110 }),
-        withTiming(1, { duration: 160 }),
+        withTiming(1, { duration: motion.duration.base }),
       );
   }, [saved, pop]);
 

@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Text } from '../../components/ui';
 import { useTheme } from '../../theme';
-import { gradients } from '../../theme/tokens';
+import { gradients, motion } from '../../theme/tokens';
 
 /**
  * Three motifs, one per onboarding panel, each drawn from the same geometry
@@ -34,7 +34,7 @@ export function HoldMotif({ active }: { active: boolean }) {
     if (!active) return;
     fill.value = 0;
     sweep.value = 0;
-    fill.value = withDelay(150, withSpring(1, { damping: 12, stiffness: 160 }));
+    fill.value = withDelay(150, withSpring(1, motion.spring.enter));
     sweep.value = withDelay(150, withTiming(1, { duration: 1400 }));
   }, [active, fill, sweep]);
 
