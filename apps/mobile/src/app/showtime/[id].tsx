@@ -161,6 +161,7 @@ export default function SeatMapScreen() {
       <AppBar
         title={subjectTitle(map)}
         subtitle={`${map.cinema.name} · ${map.screen.name}`}
+        titleLines={2}
         onBack={() => router.back()}
         actions={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>

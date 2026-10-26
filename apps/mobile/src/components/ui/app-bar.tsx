@@ -18,6 +18,7 @@ export function AppBar({
   onPressTitle,
   onBack,
   actions,
+  titleLines = 1,
 }: {
   title: string;
   subtitle?: string;
@@ -25,6 +26,14 @@ export function AppBar({
   onPressTitle?: () => void;
   onBack?: () => void;
   actions?: ReactNode;
+  /**
+   * Let a long title wrap instead of truncating. One line is right almost
+   * everywhere — a title that needs two is usually a sign the screen is
+   * carrying too much — but a bar with a back arrow, a title, a subtitle, an
+   * icon and a date block has roughly 190pt left for the title, and a film
+   * name does not fit in it. Two lines there beats "Drishyam: The Conclu…".
+   */
+  titleLines?: 1 | 2;
 }) {
   const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
@@ -39,7 +48,7 @@ export function AppBar({
             {subtitle}
           </Text>
         ) : null}
-        <Text variant="heading" tone="onChrome" numberOfLines={1}>
+        <Text variant="heading" tone="onChrome" numberOfLines={titleLines}>
           {title}
         </Text>
       </View>
