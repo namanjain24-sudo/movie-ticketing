@@ -161,13 +161,17 @@ export default function SupportScreen() {
       {messages.length === 1 ? (
         <Animated.View
           entering={FadeInDown.delay(120).duration(260)}
-          // Stacked rather than wrapped. A `flexWrap` row measured each chip
-          // against what was left of the line above it, so the second chip
-          // was sized for a gap it then wrapped out of and rendered as "What
-          // have I" — a question truncated into nonsense. One per row, each
-          // sized to its own text, cannot do that.
+          // Full-width rows, not chips sized to their own text.
+          //
+          // As chips, "What have I booked?" rendered as "What have I" on a
+          // real device: the view's text was right — uiautomator read the
+          // whole question back — but the box around it measured about half
+          // the string and clipped the rest. Both a wrapping row and a column
+          // of self-sized children did it, and only to that one string, so
+          // the fix is not to make a measurement tidier but to stop depending
+          // on one: a row that is as wide as the screen has nothing to get
+          // wrong, and a question is a comfortable thing to aim at anyway.
           style={{
-            alignItems: 'flex-start',
             gap: spacing.sm,
             paddingHorizontal: spacing.lg,
             paddingBottom: spacing.sm,
@@ -179,10 +183,12 @@ export default function SupportScreen() {
               accessibilityRole="button"
               onPress={() => void send(opener)}
               style={({ pressed }) => ({
-                maxWidth: '100%',
+                alignSelf: 'stretch',
+                minHeight: HIT_SIZE,
+                justifyContent: 'center',
                 paddingVertical: spacing.sm,
                 paddingHorizontal: spacing.md,
-                borderRadius: radius.full,
+                borderRadius: radius.lg,
                 borderWidth: 1,
                 borderColor: colors.border,
                 backgroundColor: pressed ? colors.surfaceMuted : colors.surface,
