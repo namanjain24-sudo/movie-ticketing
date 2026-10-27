@@ -50,6 +50,35 @@ export const holdSchema = z.object({
 export type Hold = z.infer<typeof holdSchema>;
 
 /**
+ * A hold the caller still owns, with enough of its showtime to name it.
+ *
+ * Exists because a hold is the one piece of state in this app that is losing
+ * value while nobody is looking at it: five minutes, counted by the server,
+ * and the seats go back on sale. If the app was closed mid-checkout — a call
+ * came in, the phone slept, somebody switched away to check a date — there
+ * was no way back to it except remembering the film and starting again.
+ */
+export const activeHoldSchema = z.object({
+  hold: holdSchema,
+  showtime: z.object({
+    id: z.string(),
+    startsAt: z.string(),
+    /** Exactly one of these, the same rule the ticket follows. */
+    movie: z
+      .object({ id: z.string(), slug: z.string(), title: z.string(), posterUrl: z.string() })
+      .nullable()
+      .default(null),
+    event: z
+      .object({ id: z.string(), slug: z.string(), title: z.string(), posterUrl: z.string() })
+      .nullable()
+      .default(null),
+    cinema: z.object({ id: z.string(), name: z.string(), city: z.string() }),
+    screen: z.object({ id: z.string(), name: z.string() }),
+  }),
+});
+export type ActiveHold = z.infer<typeof activeHoldSchema>;
+
+/**
  * Body of a 409 when seats were taken between the map load and the tap. The
  * seat map uses `unavailableShowSeatIds` to grey those seats out in place.
  */
@@ -318,6 +347,12 @@ export const POINT_VALUE_MINOR = 100;
 
 export const loyaltyBalanceSchema = z.object({
   balance: z.number().int(),
+  /**
+   * Everything ever earned, which is what a tier is ranked on. Defaulted
+   * rather than required: an app built against a server that predates this
+   * field should show a Regular tier, not fail to parse its own balance.
+   */
+  lifetimePoints: z.number().int().min(0).default(0),
 });
 export type LoyaltyBalance = z.infer<typeof loyaltyBalanceSchema>;
 
@@ -376,3 +411,49 @@ export const toggleBookingSplitShareSchema = z.object({
   settled: z.boolean(),
 });
 export type ToggleBookingSplitShareInput = z.infer<typeof toggleBookingSplitShareSchema>;
+
+/**
+ * Loyalty tiers.
+ *
+ * Ranked on **lifetime points earned**, never on the current balance. Spending
+ * points is the thing the programme is for; a tier that fell when you used it
+ * would be a programme that punishes you for taking part.
+ *
+ * `EARNED` entries count, and so do the negative `REVERSED` ones, which are
+ * `clawbackEarned` undoing an award for a booking that was cancelled. The
+ * positive `REVERSED` entries do not: those are `reverseRedemption` handing
+ * back points that were spent on a booking that never completed, and handing
+ * back a spend is not a fresh earning.
+ *
+ * **These tiers carry no perks, and the app says so.** Writing "free popcorn
+ * at Gold" here takes one line and would be a lie until something enforces
+ * it, and a lie on this screen is the same lie the support agent is built to
+ * never tell. The obvious perk — a better earn rate — is deliberately not
+ * taken: `earnedPoints` is pure in `totalMinor` so that `clawbackEarned` can
+ * exactly undo an award, and a rate that varied with a tier the user may have
+ * left by the time they cancel would break that on the money path. A real
+ * perk belongs in a change that implements it, not in a label.
+ */
+export const LOYALTY_TIERS = [
+  { id: 'REGULAR', name: 'Regular', minLifetimePoints: 0 },
+  { id: 'SILVER', name: 'Silver', minLifetimePoints: 50 },
+  { id: 'GOLD', name: 'Gold', minLifetimePoints: 150 },
+  { id: 'PLATINUM', name: 'Platinum', minLifetimePoints: 400 },
+] as const;
+
+export type LoyaltyTierId = (typeof LOYALTY_TIERS)[number]['id'];
+export type LoyaltyTier = (typeof LOYALTY_TIERS)[number];
+
+/** The highest tier this many lifetime points reaches. Never null: `REGULAR` starts at zero. */
+export function tierFor(lifetimePoints: number): LoyaltyTier {
+  let reached: LoyaltyTier = LOYALTY_TIERS[0];
+  for (const tier of LOYALTY_TIERS) {
+    if (lifetimePoints >= tier.minLifetimePoints) reached = tier;
+  }
+  return reached;
+}
+
+/** The next tier up, or null at the top. */
+export function nextTierAfter(lifetimePoints: number): LoyaltyTier | null {
+  return LOYALTY_TIERS.find((t) => t.minLifetimePoints > lifetimePoints) ?? null;
+}

@@ -91,6 +91,15 @@ describe('loyalty points', () => {
         .then((r) => r.body)
     ).balance as number;
 
+  const lifetime = async (user: TestUser) =>
+    (
+      await request(app)
+        .get('/v1/loyalty/balance')
+        .set(user.auth)
+        .expect(200)
+        .then((r) => r.body)
+    ).lifetimePoints as number;
+
   async function settled(bookingId: string) {
     await waitFor(async () => {
       const b = await prisma.booking.findUnique({ where: { id: bookingId } });
@@ -232,5 +241,54 @@ describe('loyalty points', () => {
     // spent on it are handed back — net back to the 6 from the first booking.
     expect(await balance(alice)).toBe(6);
     expect(await verifyInvariants()).toEqual([]);
+  });
+
+  describe('lifetime points, which tiers rank on', () => {
+    it('starts at zero and follows what was earned', async () => {
+      expect(await lifetime(alice)).toBe(0);
+      const h = await hold(alice, [0, 1]);
+      const paid = await checkout(alice, h.id).expect(201);
+      await settled(paid.body.bookingId);
+      expect(await lifetime(alice)).toBe(6);
+    });
+
+    it('does not fall when points are spent', async () => {
+      const first = await hold(alice, [0, 1]);
+      const firstPaid = await checkout(alice, first.id).expect(201);
+      await settled(firstPaid.body.bookingId);
+
+      const second = await hold(alice, [2, 3]);
+      const secondPaid = await checkout(alice, second.id, { pointsToRedeem: 6 }).expect(201);
+      await settled(secondPaid.body.bookingId);
+
+      // Balance went down and came back; lifetime only ever went up. Spending
+      // is what the programme is for, so it must not cost a tier.
+      expect(await balance(alice)).toBe(6);
+      expect(await lifetime(alice)).toBe(12);
+    });
+
+    it('falls by the clawback when a booking is cancelled, and not by the refund', async () => {
+      const first = await hold(alice, [0, 1]);
+      const firstPaid = await checkout(alice, first.id).expect(201);
+      await settled(firstPaid.body.bookingId);
+
+      const second = await hold(alice, [2, 3]);
+      const secondPaid = await checkout(alice, second.id, { pointsToRedeem: 6 }).expect(201);
+      await settled(secondPaid.body.bookingId);
+      expect(await lifetime(alice)).toBe(12);
+
+      await request(app)
+        .post(`/v1/bookings/${secondPaid.body.bookingId}/cancel`)
+        .set(alice.auth)
+        .expect(200);
+
+      // Cancelling writes two REVERSED rows: -6 clawing back the award, and
+      // +6 handing back the spend. Only the first is an un-earning. Summing
+      // REVERSED blind would leave lifetime at 12 and hand out a tier nobody
+      // reached.
+      expect(await lifetime(alice)).toBe(6);
+      expect(await balance(alice)).toBe(6);
+      expect(await verifyInvariants()).toEqual([]);
+    });
   });
 });

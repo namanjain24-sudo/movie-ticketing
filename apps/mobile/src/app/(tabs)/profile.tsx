@@ -9,6 +9,7 @@ import { bookingApi } from '../../api/booking';
 import { loyaltyApi } from '../../api/loyalty';
 import { ErrorState } from '../../components/query-state';
 import { AppBar, Button, Skeleton, Text, TextField } from '../../components/ui';
+import { TierCard } from '../../features/bookings/tier-card';
 import { useWatchlist } from '../../features/watchlist/use-watchlist';
 import { useAuthStore } from '../../features/auth/auth-store';
 import { appVersion } from '../../lib/config';
@@ -161,6 +162,8 @@ export default function Profile() {
           <Stat label="Points" value={loyaltyBalance.data?.balance} />
         </Animated.View>
 
+        <TierCard lifetimePoints={loyaltyBalance.data?.lifetimePoints} />
+
         <Animated.View
           entering={FadeInDown.delay(110).duration(280)}
           style={{
@@ -189,6 +192,12 @@ export default function Profile() {
             icon="chatbubble-ellipses-outline"
             label="Help & support"
             onPress={() => router.push('/support')}
+          />
+          <Divider />
+          <Row
+            icon="megaphone-outline"
+            label="House ads"
+            onPress={() => router.push('/sponsors')}
           />
           <Divider />
           <Row icon="film-outline" label="Browse films" onPress={() => router.push('/(tabs)')} />
@@ -284,7 +293,8 @@ function Row({
     | 'film-outline'
     | 'heart-outline'
     | 'notifications-outline'
-    | 'chatbubble-ellipses-outline';
+    | 'chatbubble-ellipses-outline'
+    | 'megaphone-outline';
   label: string;
   onPress: () => void;
 }) {

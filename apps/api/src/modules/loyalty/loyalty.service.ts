@@ -44,8 +44,37 @@ async function balanceOf(db: Pick<Db, '$queryRaw'>, userId: string): Promise<num
   return Number(rows[0]?.sum ?? 0);
 }
 
+/**
+ * Everything this user has ever earned, which is what their tier is ranked on
+ * — not the balance, because spending points is what the programme is for and
+ * a tier that fell when you used it would punish taking part.
+ *
+ * `EARNED` counts. So do the negative `REVERSED` rows, which are
+ * `clawbackEarned` undoing an award for a booking that was cancelled. The
+ * positive `REVERSED` rows do not: those are `reverseRedemption` returning
+ * points that were spent on a booking that never completed, and giving back a
+ * spend is not a fresh earning. Summing `REVERSED` blind would count those
+ * twice and hand out tiers nobody reached.
+ */
+async function lifetimeEarnedOf(
+  db: Pick<Db, '$queryRaw'>,
+  userId: string,
+): Promise<number> {
+  const rows = await db.$queryRaw<{ sum: bigint | null }[]>`
+    SELECT COALESCE(SUM(points), 0)::bigint AS sum
+    FROM "LoyaltyLedger"
+    WHERE "userId" = ${userId}
+      AND (reason = 'EARNED' OR (reason = 'REVERSED' AND points < 0))
+  `;
+  return Math.max(0, Number(rows[0]?.sum ?? 0));
+}
+
 export async function getBalance(userId: string): Promise<LoyaltyBalance> {
-  return { balance: await balanceOf(prisma, userId) };
+  const [balance, lifetimePoints] = await Promise.all([
+    balanceOf(prisma, userId),
+    lifetimeEarnedOf(prisma, userId),
+  ]);
+  return { balance, lifetimePoints };
 }
 
 export interface AppliedLoyalty {
