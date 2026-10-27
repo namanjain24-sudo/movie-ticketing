@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 import { Button, Text, TextField } from '../../components/ui';
+import { PasswordRules } from '../../features/auth/password-rules';
 import { authErrorMessage } from '../../features/auth/auth-error';
 import { useSlowSubmit } from '../../features/auth/use-slow-submit';
 import { AuthScaffold } from '../../features/auth/auth-scaffold';
@@ -95,18 +96,23 @@ export default function SignUp() {
           control={control}
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Password"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={errors.password?.message}
-              hint="At least 10 characters, with upper case, lower case and a number."
-              secureTextEntry
-              autoComplete="new-password"
-              textContentType="newPassword"
-              placeholder="••••••••••"
-            />
+            <View>
+              <TextField
+                label="Password"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                // The checklist below carries the rules, so the error line is
+                // left for things it cannot show — a password the server
+                // rejected for a reason that is not one of the four.
+                error={errors.password?.message}
+                secureTextEntry
+                autoComplete="new-password"
+                textContentType="newPassword"
+                placeholder="••••••••••"
+              />
+              <PasswordRules value={value ?? ''} />
+            </View>
           )}
         />
 

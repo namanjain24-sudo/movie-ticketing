@@ -4,14 +4,61 @@ import { userSchema } from './user';
 /**
  * Password policy lives here so the sign-up form and the API can never drift
  * apart. Change it once and both sides move together.
+ *
+ * The rules are data rather than a chain of `.refine()` calls because the
+ * sign-up form shows them as a checklist that ticks off while somebody types.
+ * Written twice — once to enforce, once to display — they would eventually
+ * disagree, and a form that promises a rule the server does not keep (or
+ * hides one it does) is worse than no checklist at all. `passwordSchema` is
+ * built from this list, so the two cannot come apart.
+ *
+ * `label` is what the rule looks like when it is a goal ("A number"), and
+ * `message` is what it sounds like when it has been broken ("Add a number").
  */
-export const passwordSchema = z
-  .string()
-  .min(10, 'Use at least 10 characters')
-  .max(128, 'Password is too long')
-  .refine((v) => /[a-z]/.test(v), 'Add a lowercase letter')
-  .refine((v) => /[A-Z]/.test(v), 'Add an uppercase letter')
-  .refine((v) => /[0-9]/.test(v), 'Add a number');
+export const PASSWORD_RULES = [
+  {
+    id: 'length',
+    label: 'At least 10 characters',
+    message: 'Use at least 10 characters',
+    test: (v: string) => v.length >= 10,
+  },
+  {
+    id: 'lowercase',
+    label: 'A lowercase letter',
+    message: 'Add a lowercase letter',
+    test: (v: string) => /[a-z]/.test(v),
+  },
+  {
+    id: 'uppercase',
+    label: 'An uppercase letter',
+    message: 'Add an uppercase letter',
+    test: (v: string) => /[A-Z]/.test(v),
+  },
+  {
+    id: 'number',
+    label: 'A number',
+    message: 'Add a number',
+    test: (v: string) => /[0-9]/.test(v),
+  },
+] as const;
+
+export type PasswordRule = (typeof PASSWORD_RULES)[number];
+
+/** Which rules this password has not met yet, in the order they are shown. */
+export function unmetPasswordRules(value: string): PasswordRule[] {
+  return PASSWORD_RULES.filter((rule) => !rule.test(value));
+}
+
+export const passwordSchema = PASSWORD_RULES.reduce(
+  // Typed as `z.ZodString`'s own refine result rather than `z.ZodType<string>`:
+  // the latter widens the schema's *input* to unknown, which propagates into
+  // `registerSchema` and makes `password` unknown at every call site.
+  (schema: z.ZodType<string, string>, rule) => schema.refine(rule.test, rule.message),
+  // The upper bound is not in the list: it is a limit rather than a goal, and
+  // a checklist item reading "fewer than 128 characters" is noise on a form
+  // nobody is going to fail it on.
+  z.string().max(128, 'Password is too long'),
+);
 
 export const emailSchema = z
   .email('Enter a valid email')
