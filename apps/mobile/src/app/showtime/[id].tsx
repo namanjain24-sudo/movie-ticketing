@@ -140,9 +140,20 @@ export default function SeatMapScreen() {
    */
   const rows = selection.rows;
 
+  /**
+   * The stand the person picked, if they picked one.
+   *
+   * It is not decoration. "Best seats for me" searches the rows it is given,
+   * and given all of them it will happily answer a tap on the ₹600 end with
+   * two seats in the ₹6,000 Club House — ten times the price somebody just
+   * said they wanted. Choosing a stand narrows that search to it.
+   */
+  const [chosenTier, setChosenTier] = useState<SeatTier | null>(null);
+
   /** Send the seat list to the first row of a stand, from plan or from list. */
   const jumpToStand = useCallback(
     (tier: SeatTier) => {
+      setChosenTier(tier);
       const row = rows.find((r) => r.seats.some((seat) => seat.tier === tier));
       if (row) gridRef.current?.scrollToRow(row.y);
     },
@@ -154,15 +165,22 @@ export default function SeatMapScreen() {
    * hand rather than asked of the server: a second number from a second
    * source is a number that can disagree with the map under it.
    */
-  const bowlTiers = seatMap.data?.tiers;
-  const bowlSeats = seatMap.data?.seats;
+  const tiers = seatMap.data?.tiers;
+  const allSeats = seatMap.data?.seats;
+  const isEvent = Boolean(seatMap.data?.event);
   const statusOf = selection.statusOf;
   const stands = useMemo(
-    () =>
-      bowlTiers && bowlSeats && bowlTiers.some((t) => typeof t.bearing === 'number')
-        ? summariseStands(bowlTiers, bowlSeats, statusOf)
-        : [],
-    [bowlTiers, bowlSeats, statusOf],
+    // Every event, not only the ones shaped like a bowl. A concert in a hall
+    // and a workshop in a studio are sold the same way a match is — pick the
+    // band, then the seat — and those venues have no ring to draw, so without
+    // this they were the only places that still opened on a bare grid.
+    //
+    // A film is not on this list. A cinema's bands are Standard, Premium and
+    // Recliner, every seat faces the same screen, and the row you are in is
+    // the decision. Asking a cinema-goer to choose a category first would be
+    // a step that answers nothing.
+    () => (tiers && allSeats && isEvent ? summariseStands(tiers, allSeats, statusOf) : []),
+    [tiers, allSeats, isEvent, statusOf],
   );
 
   if (seatMap.isPending) return <LoadingState label="Loading seats" />;
@@ -185,6 +203,10 @@ export default function SeatMapScreen() {
    * ground has one side.
    */
   const hasBowl = map.tiers.filter((t) => typeof t.bearing === 'number').length >= 2;
+
+  const chosenStandLabel = chosenTier
+    ? (map.tiers.find((t) => t.tier === chosenTier)?.label ?? null)
+    : null;
 
   // Plain derivation, not a hook, so it is fine below the guard: which stand
   // the seat list is currently in, so the plan and the list can both light it.
@@ -266,18 +288,18 @@ export default function SeatMapScreen() {
         {hasBowl ? (
           <StadiumBowl
             tiers={map.tiers}
-            activeTier={visibleTier}
+            activeTier={chosenTier ?? visibleTier}
             onSelectStand={jumpToStand}
           />
         ) : (
           <VenueFacing facing={map.event?.kind ?? 'FILM'} />
         )}
-        {hasBowl ? (
+        {stands.length > 0 ? (
           <View style={{ paddingBottom: spacing.lg }}>
             <StandPicker
               stands={stands}
               currency={map.currency}
-              activeTier={visibleTier}
+              activeTier={chosenTier ?? visibleTier}
               onSelect={jumpToStand}
             />
           </View>
@@ -348,11 +370,21 @@ export default function SeatMapScreen() {
             </Text>
             {salesClosed ? null : (
               <Button
-                label={`Best ${wanted} seat${wanted === 1 ? '' : 's'} for me`}
+                label={
+                  chosenStandLabel
+                    ? `Best ${wanted} in ${chosenStandLabel}`
+                    : `Best ${wanted} seat${wanted === 1 ? '' : 's'} for me`
+                }
                 variant="secondary"
                 onPress={() => {
+                  // Inside the chosen stand when there is one. Searching the
+                  // whole bowl would answer "the cheap end, please" with the
+                  // most expensive seats in the ground.
+                  const searchRows = chosenTier
+                    ? selection.rows.filter((r) => r.seats.some((x) => x.tier === chosenTier))
+                    : selection.rows;
                   const best = findBestSeats(
-                    selection.rows,
+                    searchRows,
                     selection.statusOf,
                     wanted,
                     map.screen.columnCount,
@@ -364,7 +396,9 @@ export default function SeatMapScreen() {
                   } else {
                     rejectFeedback();
                     setHoldError(
-                      `No ${wanted} seats together are free. Pick them one by one, or try another showing.`,
+                      chosenStandLabel
+                        ? `No ${wanted} seats together are free in ${chosenStandLabel}. Try another stand, or pick them one by one.`
+                        : `No ${wanted} seats together are free. Pick them one by one, or try another showing.`,
                     );
                   }
                 }}
