@@ -49,4 +49,47 @@ describe('TextField', () => {
     );
     expect(getByText('At least 10 characters')).toBeTruthy();
   });
+
+  describe('password reveal', () => {
+    it('offers no toggle on an ordinary field', async () => {
+      const { queryByLabelText } = await wrap(
+        <TextField label="Email" value="" onChangeText={jest.fn()} />,
+      );
+      expect(queryByLabelText('Show password')).toBeNull();
+    });
+
+    it('starts masked, and says it can be shown', async () => {
+      const { getByLabelText } = await wrap(
+        <TextField label="Password" value="hunter2" onChangeText={jest.fn()} secureTextEntry />,
+      );
+      expect(getByLabelText('Password').props.secureTextEntry).toBe(true);
+      expect(getByLabelText('Show password')).toBeTruthy();
+    });
+
+    it('unmasks when the toggle is pressed, and masks again', async () => {
+      const user = userEvent.setup();
+      const { getByLabelText } = await wrap(
+        <TextField label="Password" value="hunter2" onChangeText={jest.fn()} secureTextEntry />,
+      );
+
+      await user.press(getByLabelText('Show password'));
+      expect(getByLabelText('Password').props.secureTextEntry).toBe(false);
+
+      // The label flips too, so a screen reader is told what the button does
+      // now rather than what it did a moment ago.
+      await user.press(getByLabelText('Hide password'));
+      expect(getByLabelText('Password').props.secureTextEntry).toBe(true);
+    });
+
+    it('keeps the value across a toggle', async () => {
+      const user = userEvent.setup();
+      const { getByLabelText } = await wrap(
+        <TextField label="Password" value="hunter2" onChangeText={jest.fn()} secureTextEntry />,
+      );
+      await user.press(getByLabelText('Show password'));
+      // Flipping `secureTextEntry` is only safe because the value is
+      // controlled; this is the assertion that keeps it that way.
+      expect(getByLabelText('Password').props.value).toBe('hunter2');
+    });
+  });
 });
