@@ -1,4 +1,4 @@
-import { describeShow, formatMoney } from '@app/shared';
+import { EVENT_KIND_SINGULAR, SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ScrollView, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -78,12 +78,15 @@ export function SavedTicketCard({ ticket, onRetry }: { ticket: SavedTicket; onRe
               {ticket.movieTitle}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              {/* The same split as the live ticket: one badge names what it
+                  is, the other gives the language a film has and an event
+                  does not. */}
               <Badge
-                label={describeShow({
-                  format: ticket.format,
-                  language: ticket.language,
-                  event: ticket.eventKind ? { kind: ticket.eventKind } : null,
-                })}
+                label={
+                  ticket.eventKind
+                    ? EVENT_KIND_SINGULAR[ticket.eventKind]
+                    : SHOW_FORMAT_LABELS[ticket.format]
+                }
                 tone="primary"
               />
               {ticket.eventKind ? null : <Badge label={ticket.language} variant="outline" />}

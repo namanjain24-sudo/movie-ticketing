@@ -1,4 +1,9 @@
-import { POINT_VALUE_MINOR, describeShow, formatMoney } from '@app/shared';
+import {
+  EVENT_KIND_SINGULAR,
+  POINT_VALUE_MINOR,
+  SHOW_FORMAT_LABELS,
+  formatMoney,
+} from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -250,7 +255,18 @@ export default function BookingTicket() {
               {subject?.title}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Badge label={describeShow(showtime)} tone="primary" />
+              {/* Two badges, so they split the job: an event names itself and
+                  has no language worth printing, a film gives its format here
+                  and its language beside it. Joining them into one string put
+                  "IMAX · ENGLISH" next to "ENGLISH". */}
+              <Badge
+                label={
+                  showtime.event
+                    ? EVENT_KIND_SINGULAR[showtime.event.kind]
+                    : SHOW_FORMAT_LABELS[showtime.format]
+                }
+                tone="primary"
+              />
               {showtime.event ? null : <Badge label={showtime.language} variant="outline" />}
             </View>
 
