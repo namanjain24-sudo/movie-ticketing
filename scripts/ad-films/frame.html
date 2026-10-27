@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sponsor film frames</title>
+    <style>
+      /* No margin and no scrollbars: the page is a canvas and nothing else,
+         so a screenshot of the viewport is exactly one frame. */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #0e0e13;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <script src="scenes.js"></script>
+    <script>
+      // Size comes from the query string so the capture script owns the
+      // resolution, and the canvas is sized in device pixels directly — there
+      // is no DPR here, the screenshot is taken at 1:1.
+      const params = new URLSearchParams(location.search);
+      const canvas = document.getElementById('stage');
+      canvas.width = Number(params.get('w') ?? 640);
+      canvas.height = Number(params.get('h') ?? 360);
+      window.renderFrame(canvas, params.get('film') ?? 'archforge', 0);
+      window.drawAt = (t) => window.renderFrame(canvas, params.get('film'), t);
+    </script>
+  </body>
+</html>

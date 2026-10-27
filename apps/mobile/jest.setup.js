@@ -13,7 +13,17 @@
 // this, which throws while installing a native module that is not there. Both
 // libraries ship a mock; both have to be in place.
 jest.mock('react-native-worklets', () => require('react-native-worklets/lib/module/mock'));
-jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+/**
+ * Reanimated's shipped mock does not implement `useReducedMotion`, so any
+ * component that asks the OS whether to animate — the splash, the sponsor
+ * films, the typing dots — throws on import rather than rendering. Answering
+ * "no" is also the right default for a test: the assertions are about the
+ * destination, and reduce-motion is the path that skips the journey.
+ */
+jest.mock('react-native-reanimated', () => ({
+  ...require('react-native-reanimated/mock'),
+  useReducedMotion: () => false,
+}));
 
 /**
  * Native maps have no headless implementation, so the map renders as a plain
