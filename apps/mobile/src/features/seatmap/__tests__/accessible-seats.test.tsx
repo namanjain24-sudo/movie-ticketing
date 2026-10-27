@@ -52,7 +52,7 @@ describe('AccessibleSeats', () => {
   it('counts only the free ones, against the room total', async () => {
     const seats = [
       seat('w1', 2, true, 'AVAILABLE'),
-      seat('w2', 2, true, 'TAKEN'),
+      seat('w2', 2, true, 'SOLD'),
       seat('w3', 5, true, 'AVAILABLE'),
       seat('n1', 1, false),
     ];
@@ -72,7 +72,7 @@ describe('AccessibleSeats', () => {
     const onJump = jest.fn();
     const seats = [
       // Row 2 has a space, but it is gone. The jump should skip it.
-      seat('w1', 2, true, 'TAKEN'),
+      seat('w1', 2, true, 'SOLD'),
       seat('w2', 7, true, 'AVAILABLE'),
       seat('n1', 1, false),
     ];
@@ -85,7 +85,7 @@ describe('AccessibleSeats', () => {
 
   it('stays visible but inert once every space is taken', async () => {
     const onJump = jest.fn();
-    const seats = [seat('w1', 2, true, 'TAKEN'), seat('n1', 1, false)];
+    const seats = [seat('w1', 2, true, 'SOLD'), seat('n1', 1, false)];
     const { getByLabelText } = await wrap(
       <AccessibleSeats rows={rowsFrom(seats)} seats={seats} statusOf={statusOf} onJump={onJump} />,
     );

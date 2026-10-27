@@ -4,7 +4,35 @@ import { Text } from '../../components/ui';
 import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 
-export type ShowtimeFilter = { format?: ShowFormat; language?: string };
+export type ShowtimeFilter = { format?: ShowFormat; language?: string; partOfDay?: PartOfDay };
+
+/**
+ * When a show starts, in the words people use when they are deciding whether
+ * they can go. A format and a language narrow *what* is playing; this narrows
+ * *when*, which is the constraint most people actually arrive with — and the
+ * one a multiplex with four screens makes hardest to scan by eye.
+ *
+ * Boundaries are the ordinary ones: lunchtime, the end of a working day, and
+ * late enough that getting home is a consideration.
+ */
+export const PARTS_OF_DAY = [
+  { id: 'morning', label: 'Morning', from: 0, until: 12 },
+  { id: 'afternoon', label: 'Afternoon', from: 12, until: 17 },
+  { id: 'evening', label: 'Evening', from: 17, until: 21 },
+  { id: 'night', label: 'Night', from: 21, until: 24 },
+] as const;
+
+export type PartOfDay = (typeof PARTS_OF_DAY)[number]['id'];
+
+/**
+ * Local hours, not UTC: the question is what time it is where the cinema is,
+ * and the list beside this prints local times too. Reading these apart is how
+ * a 10:15 pm show ends up filed under Morning.
+ */
+export function partOfDay(startsAt: string): PartOfDay {
+  const hour = new Date(startsAt).getHours();
+  return (PARTS_OF_DAY.find((p) => hour >= p.from && hour < p.until) ?? PARTS_OF_DAY[0]).id;
+}
 
 /**
  * Generic over the showtime element so callers keep whatever they annotated it
@@ -17,20 +45,28 @@ type Grouped<T> = { showtimes: T[] };
 export function filterOptions<T extends ShowtimeSummary>(cinemas: Grouped<T>[]) {
   const formats = new Set<ShowFormat>();
   const languages = new Set<string>();
+  const parts = new Set<PartOfDay>();
   for (const entry of cinemas) {
     for (const slot of entry.showtimes) {
       formats.add(slot.format);
       languages.add(slot.language);
+      parts.add(partOfDay(slot.startsAt));
     }
   }
-  return { formats: [...formats], languages: [...languages] };
+  return {
+    formats: [...formats],
+    languages: [...languages],
+    // In the order of the day rather than the order they were found, so the
+    // chips read Morning, Afternoon, Evening, Night however the list arrived.
+    parts: PARTS_OF_DAY.filter((p) => parts.has(p.id)),
+  };
 }
 
 export function applyFilter<T extends ShowtimeSummary, G extends Grouped<T>>(
   cinemas: G[],
   filter: ShowtimeFilter,
 ): G[] {
-  if (!filter.format && !filter.language) return cinemas;
+  if (!filter.format && !filter.language && !filter.partOfDay) return cinemas;
   return (
     cinemas
       .map((entry) => ({
@@ -38,7 +74,8 @@ export function applyFilter<T extends ShowtimeSummary, G extends Grouped<T>>(
         showtimes: entry.showtimes.filter(
           (slot) =>
             (!filter.format || slot.format === filter.format) &&
-            (!filter.language || slot.language === filter.language),
+            (!filter.language || slot.language === filter.language) &&
+            (!filter.partOfDay || partOfDay(slot.startsAt) === filter.partOfDay),
         ),
       }))
       // A cinema with nothing left is noise, not information.
@@ -49,18 +86,20 @@ export function applyFilter<T extends ShowtimeSummary, G extends Grouped<T>>(
 export function ShowtimeFilters({
   formats,
   languages,
+  parts = [],
   value,
   onChange,
 }: {
   formats: ShowFormat[];
   languages: string[];
+  parts?: readonly (typeof PARTS_OF_DAY)[number][];
   value: ShowtimeFilter;
   onChange: (next: ShowtimeFilter) => void;
 }) {
   const { colors, radius, spacing } = useTheme();
 
   // With a single option there is nothing to choose between.
-  if (formats.length < 2 && languages.length < 2) return null;
+  if (formats.length < 2 && languages.length < 2 && parts.length < 2) return null;
 
   const chip = (label: string, selected: boolean, onPress: () => void, key: string) => (
     <Pressable
@@ -93,7 +132,22 @@ export function ShowtimeFilters({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}
     >
-      {chip('All', !value.format && !value.language, () => onChange({}), 'all')}
+      {chip('All', !value.format && !value.language && !value.partOfDay, () => onChange({}), 'all')}
+      {/* When comes first: it is the constraint most people arrive with, and
+          the one a four-screen multiplex makes hardest to scan by eye. */}
+      {parts.length > 1 &&
+        parts.map((part) =>
+          chip(
+            part.label,
+            value.partOfDay === part.id,
+            () =>
+              onChange({
+                ...value,
+                partOfDay: value.partOfDay === part.id ? undefined : part.id,
+              }),
+            `p-${part.id}`,
+          ),
+        )}
       {formats.length > 1 &&
         formats.map((format) =>
           chip(
