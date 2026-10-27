@@ -84,6 +84,7 @@ const bookingSelect = {
     select: {
       id: true,
       startsAt: true,
+      endsAt: true,
       format: true,
       language: true,
       movie: { select: { id: true, title: true, posterUrl: true } },
@@ -149,6 +150,7 @@ function toDto(row: NonNullable<BookingRow>): Booking {
     showtime: {
       id: row.showtime.id,
       startsAt: row.showtime.startsAt.toISOString(),
+      endsAt: row.showtime.endsAt.toISOString(),
       format: row.showtime.format as ShowFormat,
       language: row.showtime.language,
       movie: row.showtime.movie,

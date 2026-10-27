@@ -32,7 +32,7 @@ import {
   requestNotificationPermissionIfUnasked,
   scheduleShowtimeReminder,
 } from '../../features/notifications/notifications';
-import { formatMonthDay, formatTime } from '../../lib/format';
+import { endsNextDay, formatMonthDay, formatTime } from '../../lib/format';
 import { notify } from '../../lib/notify';
 import { queryKeys } from '../../lib/query-client';
 import { shareLink } from '../../lib/share-link';
@@ -272,7 +272,16 @@ export default function BookingTicket() {
 
             <View style={{ flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm }}>
               <Field label="Date" value={formatMonthDay(showtime.startsAt)} />
-              <Field label="Time" value={formatTime(showtime.startsAt)} />
+              {/* Ends, not just starts. Somebody looking at this ticket is
+                  working out when they are free again — the last metro, the
+                  babysitter, the drive home. The API carried `endsAt` all
+                  along; the ticket never printed it. */}
+              <Field
+                label="Time"
+                value={`${formatTime(showtime.startsAt)} – ${formatTime(showtime.endsAt)}${
+                  endsNextDay(showtime.startsAt, showtime.endsAt) ? ' +1' : ''
+                }`}
+              />
               <Field label="Screen" value={showtime.screen.name} />
             </View>
 

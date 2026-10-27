@@ -212,6 +212,12 @@ export const bookingSchema = z.object({
   showtime: z.object({
     id: z.string(),
     startsAt: z.string(),
+    /**
+     * Somebody reading a ticket is working out when they are free again — the
+     * last metro, the babysitter, the drive home. One showtime in five in the
+     * catalogue finishes on the following day.
+     */
+    endsAt: z.string(),
     format: showFormatSchema,
     language: z.string(),
     /**

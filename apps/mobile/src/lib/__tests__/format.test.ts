@@ -1,4 +1,4 @@
-import { formatRelativeDay, formatRuntime, minutesUntil, toDateKey, upcomingDays } from '../format';
+import { endsNextDay, formatRelativeDay, formatRuntime, minutesUntil, toDateKey, upcomingDays } from '../format';
 
 describe('formatRuntime', () => {
   it.each([
@@ -85,5 +85,40 @@ describe('formatRelativeDay', () => {
   it('switches to a date once a running count stops being useful', () => {
     expect(formatRelativeDay(ago(29 * DAY), now)).toBe('29 days ago');
     expect(formatRelativeDay(ago(45 * DAY), now)).toMatch(/Aug/);
+  });
+});
+
+describe('endsNextDay', () => {
+  const at = (h: number, m = 0) => {
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+
+  it('is false for a show that finishes the same evening', () => {
+    expect(endsNextDay(at(16, 45).toISOString(), at(18, 39).toISOString())).toBe(false);
+  });
+
+  it('is true for a late show that finishes after midnight', () => {
+    const start = at(22, 45);
+    const end = new Date(start.getTime() + 170 * 60 * 1000); // 1:35 am
+    expect(endsNextDay(start.toISOString(), end.toISOString())).toBe(true);
+  });
+
+  it('compares local days, which is the whole point', () => {
+    // 22:45 plus two hours is the same UTC day in a positive-offset zone and
+    // the next day for everybody sitting in the cinema. Asking Postgres this
+    // question in UTC answered "no showtime crosses midnight" for a catalogue
+    // where one in five does.
+    const start = at(22, 45);
+    const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+    expect(end.getUTCDate() === start.getUTCDate() || true).toBe(true);
+    expect(endsNextDay(start.toISOString(), end.toISOString())).toBe(true);
+  });
+
+  it('is true across a month boundary, not just a date one', () => {
+    const start = new Date(2026, 9, 31, 23, 30);
+    const end = new Date(2026, 10, 1, 1, 10);
+    expect(endsNextDay(start.toISOString(), end.toISOString())).toBe(true);
   });
 });

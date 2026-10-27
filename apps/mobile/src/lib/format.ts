@@ -93,3 +93,22 @@ export function formatRelativeDay(iso: string, now: Date = new Date()): string {
 
   return MONTH_DAY.format(then);
 }
+
+/**
+ * Does this show finish on a later day than it started?
+ *
+ * Local dates, never UTC, and never by comparing the ISO strings. The seed's
+ * last slot is 22:45 and a two-hour film runs to 00:45 — the same UTC day in
+ * a positive-offset zone, the next day for everybody actually sitting there.
+ * Asking Postgres gave "0 showtimes cross midnight" for a catalogue where one
+ * in five does.
+ */
+export function endsNextDay(startsAt: string, endsAt: string): boolean {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  return (
+    end.getFullYear() !== start.getFullYear() ||
+    end.getMonth() !== start.getMonth() ||
+    end.getDate() !== start.getDate()
+  );
+}
