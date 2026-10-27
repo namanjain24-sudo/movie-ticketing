@@ -9,6 +9,24 @@ jest.mock('../../../lib/maps', () => ({
   callNumber: jest.fn(),
 }));
 
+/**
+ * The card mounts `useFavoriteCinemas` to draw its heart, and that hook asks
+ * the server which cinemas are pinned. None of these tests are about the
+ * heart, but without this the request was real: it went to whatever
+ * EXPO_PUBLIC_API_URL named, found nothing listening, and put the client into
+ * its wake-a-sleeping-host loop, which went on retrying on a timer long after
+ * the test had finished. Nothing failed — the card does not need the answer to
+ * render — so it showed up only as "a worker process has failed to exit
+ * gracefully" at the end of every full run.
+ */
+jest.mock('../../../api/favorite-cinemas', () => ({
+  favoriteCinemasApi: {
+    list: jest.fn(async () => []),
+    save: jest.fn(async () => undefined),
+    remove: jest.fn(async () => undefined),
+  },
+}));
+
 const REGAL: CinemaDirectoryEntry = {
   id: 'cin_1',
   kind: 'CINEMA' as const,

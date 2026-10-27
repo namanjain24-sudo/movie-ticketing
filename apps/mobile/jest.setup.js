@@ -111,3 +111,29 @@ jest.mock('expo-secure-store', () => {
     isAvailableAsync: jest.fn(async () => true),
   };
 });
+
+/**
+ * No unit test talks to the network.
+ *
+ * `cinema-card.test.tsx` did, without anybody meaning it to: the card mounts
+ * `useFavoriteCinemas` to draw its heart, and that hook asked the server which
+ * cinemas are pinned. The request was real and it went to the default
+ * `http://localhost:4000` — which on this machine is a different project
+ * altogether. Nothing failed, because the card does not need the answer in
+ * order to render, so a unit suite had been quietly posting to whatever
+ * happened to be listening on a neighbouring port.
+ *
+ * A component that fetches mocks the api module it calls, the way
+ * support.test.tsx and auth-store.test.ts already do. This turns forgetting
+ * into a named error instead of a silent request.
+ */
+global.fetch = jest.fn((input) => {
+  const url = typeof input === 'string' ? input : (input?.url ?? String(input));
+  return Promise.reject(
+    new Error(
+      `Unmocked network call in a test: ${url}\n` +
+        'Mock the api module the component under test calls, e.g.\n' +
+        "  jest.mock('../../../api/favorite-cinemas', () => ({ favoriteCinemasApi: { list: jest.fn(async () => []) } }));",
+    ),
+  );
+});
