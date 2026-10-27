@@ -1,4 +1,5 @@
 import type {
+  ActiveHold,
   Booking,
   BookingList,
   BookingSplit,
@@ -25,6 +26,13 @@ export const bookingApi = {
     }),
 
   hold: (holdId: string) => api.get<Hold>(`/v1/holds/${encodeURIComponent(holdId)}`),
+
+  /**
+   * Holds this account still owns. The server decides what "still" means,
+   * against its own clock — a hold that looks alive on a phone whose time is
+   * wrong is not one worth offering to resume.
+   */
+  activeHolds: () => api.get<{ holds: ActiveHold[] }>('/v1/holds/active').then((r) => r.holds),
 
   releaseHold: (holdId: string) => api.delete<void>(`/v1/holds/${encodeURIComponent(holdId)}`),
 

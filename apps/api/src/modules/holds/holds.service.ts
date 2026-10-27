@@ -1,4 +1,4 @@
-import type { HeldSeat, Hold as HoldDto, SeatDelta } from '@app/shared';
+import type { ActiveHold, HeldSeat, Hold as HoldDto, SeatDelta } from '@app/shared';
 import type { SeatTier } from '@prisma/client';
 import { prisma, type Tx } from '../../db';
 import { env } from '../../env';
@@ -252,6 +252,103 @@ export async function getHold(params: { userId: string; holdId: string }): Promi
     currency: hold.showtime.currency,
     now,
   });
+}
+
+/**
+ * Every hold this user still owns, newest first.
+ *
+ * A hold is the one piece of state in this system that is losing value while
+ * nobody is looking at it: it expires in `HOLD_TTL_SECONDS` whatever the app
+ * is doing, and when it does the seats go back on sale. So an app that was
+ * closed mid-checkout — a call came in, the phone slept, somebody switched
+ * away to check a date — needs a way back to it that does not involve
+ * remembering which film it was.
+ *
+ * Expiry is decided here the same way every other read path decides it,
+ * against the database clock rather than this process's: rows past their
+ * deadline are filtered out even when the sweeper has not reached them yet,
+ * so this can never offer to resume something that is already gone.
+ */
+export async function listActiveHolds(params: { userId: string }): Promise<ActiveHold[]> {
+  const now = await dbNow(prisma);
+
+  const holds = await prisma.hold.findMany({
+    where: {
+      userId: params.userId,
+      status: 'ACTIVE',
+      expiresAt: { gt: now },
+      // A hold that already has a booking is not something to resume, whether
+      // or not the payment has settled yet. `status` alone is not enough:
+      // the hold only becomes CONVERTED when the capture lands
+      // (`payments.service.ts`), so between checkout and settlement it is
+      // still ACTIVE — and offering "you have seats held, resume?" to
+      // somebody who has just paid for them is the one moment this list must
+      // not do that. The ticket is reachable from Tickets by then.
+      booking: { is: null },
+    },
+    orderBy: { expiresAt: 'desc' },
+    // A person cannot be in the middle of more checkouts than this, and the
+    // cap keeps a scripted account from making this endpoint expensive.
+    take: 5,
+    select: {
+      id: true,
+      showtimeId: true,
+      status: true,
+      expiresAt: true,
+      showSeats: {
+        select: {
+          id: true,
+          priceMinor: true,
+          seat: { select: { rowLabel: true, number: true, tier: true } },
+        },
+        orderBy: { id: 'asc' },
+      },
+      showtime: {
+        select: {
+          id: true,
+          startsAt: true,
+          currency: true,
+          movie: { select: { id: true, slug: true, title: true, posterUrl: true } },
+          event: { select: { id: true, slug: true, title: true, posterUrl: true } },
+          screen: {
+            select: {
+              id: true,
+              name: true,
+              cinema: { select: { id: true, name: true, city: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return holds.map((hold) => ({
+    hold: toHoldDto({
+      hold: {
+        id: hold.id,
+        showtimeId: hold.showtimeId,
+        status: hold.status,
+        expiresAt: hold.expiresAt,
+      },
+      seats: hold.showSeats.map((ss) => ({
+        id: ss.id,
+        priceMinor: ss.priceMinor,
+        rowLabel: ss.seat.rowLabel,
+        number: ss.seat.number,
+        tier: ss.seat.tier,
+      })),
+      currency: hold.showtime.currency,
+      now,
+    }),
+    showtime: {
+      id: hold.showtime.id,
+      startsAt: hold.showtime.startsAt.toISOString(),
+      movie: hold.showtime.movie,
+      event: hold.showtime.event,
+      cinema: hold.showtime.screen.cinema,
+      screen: { id: hold.showtime.screen.id, name: hold.showtime.screen.name },
+    },
+  }));
 }
 
 /**

@@ -40,6 +40,17 @@ holdsRouter.post(
   },
 );
 
+/**
+ * What this account still has on hold.
+ *
+ * Declared before `/holds/:id` on purpose: Express matches in order, and
+ * registered after it this path would be read as a hold whose id is the word
+ * "active" and answered with a 404.
+ */
+holdsRouter.get('/holds/active', authenticate, async (req, res) => {
+  res.json({ holds: await holds.listActiveHolds({ userId: requireUserId(req) }) });
+});
+
 /** Polled by the checkout countdown, which never trusts the device clock. */
 holdsRouter.get('/holds/:id', authenticate, async (req, res) => {
   res.json(await holds.getHold({ userId: requireUserId(req), holdId: pathParam(req, 'id') }));

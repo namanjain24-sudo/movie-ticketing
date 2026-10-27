@@ -64,6 +64,7 @@ function RootNavigator() {
           <Stack.Screen name="watchlist" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="support" />
+          <Stack.Screen name="sponsors" />
           {/* Both carry their own dark AppBar, so the stack header stays off. */}
           <Stack.Screen name="showtime/[id]" />
           <Stack.Screen name="checkout/[holdId]" />

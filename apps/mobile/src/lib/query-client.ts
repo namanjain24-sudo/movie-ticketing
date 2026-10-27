@@ -52,6 +52,7 @@ export const queryKeys = {
   loyaltyBalance: ['loyalty-balance'] as const,
   concessions: ['concessions'] as const,
   bookings: ['bookings'] as const,
+  activeHolds: ['active-holds'] as const,
   booking: (reference: string) => ['booking', reference] as const,
   bookingSplit: (bookingId: string) => ['booking-split', bookingId] as const,
   cancellationQuote: (bookingId: string) => ['cancellation', bookingId] as const,
