@@ -7,6 +7,7 @@ import { View } from 'react-native';
 import { z } from 'zod';
 import { authApi } from '../api/auth';
 import { Button, Text, TextField } from '../components/ui';
+import { PasswordRules } from '../features/auth/password-rules';
 import { authErrorMessage } from '../features/auth/auth-error';
 import { AuthScaffold } from '../features/auth/auth-scaffold';
 import { useSlowSubmit } from '../features/auth/use-slow-submit';
@@ -110,18 +111,22 @@ export default function ResetPassword() {
           control={control}
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="New password"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={errors.password?.message}
-              hint="At least 10 characters, with upper case, lower case and a number."
-              secureTextEntry
-              autoComplete="new-password"
-              textContentType="newPassword"
-              placeholder="••••••••••"
-            />
+            <View>
+              <TextField
+                label="New password"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                // Same policy as sign-up, so the same checklist. The error
+                // line is left for whatever the four rules cannot say.
+                error={errors.password?.message}
+                secureTextEntry
+                autoComplete="new-password"
+                textContentType="newPassword"
+                placeholder="••••••••••"
+              />
+              <PasswordRules value={value ?? ''} />
+            </View>
           )}
         />
 
