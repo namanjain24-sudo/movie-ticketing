@@ -3,7 +3,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, TextInput, View } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
 import { EmptyState, ErrorState } from '../../components/query-state';
@@ -23,6 +30,7 @@ import { useRecentlyViewed } from '../../features/catalog/use-recently-viewed';
 import { promosApi } from '../../api/promos';
 import { OffersRail } from '../../features/promos/offers-rail';
 import { RecentSearchChips } from '../../features/search/recent-search-chips';
+import { SponsorSlot } from '../../features/sponsors/sponsor-slot';
 import { useRecentSearches } from '../../features/search/use-recent-searches';
 import { queryKeys } from '../../lib/query-client';
 import { STORAGE_KEYS } from '../../lib/storage';
@@ -93,6 +101,12 @@ export default function NowShowing() {
   const all = movies.data ?? [];
   const genres = genresIn(all);
   const languages = languagesIn(all);
+  // The grid's own arithmetic: a gutter each side, one gap between the two
+  // columns, the rest split evenly. Kept here rather than inside MovieCard
+  // because it is a fact about this grid, not about a poster.
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = (windowWidth - spacing.lg * (COLUMNS + 1)) / COLUMNS;
+
   const shown = byLanguage(byGenre(all, genre), language);
   const narrowed = Boolean(genre || language);
 
@@ -208,20 +222,31 @@ export default function NowShowing() {
 
   // Sits below the grid, never mixed into it: these cannot be booked yet, and
   // a poster that does nothing when tapped is worse than one further down.
+  //
+  // The house ad goes under all of it, which is where an ad belongs in a
+  // screen somebody opened to find a film: after the films. It is skipped
+  // while searching or filtering, when the person is plainly looking for
+  // something specific and an ad is noise in the way of it.
   const footer =
-    searching || narrowed || !comingSoon.data?.length ? null : (
+    searching || narrowed ? null : (
       <View style={{ gap: spacing.lg, paddingTop: spacing['2xl'] }}>
-        <SectionHeader title="Coming soon" note="Not on sale yet" />
-        <FlatList
-          data={comingSoon.data}
-          horizontal
-          keyExtractor={(movie) => movie.id}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg }}
-          renderItem={({ item }) => (
-            <MovieCard movie={item} width={130} releaseNote onPress={() => open(item)} />
-          )}
-        />
+        {comingSoon.data?.length ? (
+          <>
+            <SectionHeader title="Coming soon" note="Not on sale yet" />
+            <FlatList
+              data={comingSoon.data}
+              horizontal
+              keyExtractor={(movie) => movie.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg }}
+              renderItem={({ item }) => (
+                <MovieCard movie={item} width={130} releaseNote onPress={() => open(item)} />
+              )}
+            />
+          </>
+        ) : null}
+
+        <SponsorSlot />
       </View>
     );
 
@@ -261,9 +286,16 @@ export default function NowShowing() {
               entering={FadeInDown.delay(Math.min(Math.floor(index / COLUMNS), 6) * 50).duration(
                 280,
               )}
-              style={{ flex: 1 }}
             >
-              <MovieCard movie={item} onPress={() => open(item)} />
+              {/*
+                An explicit width, not `flex: 1`. A FlatList row holding one
+                child stretches it across the whole row, so a catalogue with an
+                odd number of films rendered its last poster at double size —
+                one enormous card sitting under a tidy grid. The width is the
+                same arithmetic the grid already does with its padding and gap,
+                so a full row is unchanged and a lone last card keeps its place.
+              */}
+              <MovieCard movie={item} width={cardWidth} onPress={() => open(item)} />
             </Animated.View>
           )}
           numColumns={COLUMNS}
