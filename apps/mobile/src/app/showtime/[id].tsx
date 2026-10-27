@@ -20,6 +20,7 @@ import { SeatLegend } from '../../features/seatmap/legend';
 import { findBestSeats } from '../../features/seatmap/best-seats';
 import { SeatCountSheet } from '../../features/seatmap/seat-count-sheet';
 import { SeatGrid, type SeatGridHandle } from '../../features/seatmap/seat-grid';
+import { StadiumBowl } from '../../features/seatmap/stadium-bowl';
 import { VenueFacing } from '../../features/seatmap/venue-facing';
 import { SeatOverview } from '../../features/seatmap/seat-overview';
 import { useSeatSelection } from '../../features/seatmap/use-seat-selection';
@@ -142,6 +143,18 @@ export default function SeatMapScreen() {
   }
 
   const map = seatMap.data;
+
+  /**
+   * A venue earns the bowl plan by having bands that know where they are.
+   * Two is the floor: one arc is not a ring, and drawing it would say the
+   * ground has one side.
+   */
+  const hasBowl = map.tiers.filter((t) => typeof t.bearing === 'number').length >= 2;
+  /** Which stand the seat list is in, so the plan can light that arc. */
+  const visibleTier = visibleRow
+    ? selection.rows.find((r) => r.label === visibleRow)?.seats[0]?.tier
+    : undefined;
+
   const salesClosed = new Date(map.salesCloseAt).getTime() <= new Date(map.serverTime).getTime();
   const count = selection.selectedSeats.length;
   /** How many the auto-pick looks for: what they said, else a pair. */
@@ -209,8 +222,23 @@ export default function SeatMapScreen() {
 
       <View style={{ flex: 1, paddingTop: spacing.lg }}>
         {/* Outside the horizontal scroller: on a wide auditorium a centred
-            label inside it would sit off-screen until the user panned. */}
-        <VenueFacing facing={map.event?.kind ?? 'FILM'} />
+            label inside it would sit off-screen until the user panned.
+
+            A bowl whose bands carry bearings gets the plan instead of the
+            facing arrow — it answers "which side am I on", which the arrow
+            never could, and it already contains the ground drawing. */}
+        {hasBowl ? (
+          <StadiumBowl
+            tiers={map.tiers}
+            activeTier={visibleTier}
+            onSelectStand={(tier) => {
+              const row = selection.rows.find((r) => r.seats.some((seat) => seat.tier === tier));
+              if (row) gridRef.current?.scrollToRow(row.y);
+            }}
+          />
+        ) : (
+          <VenueFacing facing={map.event?.kind ?? 'FILM'} />
+        )}
         {visibleRow ? (
           <View
             style={{

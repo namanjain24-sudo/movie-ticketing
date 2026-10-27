@@ -286,7 +286,19 @@ export const seatMapSchema = z.object({
   salesCloseAt: z.string(),
   maxSeatsPerBooking: z.number().int(),
   tiers: z.array(
-    z.object({ tier: seatTierSchema, priceMinor: z.number().int(), label: z.string() }),
+    z.object({
+      tier: seatTierSchema,
+      priceMinor: z.number().int(),
+      label: z.string(),
+      /**
+       * Degrees clockwise from the sight screen end, for a venue whose bands
+       * ring a pitch. Null in a cinema, where every seat faces one screen, and
+       * null in an arena, whose blocks stack back from a stage rather than
+       * going round — the map falls back to a plain list when it is absent
+       * rather than inventing a circle the building does not have.
+       */
+      bearing: z.number().int().min(0).max(359).nullable().default(null),
+    }),
   ),
   seats: z.array(seatMapSeatSchema),
   /**

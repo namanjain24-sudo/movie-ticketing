@@ -74,6 +74,17 @@ export interface StandSpec {
   seatsPerRow: number;
   /** Row labels are prefixed so a ticket reads "ST-C 14", not just "C 14". */
   rowPrefix: string;
+  /**
+   * Where this stand sits around the bowl, in degrees clockwise from the
+   * sight screen end, so the map can draw it on the side it is actually on.
+   *
+   * Evenly spaced rather than surveyed: these are the real stands at these
+   * grounds in their real order around the ring, but the exact arc each one
+   * subtends is not claimed. Omitted entirely for a venue that is not a bowl
+   * — an arena's blocks stack back from a stage rather than ringing a pitch,
+   * and a bearing there would be a shape the building does not have.
+   */
+  bearing?: number;
 }
 
 /**
@@ -126,26 +137,24 @@ export const VENUES: VenueSpec[] = [
     amenities: ['Floodlights', 'Covered stands', 'Food courts', 'Churchgate station nearby'],
     stands: [
       // The pavilions sit square of the wicket and are the members' ends.
-      { tier: 'VIP', label: 'Garware Pavilion', rows: 6, seatsPerRow: 18, rowPrefix: 'GP' },
-      { tier: 'GOLD', label: 'MCA Pavilion', rows: 6, seatsPerRow: 20, rowPrefix: 'MCA' },
+      { tier: 'VIP', label: 'Garware Pavilion', rows: 6, seatsPerRow: 18, rowPrefix: 'GP', bearing: 0 },
+      { tier: 'GOLD', label: 'MCA Pavilion', rows: 6, seatsPerRow: 20, rowPrefix: 'MCA', bearing: 60 },
       // Sachin Tendulkar and Sunil Gavaskar stands run along the sides.
       {
         tier: 'PREMIUM',
         label: 'Sachin Tendulkar Stand',
         rows: 8,
         seatsPerRow: 22,
-        rowPrefix: 'ST',
-      },
-      { tier: 'SILVER', label: 'Sunil Gavaskar Stand', rows: 8, seatsPerRow: 22, rowPrefix: 'SG' },
+        rowPrefix: 'ST', bearing: 120 },
+      { tier: 'SILVER', label: 'Sunil Gavaskar Stand', rows: 8, seatsPerRow: 22, rowPrefix: 'SG', bearing: 180 },
       {
         tier: 'STANDARD',
         label: 'Vijay Merchant Stand',
         rows: 7,
         seatsPerRow: 20,
-        rowPrefix: 'VM',
-      },
+        rowPrefix: 'VM', bearing: 240 },
       // The North Stand is the cheap end and the loud one.
-      { tier: 'GENERAL', label: 'North Stand', rows: 10, seatsPerRow: 24, rowPrefix: 'NS' },
+      { tier: 'GENERAL', label: 'North Stand', rows: 10, seatsPerRow: 24, rowPrefix: 'NS', bearing: 300 },
     ],
   },
   {
@@ -161,9 +170,9 @@ export const VENUES: VenueSpec[] = [
     amenities: ['Floodlights', 'Solar roof', 'Metro at Cubbon Park', 'Rain drainage system'],
     stands: [
       { tier: 'VIP', label: "President's Box", rows: 4, seatsPerRow: 14, rowPrefix: 'PB' },
-      { tier: 'GOLD', label: 'Grand Stand', rows: 8, seatsPerRow: 22, rowPrefix: 'GS' },
-      { tier: 'SILVER', label: 'Pavilion Terrace', rows: 8, seatsPerRow: 22, rowPrefix: 'PT' },
-      { tier: 'GENERAL', label: 'P3 Terrace', rows: 10, seatsPerRow: 24, rowPrefix: 'P3' },
+      { tier: 'GOLD', label: 'Grand Stand', rows: 8, seatsPerRow: 22, rowPrefix: 'GS', bearing: 0 },
+      { tier: 'SILVER', label: 'Pavilion Terrace', rows: 8, seatsPerRow: 22, rowPrefix: 'PT', bearing: 120 },
+      { tier: 'GENERAL', label: 'P3 Terrace', rows: 10, seatsPerRow: 24, rowPrefix: 'P3', bearing: 240 },
     ],
   },
   {
@@ -178,10 +187,10 @@ export const VENUES: VenueSpec[] = [
     phone: '+91 33 2248 1430',
     amenities: ['Floodlights', 'Club House', 'Maidan metro nearby', 'Covered tiers'],
     stands: [
-      { tier: 'VIP', label: 'B. C. Roy Club House', rows: 5, seatsPerRow: 16, rowPrefix: 'CH' },
-      { tier: 'GOLD', label: 'Block B', rows: 8, seatsPerRow: 22, rowPrefix: 'B' },
-      { tier: 'SILVER', label: 'Block H', rows: 9, seatsPerRow: 24, rowPrefix: 'H' },
-      { tier: 'GENERAL', label: 'Block L', rows: 11, seatsPerRow: 26, rowPrefix: 'L' },
+      { tier: 'VIP', label: 'B. C. Roy Club House', rows: 5, seatsPerRow: 16, rowPrefix: 'CH', bearing: 0 },
+      { tier: 'GOLD', label: 'Block B', rows: 8, seatsPerRow: 22, rowPrefix: 'B', bearing: 90 },
+      { tier: 'SILVER', label: 'Block H', rows: 9, seatsPerRow: 24, rowPrefix: 'H', bearing: 180 },
+      { tier: 'GENERAL', label: 'Block L', rows: 11, seatsPerRow: 26, rowPrefix: 'L', bearing: 270 },
     ],
   },
   {
@@ -196,10 +205,10 @@ export const VENUES: VenueSpec[] = [
     phone: '+91 44 2844 4300',
     amenities: ['Floodlights', 'Cantilever roof', 'Chepauk metro nearby', 'Covered stands'],
     stands: [
-      { tier: 'VIP', label: 'Pavilion Terrace', rows: 5, seatsPerRow: 16, rowPrefix: 'PV' },
-      { tier: 'GOLD', label: 'I Stand', rows: 8, seatsPerRow: 22, rowPrefix: 'I' },
-      { tier: 'SILVER', label: 'J Stand', rows: 8, seatsPerRow: 22, rowPrefix: 'J' },
-      { tier: 'GENERAL', label: 'K Stand', rows: 10, seatsPerRow: 24, rowPrefix: 'K' },
+      { tier: 'VIP', label: 'Pavilion Terrace', rows: 5, seatsPerRow: 16, rowPrefix: 'PV', bearing: 0 },
+      { tier: 'GOLD', label: 'I Stand', rows: 8, seatsPerRow: 22, rowPrefix: 'I', bearing: 90 },
+      { tier: 'SILVER', label: 'J Stand', rows: 8, seatsPerRow: 22, rowPrefix: 'J', bearing: 180 },
+      { tier: 'GENERAL', label: 'K Stand', rows: 10, seatsPerRow: 24, rowPrefix: 'K', bearing: 270 },
     ],
   },
   {
@@ -215,11 +224,11 @@ export const VENUES: VenueSpec[] = [
     amenities: ['Floodlights', 'Concert stage rigging', 'Nerul station nearby', 'Parking'],
     // Divided for a concert rather than for cricket: the pit is at the stage.
     stands: [
-      { tier: 'VIP', label: 'Fan Pit', rows: 5, seatsPerRow: 20, rowPrefix: 'PIT' },
-      { tier: 'GOLD', label: 'Gold Stand', rows: 8, seatsPerRow: 24, rowPrefix: 'GD' },
-      { tier: 'PREMIUM', label: 'Premium Lounge', rows: 5, seatsPerRow: 16, rowPrefix: 'PL' },
-      { tier: 'SILVER', label: 'Silver Tier', rows: 9, seatsPerRow: 24, rowPrefix: 'SV' },
-      { tier: 'GENERAL', label: 'General Stand', rows: 11, seatsPerRow: 26, rowPrefix: 'GN' },
+      { tier: 'VIP', label: 'Fan Pit', rows: 5, seatsPerRow: 20, rowPrefix: 'PIT', bearing: 0 },
+      { tier: 'GOLD', label: 'Gold Stand', rows: 8, seatsPerRow: 24, rowPrefix: 'GD', bearing: 72 },
+      { tier: 'PREMIUM', label: 'Premium Lounge', rows: 5, seatsPerRow: 16, rowPrefix: 'PL', bearing: 144 },
+      { tier: 'SILVER', label: 'Silver Tier', rows: 9, seatsPerRow: 24, rowPrefix: 'SV', bearing: 216 },
+      { tier: 'GENERAL', label: 'General Stand', rows: 11, seatsPerRow: 26, rowPrefix: 'GN', bearing: 288 },
     ],
   },
   {
@@ -234,10 +243,10 @@ export const VENUES: VenueSpec[] = [
     phone: '+91 11 2436 8482',
     amenities: ['Floodlights', 'Athletics track', 'JLN Stadium metro', 'Covered seating'],
     stands: [
-      { tier: 'VIP', label: 'Front of Stage', rows: 5, seatsPerRow: 20, rowPrefix: 'FOS' },
-      { tier: 'GOLD', label: 'Gold Block', rows: 8, seatsPerRow: 22, rowPrefix: 'GB' },
-      { tier: 'SILVER', label: 'Silver Block', rows: 9, seatsPerRow: 24, rowPrefix: 'SB' },
-      { tier: 'GENERAL', label: 'General Block', rows: 10, seatsPerRow: 26, rowPrefix: 'GEN' },
+      { tier: 'VIP', label: 'Front of Stage', rows: 5, seatsPerRow: 20, rowPrefix: 'FOS', bearing: 0 },
+      { tier: 'GOLD', label: 'Gold Block', rows: 8, seatsPerRow: 22, rowPrefix: 'GB', bearing: 90 },
+      { tier: 'SILVER', label: 'Silver Block', rows: 9, seatsPerRow: 24, rowPrefix: 'SB', bearing: 180 },
+      { tier: 'GENERAL', label: 'General Block', rows: 10, seatsPerRow: 26, rowPrefix: 'GEN', bearing: 270 },
     ],
   },
   {
@@ -774,6 +783,7 @@ export async function createEventShow(
           tier: stand.tier,
           priceMinor,
           label: stand.label,
+          bearing: stand.bearing ?? null,
         })),
       },
     },

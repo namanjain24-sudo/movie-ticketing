@@ -433,6 +433,15 @@ model ShowtimeTierPrice {
   /// per venue because the same bowl is divided differently for a match and
   /// for a concert.
   label      String?
+  /// Where this band sits around the bowl, in degrees clockwise from the
+  /// sight screen end, so the map can draw a stand on the side it is actually
+  /// on. Null for a cinema, where every seat faces the one screen and a
+  /// bearing would be meaningless.
+  ///
+  /// Per showtime for the same reason `label` is: a bowl is divided
+  /// differently for a match and for a concert, and a stage at one end makes
+  /// a stand that was square of the wicket into a side-on stand.
+  bearing    Int?
 
   @@unique([showtimeId, tier])
 }

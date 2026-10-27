@@ -28,7 +28,8 @@ function buildMap(seats: SeatMapSeat[], maxSeatsPerBooking = 3): SeatMap {
     currency: 'INR',
     salesCloseAt: '2026-09-13T14:00:00.000Z',
     maxSeatsPerBooking,
-    tiers: [{ tier: 'STANDARD', priceMinor: 20000, label: 'Standard' }],
+    // A cinema band: one screen, no sides, so no bearing.
+    tiers: [{ tier: 'STANDARD', priceMinor: 20000, label: 'Standard', bearing: null }],
     seats,
     serverTime: '2026-09-13T12:00:00.000Z',
   };

@@ -439,7 +439,7 @@ export async function getSeatMap(params: {
       movie: { select: { id: true, title: true, posterUrl: true } },
       event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
       tierPrices: {
-        select: { tier: true, priceMinor: true, label: true },
+        select: { tier: true, priceMinor: true, label: true, bearing: true },
         orderBy: { priceMinor: 'asc' },
       },
       screen: {
@@ -519,6 +519,7 @@ export async function getSeatMap(params: {
        * for their gate.
        */
       label: t.label ?? SEAT_TIER_LABELS[t.tier as SeatTier],
+      bearing: t.bearing,
     })),
     seats,
     serverTime: now.toISOString(),
