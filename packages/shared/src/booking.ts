@@ -226,7 +226,21 @@ export const bookingSchema = z.object({
      * than an absent one on the stub that gets scanned at the gate.
      */
     movie: z
-      .object({ id: z.string(), title: z.string(), posterUrl: z.string() })
+      .object({
+        id: z.string(),
+        title: z.string(),
+        posterUrl: z.string(),
+        /**
+         * The certificate, carried all the way to the ticket.
+         *
+         * It is the one fact checked at the door, and it was the one fact the
+         * app stopped mentioning the moment somebody started paying: visible
+         * while browsing, absent from checkout, absent from the stub. An "A"
+         * printed on the ticket is the difference between being turned away
+         * and bringing ID.
+         */
+        certification: z.string(),
+      })
       .nullable()
       .default(null),
     event: z
@@ -236,6 +250,8 @@ export const bookingSchema = z.object({
         kind: eventKindSchema,
         title: z.string(),
         posterUrl: z.string(),
+        /** Null when the event has no age restriction at all. */
+        minAge: z.number().int().nullable().default(null),
       })
       .nullable()
       .default(null),

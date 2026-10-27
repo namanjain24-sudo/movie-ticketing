@@ -87,8 +87,10 @@ const bookingSelect = {
       endsAt: true,
       format: true,
       language: true,
-      movie: { select: { id: true, title: true, posterUrl: true } },
-      event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
+      movie: { select: { id: true, title: true, posterUrl: true, certification: true } },
+      event: {
+        select: { id: true, slug: true, kind: true, title: true, posterUrl: true, minAge: true },
+      },
       tierPrices: { select: { tier: true, label: true } },
       screen: {
         select: {

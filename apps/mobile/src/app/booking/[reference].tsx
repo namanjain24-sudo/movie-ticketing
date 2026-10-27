@@ -197,6 +197,12 @@ export default function BookingTicket() {
   const { showtime } = ticket;
   // A film or an event; the ticket renders the same either way.
   const subject = subjectOf(showtime);
+  /**
+   * Worth a sentence rather than only a badge: an A certificate and an age
+   * floor are the two cases where somebody can be turned away at the door,
+   * and a letter on its own does not tell a first-timer to bring ID.
+   */
+  const restricted = showtime.movie?.certification === 'A' || Boolean(showtime.event?.minAge);
   const cancelled = ticket.status === 'CANCELLED' || ticket.status === 'FAILED';
   // `discountMinor` is the two folded together; the points portion is exact
   // (pointsRedeemed is in the same minor units a promo discount is), so
@@ -268,6 +274,19 @@ export default function BookingTicket() {
                 tone="primary"
               />
               {showtime.event ? null : <Badge label={showtime.language} variant="outline" />}
+              {/* The certificate, on the stub that gets looked at.
+                  A film's always — it is its classification, and the door
+                  reads it. An event's only when it has one, because "all
+                  ages" is not a restriction and a badge saying so is noise. */}
+              {showtime.movie ? (
+                <Badge
+                  label={showtime.movie.certification}
+                  tone={showtime.movie.certification === 'A' ? 'warning' : 'neutral'}
+                />
+              ) : null}
+              {showtime.event?.minAge ? (
+                <Badge label={`${showtime.event.minAge}+`} tone="warning" />
+              ) : null}
             </View>
 
             <View style={{ flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm }}>
@@ -289,6 +308,14 @@ export default function BookingTicket() {
               label="Seats"
               value={ticket.seats.map((s) => `${s.rowLabel}${s.number}`).join(', ')}
             />
+
+            {restricted ? (
+              <Text variant="caption" tone="muted">
+                {showtime.movie
+                  ? 'Rated A. Photo ID may be asked for at the door.'
+                  : `Over ${showtime.event?.minAge} only. Photo ID may be asked for at the door.`}
+              </Text>
+            ) : null}
             <Field label="Cinema" value={`${showtime.cinema.name}, ${showtime.cinema.city}`} />
           </View>
 

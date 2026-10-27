@@ -44,7 +44,7 @@ const JAWAN: Booking = {
     format: 'TWO_D',
     language: 'Hindi',
     event: null,
-    movie: { id: 'mv_1', title: 'Jawan', posterUrl: '' },
+    movie: { id: 'mv_1', title: 'Jawan', posterUrl: '', certification: 'UA' },
     cinema: { id: 'cin_1', name: 'PVR ICON', city: 'Mumbai', address: 'Phoenix Palladium' },
     screen: { id: 'scr_1', name: 'Audi 2' },
   },
