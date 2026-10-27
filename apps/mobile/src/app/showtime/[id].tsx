@@ -21,6 +21,7 @@ import { SeatLegend } from '../../features/seatmap/legend';
 import { findBestSeats } from '../../features/seatmap/best-seats';
 import { SeatCountSheet } from '../../features/seatmap/seat-count-sheet';
 import { SeatGrid, type SeatGridHandle } from '../../features/seatmap/seat-grid';
+import { AccessibleSeats } from '../../features/seatmap/accessible-seats';
 import { StadiumBowl } from '../../features/seatmap/stadium-bowl';
 import { StandPicker, summariseStands } from '../../features/seatmap/stand-picker';
 import { VenueFacing } from '../../features/seatmap/venue-facing';
@@ -294,6 +295,14 @@ export default function SeatMapScreen() {
         ) : (
           <VenueFacing facing={map.event?.kind ?? 'FILM'} />
         )}
+        {/* Above the band list, because "can I sit here at all" comes before
+            "which band". Renders nothing in a room with no spaces. */}
+        <AccessibleSeats
+          rows={selection.rows}
+          seats={map.seats}
+          statusOf={selection.statusOf}
+          onJump={(rowY) => gridRef.current?.scrollToRow(rowY)}
+        />
         {stands.length > 0 ? (
           <View style={{ paddingBottom: spacing.lg }}>
             <StandPicker
