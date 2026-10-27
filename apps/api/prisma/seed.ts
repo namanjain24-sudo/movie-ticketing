@@ -222,6 +222,8 @@ const CINEMAS = [
     screens: [
       { name: 'IMAX', pricing: 'imax' as const, layout: LAYOUTS.imax },
       { name: 'Audi 2', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
     ],
   },
   {
@@ -237,6 +239,8 @@ const CINEMAS = [
     screens: [
       { name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 2', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
     ],
   },
   {
@@ -249,7 +253,11 @@ const CINEMAS = [
     longitude: 72.8317,
     phone: '+91 22 6726 0000',
     amenities: ['4DX', 'Recliners', 'Dolby Atmos'],
-    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex }],
+    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
   {
     slug: 'regal-cinema-colaba',
@@ -278,6 +286,8 @@ const CINEMAS = [
     screens: [
       { name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
       { name: 'Gold Class', pricing: 'imax' as const, layout: LAYOUTS.lounge },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
     ],
   },
   {
@@ -290,7 +300,11 @@ const CINEMAS = [
     longitude: 77.1553,
     phone: '+91 11 4087 7777',
     amenities: ['Director’s Cut lounge', 'À la carte dining', 'Recliners', 'Valet parking'],
-    screens: [{ name: "Director's Cut", pricing: 'imax' as const, layout: LAYOUTS.lounge }],
+    screens: [{ name: "Director's Cut", pricing: 'imax' as const, layout: LAYOUTS.lounge },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
   {
     slug: 'delite-cinema-asaf-ali-road',
@@ -316,7 +330,11 @@ const CINEMAS = [
     longitude: 77.6113,
     phone: '+91 80 4123 4123',
     amenities: ['Recliners', 'Dolby Atmos', 'Mall parking'],
-    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex }],
+    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
   {
     slug: 'pvr-orion-rajajinagar',
@@ -328,7 +346,11 @@ const CINEMAS = [
     longitude: 77.5551,
     phone: '+91 80 6726 4000',
     amenities: ['Dolby Atmos', 'Recliners', 'Food court'],
-    screens: [{ name: 'Audi 3', pricing: 'premium' as const, layout: LAYOUTS.multiplex }],
+    screens: [{ name: 'Audi 3', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
   {
     slug: 'inox-garuda-magrath-road',
@@ -340,7 +362,11 @@ const CINEMAS = [
     longitude: 77.6072,
     phone: '+91 80 4112 6000',
     amenities: ['Wheelchair access', 'Mall parking'],
-    screens: [{ name: 'Audi 2', pricing: 'standard' as const, layout: LAYOUTS.compact }],
+    screens: [{ name: 'Audi 2', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
 
   // --- Hyderabad -----------------------------------------------------------
@@ -354,7 +380,11 @@ const CINEMAS = [
     longitude: 78.3546,
     phone: '+91 40 4855 5555',
     amenities: ['Dolby Atmos', 'Recliners', 'Gourmet concessions', 'Valet parking'],
-    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex }],
+    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
   {
     slug: 'prasads-imax-necklace-road',
@@ -366,7 +396,11 @@ const CINEMAS = [
     longitude: 78.4649,
     phone: '+91 40 2323 0473',
     amenities: ['IMAX', 'Dolby Atmos', 'Lakefront location', 'Parking'],
-    screens: [{ name: 'IMAX', pricing: 'imax' as const, layout: LAYOUTS.imax }],
+    screens: [{ name: 'IMAX', pricing: 'imax' as const, layout: LAYOUTS.imax },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
 
   // --- Chennai -------------------------------------------------------------
@@ -383,6 +417,8 @@ const CINEMAS = [
     screens: [
       { name: 'Sathyam', pricing: 'premium' as const, layout: LAYOUTS.heritage },
       { name: 'Serene', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
     ],
   },
   {
@@ -395,7 +431,11 @@ const CINEMAS = [
     longitude: 80.2176,
     phone: '+91 44 4224 5000',
     amenities: ['Recliners', 'Dolby Atmos', 'Mall parking'],
-    screens: [{ name: 'Luxe 1', pricing: 'premium' as const, layout: LAYOUTS.compact }],
+    screens: [{ name: 'Luxe 1', pricing: 'premium' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
 
   // --- Pune ----------------------------------------------------------------
@@ -409,7 +449,11 @@ const CINEMAS = [
     longitude: 73.9167,
     phone: '+91 20 6720 6720',
     amenities: ['Dolby Atmos', 'Recliners', 'Food court', 'Mall parking'],
-    screens: [{ name: 'Audi 4', pricing: 'premium' as const, layout: LAYOUTS.multiplex }],
+    screens: [{ name: 'Audi 4', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
   {
     slug: 'inox-bund-garden',
@@ -421,7 +465,11 @@ const CINEMAS = [
     longitude: 73.8785,
     phone: '+91 20 6601 6601',
     amenities: ['Dolby Atmos', 'Wheelchair access'],
-    screens: [{ name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.compact }],
+    screens: [{ name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
 
   // --- Kolkata -------------------------------------------------------------
@@ -435,7 +483,11 @@ const CINEMAS = [
     longitude: 88.3665,
     phone: '+91 33 4040 4040',
     amenities: ['Insignia', 'Dolby Atmos', 'Recliners', 'Mall parking'],
-    screens: [{ name: 'Audi 2', pricing: 'premium' as const, layout: LAYOUTS.compact }],
+    screens: [{ name: 'Audi 2', pricing: 'premium' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
+      { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
+      { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    ],
   },
   {
     slug: 'priya-cinema-deshapriya-park',
@@ -707,7 +759,13 @@ async function main() {
   }
 
   console.log('Seeding cinemas and seat layouts…');
-  const screens: { id: string; pricing: keyof typeof TIER_PRICES; seatCount: number }[] = [];
+  const screens: {
+    id: string;
+    pricing: keyof typeof TIER_PRICES;
+    seatCount: number;
+    /** Position within its own cinema, which is what decides what it programmes. */
+    screenIndex: number;
+  }[] = [];
 
   for (const c of CINEMAS) {
     const cinema = await prisma.cinema.create({
@@ -731,7 +789,12 @@ async function main() {
       await prisma.seat.createMany({
         data: seats.map((seat) => ({ ...seat, screenId: screen.id })),
       });
-      screens.push({ id: screen.id, pricing: s.pricing, seatCount: seats.length });
+      screens.push({
+        id: screen.id,
+        pricing: s.pricing,
+        seatCount: seats.length,
+        screenIndex: c.screens.indexOf(s),
+      });
       console.log(`  ${c.name} / ${s.name}: ${seats.length} seats`);
     }
   }
@@ -773,7 +836,14 @@ async function main() {
       // for no extra demo value.
       const slots = screen.seatCount > 1_000 ? SHOW_TIMES_OF_DAY.slice(0, 2) : SHOW_TIMES_OF_DAY;
       for (const [slotIndex, time] of slots.entries()) {
-        const movie = pick(movies, day + slotIndex + screens.indexOf(screen));
+        // A multiplex does not give every room a different film. The big
+        // releases open wide — two or three screens each, playing all day —
+        // and the long tail gets one room apiece. Giving every screen its own
+        // title is what made a film show exactly once at a cinema, which is
+        // not how any of these buildings have ever been programmed.
+        const wide = Math.max(1, Math.ceil(movies.length / 3));
+        const shelf = screen.screenIndex < 2 ? movies.slice(0, wide) : movies;
+        const movie = pick(shelf, day + slotIndex + screen.screenIndex);
         showSeatCount += await createShowtime({
           movieId: movie.id,
           screenId: screen.id,
