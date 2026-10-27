@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
+import { eventsApi } from '../../api/events';
 import { EmptyState, ErrorState } from '../../components/query-state';
 import { AppBar, Skeleton } from '../../components/ui';
+import { EventCard } from '../../features/events/event-card';
 import { CitySheet } from '../../features/catalog/city-sheet';
 import { FeaturedRail } from '../../features/catalog/featured-rail';
 import {
@@ -80,6 +82,21 @@ export default function NowShowing() {
     queryFn: () => catalogApi.movies(query),
   });
 
+  /**
+   * The app sells matches, gigs, comedy, workshops and plays, and the search
+   * on its front screen knew about none of them: typing a comedian's name
+   * found nothing while his show was on sale two tabs away.
+   *
+   * Only while there is something to search for. Browsing the home screen
+   * should not pay for a query nobody asked.
+   */
+  const eventMatches = useQuery({
+    queryKey: queryKeys.events({ q: debouncedSearch, city }),
+    queryFn: () => eventsApi.list({ q: debouncedSearch, city }),
+    enabled: debouncedSearch.length > 0,
+  });
+  const foundEvents = debouncedSearch ? (eventMatches.data?.events ?? []) : [];
+
   // Offers change by the day at most, and the strip is decoration until checkout.
   const offers = useQuery({
     queryKey: queryKeys.promoOffers,
@@ -139,7 +156,7 @@ export default function NowShowing() {
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             onSubmitEditing={() => recentSearches.record(search)}
-            placeholder="Search for a film"
+            placeholder="Search films and events"
             placeholderTextColor={colors.textMuted}
             returnKeyType="search"
             autoCorrect={false}
@@ -227,8 +244,24 @@ export default function NowShowing() {
   // screen somebody opened to find a film: after the films. It is skipped
   // while searching or filtering, when the person is plainly looking for
   // something specific and an ad is noise in the way of it.
+  const eventResults =
+    foundEvents.length > 0 ? (
+      <View style={{ gap: spacing.md, paddingTop: spacing.xl }}>
+        <SectionHeader title={`Events matching “${trimmed}”`} />
+        <View style={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
+          {foundEvents.map((event) => (
+            <EventCard
+              key={event.id}
+              event={event}
+              onPress={() => router.push(`/event/${event.slug}`)}
+            />
+          ))}
+        </View>
+      </View>
+    ) : null;
+
   const footer =
-    searching || narrowed ? null : (
+    searching ? eventResults : narrowed ? null : (
       <View style={{ gap: spacing.lg, paddingTop: spacing['2xl'] }}>
         {comingSoon.data?.length ? (
           <>
@@ -315,15 +348,24 @@ export default function NowShowing() {
           ListEmptyComponent={
             <EmptyState
               title={
-                searching
-                  ? `No films match “${trimmed}”`
+                // When events matched, the films coming up empty is a partial
+                // answer, not a dead end — and the screen already shows what
+                // it did find, below.
+                searching && foundEvents.length > 0
+                  ? `No films match “${trimmed}”, but this did`
+                  : searching
+                    ? `No films match “${trimmed}”`
                   : narrowed
                     ? `Nothing matches ${[genre, language].filter(Boolean).join(' · ')} right now`
                     : 'Nothing showing here'
               }
               message={
-                searching
-                  ? 'Try a shorter search, or check the spelling.'
+                // Telling somebody to check their spelling when the app found
+                // exactly what they typed is the screen arguing with itself.
+                searching && foundEvents.length > 0
+                  ? undefined
+                  : searching
+                    ? 'Try a shorter search, or check the spelling.'
                   : city
                     ? `No films are screening in ${city} right now.`
                     : 'No films are screening right now. Check back soon.'
