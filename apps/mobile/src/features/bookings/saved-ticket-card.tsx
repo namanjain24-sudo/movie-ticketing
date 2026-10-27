@@ -1,4 +1,4 @@
-import { SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
+import { describeShow, formatMoney } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ScrollView, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -78,8 +78,15 @@ export function SavedTicketCard({ ticket, onRetry }: { ticket: SavedTicket; onRe
               {ticket.movieTitle}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Badge label={SHOW_FORMAT_LABELS[ticket.format]} tone="primary" />
-              <Badge label={ticket.language} variant="outline" />
+              <Badge
+                label={describeShow({
+                  format: ticket.format,
+                  language: ticket.language,
+                  event: ticket.eventKind ? { kind: ticket.eventKind } : null,
+                })}
+                tone="primary"
+              />
+              {ticket.eventKind ? null : <Badge label={ticket.language} variant="outline" />}
             </View>
 
             <View style={{ flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm }}>

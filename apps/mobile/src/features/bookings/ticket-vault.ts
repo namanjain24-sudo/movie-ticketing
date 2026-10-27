@@ -1,4 +1,4 @@
-import type { Booking } from '@app/shared';
+import type { Booking, EventKind } from '@app/shared';
 import { STORAGE_KEYS, secureStorage } from '../../lib/storage';
 import { subjectTitle } from '../catalog/subject';
 
@@ -29,6 +29,13 @@ export interface SavedTicket {
   startsAt: string;
   format: Booking['showtime']['format'];
   language: string;
+  /**
+   * Set only for a match, gig or workshop. Optional because tickets saved
+   * before this field existed will not have it, and a ticket already in the
+   * vault is the one thing here that must never fail to open — those fall
+   * back to `format`, which is the same thing they have always shown.
+   */
+  eventKind?: EventKind;
   /** Already formatted as "H10, H11", because that is all the stub shows. */
   seats: string;
   totalMinor: number;
@@ -70,6 +77,7 @@ export function toSavedTicket(booking: Booking): SavedTicket {
     startsAt: showtime.startsAt,
     format: showtime.format,
     language: showtime.language,
+    ...(showtime.event ? { eventKind: showtime.event.kind } : {}),
     seats: booking.seats.map((s) => `${s.rowLabel}${s.number}`).join(', '),
     totalMinor: booking.totalMinor,
     currency: booking.currency,

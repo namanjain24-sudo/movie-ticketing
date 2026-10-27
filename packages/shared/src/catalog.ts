@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { eventKindSchema, venueKindSchema } from './event';
+import { EVENT_KIND_SINGULAR, eventKindSchema, venueKindSchema, type EventKind } from './event';
 
 /**
  * Price bands, named for what the venue calls them.
@@ -311,3 +311,25 @@ export const seatUpdateMessageSchema = z.object({
   at: z.string(),
 });
 export type SeatUpdateMessage = z.infer<typeof seatUpdateMessageSchema>;
+
+/**
+ * What a show's second line should say.
+ *
+ * A film has a format and a language and both are real: "2D · Hindi" is four
+ * useful words. An event has neither. Every event in the catalogue comes back
+ * `format: TWO_D, language: "Live"` — those columns exist for films, and a
+ * row for a Test match still has to put something in them. So the app was
+ * labelling a day at Eden Gardens "2D · Live", which is wrong twice: a match
+ * is not in 2D, and "Live" is not a language.
+ *
+ * An event says what it is instead. "Match" carries everything "2D · Live"
+ * was pretending to, and carries it correctly.
+ */
+export function describeShow(show: {
+  format: ShowFormat;
+  language: string;
+  event?: { kind: EventKind } | null;
+}): string {
+  if (show.event) return EVENT_KIND_SINGULAR[show.event.kind];
+  return `${SHOW_FORMAT_LABELS[show.format]} · ${show.language}`;
+}

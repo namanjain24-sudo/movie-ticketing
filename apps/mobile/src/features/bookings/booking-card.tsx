@@ -1,4 +1,4 @@
-import { SHOW_FORMAT_LABELS, formatMoney, type Booking } from '@app/shared';
+import { describeShow, formatMoney, type Booking } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation } from '@tanstack/react-query';
 import { useRef, type ReactNode } from 'react';
@@ -113,7 +113,7 @@ export function BookingCard({
         </Text>
         <Text variant="caption" tone="muted" numeric>
           {formatMonthDay(showtime.startsAt)} · {formatTime(showtime.startsAt)} ·{' '}
-          {SHOW_FORMAT_LABELS[showtime.format]}
+          {describeShow(showtime)}
         </Text>
 
         <View

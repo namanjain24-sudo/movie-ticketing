@@ -1,4 +1,4 @@
-import { POINT_VALUE_MINOR, SHOW_FORMAT_LABELS, formatMoney } from '@app/shared';
+import { POINT_VALUE_MINOR, describeShow, formatMoney } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,6 +14,7 @@ import { Badge, Button, Card, Skeleton, Text } from '../../components/ui';
 import { addShowtimeToCalendar } from '../../lib/calendar';
 import { SplitBillSheet } from '../../features/bookings/split-bill-sheet';
 import { SavedTicketCard } from '../../features/bookings/saved-ticket-card';
+import { SponsorSlot } from '../../features/sponsors/sponsor-slot';
 import { Field, Perforation } from '../../features/bookings/ticket-parts';
 import {
   forgetTicket,
@@ -249,8 +250,8 @@ export default function BookingTicket() {
               {subject?.title}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Badge label={SHOW_FORMAT_LABELS[showtime.format]} tone="primary" />
-              <Badge label={showtime.language} variant="outline" />
+              <Badge label={describeShow(showtime)} tone="primary" />
+              {showtime.event ? null : <Badge label={showtime.language} variant="outline" />}
             </View>
 
             <View style={{ flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm }}>
@@ -502,6 +503,15 @@ export default function BookingTicket() {
             onPress={() => addToCalendar.mutate()}
           />
         )}
+
+        {/* The pre-show slot.
+            
+            A cinema plays ads before the film, so a confirmed ticket is the
+            one place in this app where an ad is in keeping rather than in the
+            way — the booking is already done, and nothing here is between
+            anybody and a seat. Hidden on a cancelled booking: there is no
+            show to be before. */}
+        {cancelled ? null : <SponsorSlot heading="Before the show" />}
 
         {/* Quiet, and deliberately here rather than only in Profile: somebody
             reading a ticket and wondering whether they can still cancel it is
