@@ -3,11 +3,12 @@ import {
   SHOW_FORMAT_LABELS,
   formatMoney,
   type SeatMapSeat,
+  type SeatTier,
 } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +22,7 @@ import { findBestSeats } from '../../features/seatmap/best-seats';
 import { SeatCountSheet } from '../../features/seatmap/seat-count-sheet';
 import { SeatGrid, type SeatGridHandle } from '../../features/seatmap/seat-grid';
 import { StadiumBowl } from '../../features/seatmap/stadium-bowl';
+import { StandPicker, summariseStands } from '../../features/seatmap/stand-picker';
 import { VenueFacing } from '../../features/seatmap/venue-facing';
 import { SeatOverview } from '../../features/seatmap/seat-overview';
 import { useSeatSelection } from '../../features/seatmap/use-seat-selection';
@@ -130,6 +132,39 @@ export default function SeatMapScreen() {
     },
   });
 
+  /**
+   * Both of these live above the loading guard. Called below it they would be
+   * hooks that only run once the query has settled, and the hook order would
+   * change on the render that loads the map — which is the one rule React has
+   * no way to recover from.
+   */
+  const rows = selection.rows;
+
+  /** Send the seat list to the first row of a stand, from plan or from list. */
+  const jumpToStand = useCallback(
+    (tier: SeatTier) => {
+      const row = rows.find((r) => r.seats.some((seat) => seat.tier === tier));
+      if (row) gridRef.current?.scrollToRow(row.y);
+    },
+    [rows],
+  );
+
+  /**
+   * Price and what is left in each stand. Counted from the seats already in
+   * hand rather than asked of the server: a second number from a second
+   * source is a number that can disagree with the map under it.
+   */
+  const bowlTiers = seatMap.data?.tiers;
+  const bowlSeats = seatMap.data?.seats;
+  const statusOf = selection.statusOf;
+  const stands = useMemo(
+    () =>
+      bowlTiers && bowlSeats && bowlTiers.some((t) => typeof t.bearing === 'number')
+        ? summariseStands(bowlTiers, bowlSeats, statusOf)
+        : [],
+    [bowlTiers, bowlSeats, statusOf],
+  );
+
   if (seatMap.isPending) return <LoadingState label="Loading seats" />;
 
   if (seatMap.isError || !seatMap.data) {
@@ -150,11 +185,12 @@ export default function SeatMapScreen() {
    * ground has one side.
    */
   const hasBowl = map.tiers.filter((t) => typeof t.bearing === 'number').length >= 2;
-  /** Which stand the seat list is in, so the plan can light that arc. */
+
+  // Plain derivation, not a hook, so it is fine below the guard: which stand
+  // the seat list is currently in, so the plan and the list can both light it.
   const visibleTier = visibleRow
     ? selection.rows.find((r) => r.label === visibleRow)?.seats[0]?.tier
     : undefined;
-
   const salesClosed = new Date(map.salesCloseAt).getTime() <= new Date(map.serverTime).getTime();
   const count = selection.selectedSeats.length;
   /** How many the auto-pick looks for: what they said, else a pair. */
@@ -231,14 +267,21 @@ export default function SeatMapScreen() {
           <StadiumBowl
             tiers={map.tiers}
             activeTier={visibleTier}
-            onSelectStand={(tier) => {
-              const row = selection.rows.find((r) => r.seats.some((seat) => seat.tier === tier));
-              if (row) gridRef.current?.scrollToRow(row.y);
-            }}
+            onSelectStand={jumpToStand}
           />
         ) : (
           <VenueFacing facing={map.event?.kind ?? 'FILM'} />
         )}
+        {hasBowl ? (
+          <View style={{ paddingBottom: spacing.lg }}>
+            <StandPicker
+              stands={stands}
+              currency={map.currency}
+              activeTier={visibleTier}
+              onSelect={jumpToStand}
+            />
+          </View>
+        ) : null}
         {visibleRow ? (
           <View
             style={{
