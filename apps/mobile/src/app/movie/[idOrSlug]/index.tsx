@@ -316,8 +316,8 @@ export default function MovieDetail() {
             {film.genres.join(' · ')}
           </Text>
 
-          {/* Three things people reach for on a film page that are not
-              booking: tell someone, read the verdict, add their own. */}
+          {/* The three things people reach for on a film page that are not
+              booking: keep it, tell someone, read or add a verdict. */}
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <ActionButton
               icon={watchlist.isSaved(film.id) ? 'heart' : 'heart-outline'}
@@ -340,14 +340,15 @@ export default function MovieDetail() {
                 })
               }
             />
+            {/* One control, not two. "Reviews" and "Rate" both pushed the
+                same route — the reviews screen carries the composer — so the
+                row offered the same destination twice and spent a quarter of
+                itself doing it. What changes is which job is worth naming: with
+                reviews to read, the count is the invitation; with none, the
+                only reason to go is to write the first one. */}
             <ActionButton
-              icon="chatbubble-ellipses-outline"
-              label={film.rating.count > 0 ? `Reviews (${film.rating.count})` : 'Reviews'}
-              onPress={() => router.push(`/movie/${idOrSlug}/reviews`)}
-            />
-            <ActionButton
-              icon="star-outline"
-              label="Rate"
+              icon={film.rating.count > 0 ? 'chatbubble-ellipses-outline' : 'star-outline'}
+              label={film.rating.count > 0 ? `Reviews (${film.rating.count})` : 'Rate it'}
               onPress={() => router.push(`/movie/${idOrSlug}/reviews`)}
             />
             {film.isNowShowing ? null : (
