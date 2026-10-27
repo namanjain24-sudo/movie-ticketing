@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Share, View } from 'react-native';
 import Animated, {
   Extrapolation,
@@ -43,6 +43,8 @@ import { shareLink } from '../../../lib/share-link';
 import { useWatchlist } from '../../../features/watchlist/use-watchlist';
 import { useTheme } from '../../../theme';
 import { HIT_SIZE } from '../../../theme/tokens';
+import { markClosed, nextCloseAfter } from '../../../features/catalog/closing';
+import { useTickAt } from '../../../lib/use-tick-at';
 
 /** How far ahead the date strip runs. The API windows a week by default. */
 const DAYS_AHEAD = 7;
@@ -127,20 +129,31 @@ export default function MovieDetail() {
     queryKey: queryKeys.showtimes(showtimeQuery),
     queryFn: () => catalogApi.showtimes(showtimeQuery),
     enabled: Boolean(movie.data?.id),
-    // Today's list includes screenings that have already started, because the
-    // API returns a whole day. Marking them here keeps the clock read out of
-    // render, where it would be an impure call.
-    select: (cinemas) => {
-      const now = Date.now();
-      return cinemas.map((entry) => ({
-        ...entry,
-        showtimes: entry.showtimes.map((slot) => ({
-          ...slot,
-          closed: new Date(slot.salesCloseAt).getTime() <= now,
-        })),
-      }));
-    },
   });
+
+  /**
+   * The day's list with the screenings that have stopped selling marked.
+   *
+   * The API returns a whole day, so a list fetched in the evening still holds
+   * the matinees. Both of these used to be decided once, from the clock as it
+   * read when the list landed — and then the screen sits there. Twenty minutes
+   * on this page is an ordinary thing to do, and for nineteen of them a six
+   * o'clock show went on looking bookable, in the colour that means bookable,
+   * with a price under it. Tapping it was the first anyone heard otherwise.
+   *
+   * Refetching would fix it and cost far too much: a day's chips across a city
+   * is around 200KB, and nothing in it has gone out of date except the clock.
+   * So the clock wakes instead, exactly when the next chip's answer changes.
+   */
+  const nextClose = useCallback(
+    (at: number) => (showtimes.data ? nextCloseAfter(showtimes.data, at) : null),
+    [showtimes.data],
+  );
+  const now = useTickAt(nextClose);
+  const marked = useMemo(
+    () => (showtimes.data ? markClosed(showtimes.data, now) : undefined),
+    [showtimes.data, now],
+  );
 
   if (movie.isPending) return <MovieDetailSkeleton />;
 
@@ -155,7 +168,7 @@ export default function MovieDetail() {
   }
 
   const film = movie.data;
-  const visible = showtimes.data ? applyFilter(showtimes.data, filter) : [];
+  const visible = marked ? applyFilter(marked, filter) : [];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
