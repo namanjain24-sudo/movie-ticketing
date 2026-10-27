@@ -274,4 +274,148 @@ describe('useSeatSelection', () => {
     // "unavailable" that would hide whether it was sold or just held.
     expect(result.current.statusOf(refreshed.seats[0]!)).toBe('SOLD');
   });
+
+  describe('seats taken while you were choosing', () => {
+    /** The same room, rerendered with a seat sold out from under the user. */
+    const takenNow = (s: SeatMapSeat) => ({ ...s, status: 'SOLD' as const });
+
+    it('says nothing while nothing has gone', async () => {
+      const { result } = await renderHook(() => useSeatSelection(buildMap([A1, A2, SOLD])));
+      await act(async () => {
+        result.current.toggle(A1);
+      });
+      // SOLD is in the room but was never chosen, so it is not a loss.
+      expect(result.current.lostSeats).toEqual([]);
+    });
+
+    it('names a chosen seat that went, once the map says so', async () => {
+      const { result, rerender } = await renderHook(
+        ({ map }: { map: SeatMap }) => useSeatSelection(map),
+        { initialProps: { map: buildMap([A1, A2]) } },
+      );
+
+      await act(async () => {
+        result.current.toggle(A1);
+        result.current.toggle(A2);
+      });
+      expect(result.current.selectedIds).toEqual(['a1', 'a2']);
+      expect(result.current.lostSeats).toEqual([]);
+
+      await act(async () => {
+        rerender({ map: buildMap([takenNow(A1), A2]) });
+      });
+
+      expect(result.current.lostSeats).toEqual(['A1']);
+      // And the three things that used to change with no explanation.
+      expect(result.current.selectedIds).toEqual(['a2']);
+      expect(result.current.subtotalMinor).toBe(20000);
+    });
+
+    it('names several in seating order, not tap order', async () => {
+      const { result, rerender } = await renderHook(
+        ({ map }: { map: SeatMap }) => useSeatSelection(map),
+        { initialProps: { map: buildMap([A1, A2, B1]) } },
+      );
+
+      await act(async () => {
+        result.current.toggle(B1);
+        result.current.toggle(A1);
+      });
+      await act(async () => {
+        rerender({ map: buildMap([takenNow(A1), A2, takenNow(B1)]) });
+      });
+
+      // Tapped B1 first; the row in front still reads first.
+      expect(result.current.lostSeats).toEqual(['A1', 'B1']);
+    });
+
+    it('keeps quiet about a seat the user let go of themselves', async () => {
+      const { result, rerender } = await renderHook(
+        ({ map }: { map: SeatMap }) => useSeatSelection(map),
+        { initialProps: { map: buildMap([A1, A2]) } },
+      );
+
+      await act(async () => {
+        result.current.toggle(A1);
+        result.current.toggle(A1); // untapped
+      });
+      await act(async () => {
+        rerender({ map: buildMap([takenNow(A1), A2]) });
+      });
+
+      expect(result.current.lostSeats).toEqual([]);
+    });
+
+    it('leaves the rejected-hold path to say its own piece', async () => {
+      const { result, rerender } = await renderHook(
+        ({ map }: { map: SeatMap }) => useSeatSelection(map),
+        { initialProps: { map: buildMap([A1, A2]) } },
+      );
+
+      await act(async () => {
+        result.current.toggle(A1);
+      });
+      // What the screen does when a hold comes back refused.
+      await act(async () => {
+        result.current.markUnavailable(['a1']);
+      });
+      await act(async () => {
+        rerender({ map: buildMap([takenNow(A1), A2]) });
+      });
+
+      // That screen already shows "Someone took those seats first." Saying it
+      // twice, differently, in two places is worse than saying it once.
+      expect(result.current.lostSeats).toEqual([]);
+      expect(result.current.rejection).toBe('UNAVAILABLE');
+    });
+
+    it('takes the notice back when the seat comes back', async () => {
+      const { result, rerender } = await renderHook(
+        ({ map }: { map: SeatMap }) => useSeatSelection(map),
+        { initialProps: { map: buildMap([A1, A2]) } },
+      );
+
+      await act(async () => {
+        result.current.toggle(A1);
+      });
+      await act(async () => {
+        rerender({ map: buildMap([takenNow(A1), A2]) });
+      });
+      expect(result.current.lostSeats).toEqual(['A1']);
+
+      // Somebody else's hold expired. The sweeper returns the seat.
+      await act(async () => {
+        rerender({ map: buildMap([A1, A2]) });
+      });
+
+      // The notice and the seat are two readings of one fact.
+      expect(result.current.lostSeats).toEqual([]);
+      expect(result.current.selectedIds).toEqual(['a1']);
+    });
+
+    it('drops a gone seat once a fresh choice answers the notice', async () => {
+      const { result, rerender } = await renderHook(
+        ({ map }: { map: SeatMap }) => useSeatSelection(map),
+        { initialProps: { map: buildMap([A1, A2, A3]) } },
+      );
+
+      await act(async () => {
+        result.current.toggle(A1);
+      });
+      const gone = buildMap([takenNow(A1), A2, A3]);
+      await act(async () => {
+        rerender({ map: gone });
+      });
+      expect(result.current.lostSeats).toEqual(['A1']);
+
+      // They settle on another seat. The message about A1 should not follow
+      // them down the screen.
+      await act(async () => {
+        result.current.toggle(A3);
+      });
+
+      expect(result.current.lostSeats).toEqual([]);
+      expect(result.current.selectedIds).toEqual(['a3']);
+    });
+  });
 });

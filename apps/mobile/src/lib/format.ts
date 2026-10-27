@@ -112,3 +112,13 @@ export function endsNextDay(startsAt: string, endsAt: string): boolean {
     end.getDate() !== start.getDate()
   );
 }
+
+/**
+ * Joins words the way a sentence does: "F11", "F11 and F12", "F11, F12 and
+ * F13". Commas alone read as a list of fragments where this is a clause, and
+ * the screens that use it are already apologising for something.
+ */
+export function joinWords(words: string[]): string {
+  if (words.length <= 1) return words[0] ?? '';
+  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+}

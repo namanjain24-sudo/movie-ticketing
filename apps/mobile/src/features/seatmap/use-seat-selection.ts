@@ -90,6 +90,40 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
     [selected, seatsById],
   );
 
+  /**
+   * The seats that went while the map sat on screen.
+   *
+   * Pure derivation, and it can be: an id is only ever added to `selected` by
+   * a tap, and `toggle` refuses to add a seat that is not selectable. So a
+   * tapped id whose seat is no longer selectable means exactly one thing —
+   * somebody else took it after it was chosen. Nothing has to remember a
+   * previous render to know that.
+   *
+   * `selectedSeats` already drops those seats, which is the design above and
+   * is right. What it did not do is say anything. The row emptied, the
+   * subtotal fell, the button counted one fewer, and nothing on screen
+   * connected those three to a cause. The person is left to notice ₹900
+   * became ₹600 on a screen they were not touching, and the kindest reading
+   * available to them is that the app miscounted.
+   *
+   * The rejected-hold path does not appear here: `markUnavailable` takes its
+   * ids out of `selected`, so that screen's own conflict message is never
+   * doubled up by this one.
+   *
+   * A seat that comes back — holds expire after five minutes — leaves this
+   * list on the same refetch that returns it to `selectedSeats`. The notice
+   * and the seat are two readings of one fact, so they cannot disagree.
+   */
+  const lostSeats = useMemo(
+    () =>
+      [...selected]
+        .map((id) => seatsById.get(id))
+        .filter((seat): seat is SeatMapSeat => seat !== undefined && !SELECTABLE.includes(seat.status))
+        .sort((a, b) => a.y - b.y || a.x - b.x)
+        .map((seat) => `${seat.rowLabel}${seat.number}`),
+    [selected, seatsById],
+  );
+
   /** Returns whether the tap was taken, so the caller can match the feedback. */
   const toggle = useCallback(
     (seat: SeatMapSeat): boolean => {
@@ -114,6 +148,15 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
         const next = new Set(current);
         if (next.has(seat.id)) next.delete(seat.id);
         else next.add(seat.id);
+        // Making a fresh choice answers the notice: ids whose seats have gone
+        // come out here, so a message about row F does not follow somebody
+        // down the screen after they have settled on row K. Done in the
+        // handler, where a state change belongs, rather than in an effect
+        // reacting to the map.
+        for (const id of [...next]) {
+          const existing = seatsById.get(id);
+          if (existing && !SELECTABLE.includes(existing.status)) next.delete(id);
+        }
         return next;
       });
       return true;
@@ -121,7 +164,7 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
     // selectedSeats.length, not selectedSeats itself: the array gets a new
     // identity on every map refetch (even one that changes nothing the user
     // selected), and that must not recreate `toggle` on every seat's onPress.
-    [maxSeats, taken, selected, selectedSeats.length],
+    [maxSeats, taken, selected, selectedSeats.length, seatsById],
   );
 
   /**
@@ -176,5 +219,7 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
     atLimit: selectedSeats.length >= maxSeats,
     rejection,
     dismissRejection: useCallback(() => setRejection(null), []),
+    /** Labels of seats taken out from under the selection, in seating order. */
+    lostSeats,
   };
 }

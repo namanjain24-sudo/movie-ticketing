@@ -27,7 +27,7 @@ import { StandPicker, summariseStands } from '../../features/seatmap/stand-picke
 import { VenueFacing } from '../../features/seatmap/venue-facing';
 import { SeatOverview } from '../../features/seatmap/seat-overview';
 import { useSeatSelection } from '../../features/seatmap/use-seat-selection';
-import { formatMonthDay, formatTime } from '../../lib/format';
+import { formatMonthDay, formatTime, joinWords } from '../../lib/format';
 import { rejectFeedback, successFeedback, tapFeedback } from '../../lib/haptics';
 import { idempotencyKey } from '../../lib/idempotency';
 import { queryKeys } from '../../lib/query-client';
@@ -54,6 +54,31 @@ export default function SeatMapScreen() {
     // difference between a stale map and one that is merely seconds old.
     refetchOnWindowFocus: true,
     staleTime: 10_000,
+    /**
+     * And refetching on a timer is the difference between either of those and
+     * a map that is simply wrong. Focus is the only thing that refreshed this
+     * screen, and focus does not fire while somebody sits on it reading a
+     * five-hundred-seat room — which is the entire time it matters. Holds last
+     * five minutes and the sweeper returns the expired ones continuously, so
+     * the room genuinely changes underneath a selection that takes a minute to
+     * make. The first the person heard of it was the hold being refused.
+     *
+     * Twenty seconds: a fifteenth of a hold's life, and about 7KB a turn for
+     * the forty-seat rooms up to roughly 50KB for the largest. It stops when
+     * the screen is unmounted, stops when the app is backgrounded (React Query
+     * does not poll in the background by default) and stops below, for good,
+     * once a snapshot reports the window shut.
+     */
+    refetchInterval: (query) => {
+      const map = query.state.data;
+      if (!map) return false;
+      // Judged against the server's own clock, as the banner below is, so a
+      // device with a wrong time cannot decide this either way. Each poll
+      // brings a fresh `serverTime`, so a window that shuts while the screen
+      // is open is noticed on the next turn and the polling then stops.
+      const closed = new Date(map.salesCloseAt).getTime() <= new Date(map.serverTime).getTime();
+      return closed ? false : 20_000;
+    },
   });
 
   const selection = useSeatSelection(seatMap.data, partySize);
@@ -219,15 +244,22 @@ export default function SeatMapScreen() {
   /** How many the auto-pick looks for: what they said, else a pair. */
   const wanted = Math.min(partySize ?? 2, map.maxSeatsPerBooking);
 
+  const lost = selection.lostSeats;
   const message = salesClosed
     ? 'Booking has closed for this screening.'
     : holdError
       ? holdError
-      : selection.rejection === 'LIMIT'
-        ? `You can book up to ${selection.maxSeats} seats at once.`
-        : selection.rejection === 'UNAVAILABLE'
-          ? 'That seat is no longer available.'
-          : null;
+      : // Below a failed hold, which the person just caused and is waiting on,
+        // and above a refused tap, which they can see for themselves.
+        lost.length > 0
+        ? `${lost.length === 1 ? 'Seat' : 'Seats'} ${joinWords(lost)} ${
+            lost.length === 1 ? 'was' : 'were'
+          } taken while you were choosing.`
+        : selection.rejection === 'LIMIT'
+          ? `You can book up to ${selection.maxSeats} seats at once.`
+          : selection.rejection === 'UNAVAILABLE'
+            ? 'That seat is no longer available.'
+            : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
