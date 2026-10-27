@@ -56,7 +56,14 @@ export function clientKey(req: Request): string {
  * they were waiting to make — a self-inflicted outage at the worst possible
  * moment, the first minute of a demo. `/health/ready` opens a database
  * connection, so it stays counted.
+ *
+ * Named and exported so the suite can drive the real predicate rather than a
+ * copy of it, the same reason `clientKey` is exported below.
  */
+export function isUncounted(req: Request): boolean {
+  return req.path === '/health/live';
+}
+
 export const globalLimiter = rateLimit({
   windowMs: 60_000,
   limit: env.isProduction
@@ -65,7 +72,7 @@ export const globalLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: clientKey,
-  skip: (req) => req.path === '/health/live',
+  skip: isUncounted,
   message: body,
 });
 

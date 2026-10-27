@@ -4,7 +4,7 @@ import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../app';
 import { signAccessToken, signRefreshToken } from '../lib/tokens';
-import { clientKey, loginAccountKey } from './rate-limit';
+import { clientKey, isUncounted, loginAccountKey } from './rate-limit';
 
 /**
  * These are about *who* a request is counted against, not about the numbers.
@@ -16,12 +16,19 @@ import { clientKey, loginAccountKey } from './rate-limit';
  * So: a throwaway app with a limit of two, driven through the real key
  * generators.
  */
-function appLimitedTo(limit: number, keyGenerator: (req: express.Request) => string) {
+function appLimitedTo(
+  limit: number,
+  keyGenerator: (req: express.Request) => string,
+  skip?: (req: express.Request) => boolean,
+) {
   const app = express();
   app.set('trust proxy', 1);
   app.use(express.json());
-  app.use(rateLimit({ windowMs: 60_000, limit, keyGenerator, legacyHeaders: false }));
+  app.use(rateLimit({ windowMs: 60_000, limit, keyGenerator, skip, legacyHeaders: false }));
   app.post('/try', (_req, res) => void res.json({ ok: true }));
+  // Carry the real paths, because the exemption is decided on the path.
+  app.get('/health/live', (_req, res) => void res.json({ ok: true }));
+  app.get('/health/ready', (_req, res) => void res.json({ ok: true }));
   return app;
 }
 
@@ -132,13 +139,45 @@ describe('rate limit keys', () => {
      * a minute from one address, and if they spent the address budget the
      * request they were all waiting to make would be refused the moment the
      * server finally woke.
+     *
+     * Driven through the real predicate against a limit of two, like every
+     * other test here. The version this replaces fired three hundred requests
+     * at the whole app and asserted they all returned 200 — but the limit
+     * outside production is `RATE_LIMIT_GLOBAL_PER_MINUTE * 50`, six thousand
+     * a minute, so three hundred never came near it. It passed with the
+     * exemption deleted. It also took sixty seconds and timed out whenever the
+     * machine was busy, which is how a test that proves nothing still manages
+     * to cost something.
      */
-    it('is not rate limited', async () => {
-      const app = createApp();
-      for (let i = 0; i < 300; i += 1) {
-        // eslint-disable-next-line no-await-in-loop -- sequential is the point
-        await request(app).get('/health/live').set('X-Forwarded-For', '203.0.113.30').expect(200);
-      }
+    it('does not spend the address budget', async () => {
+      const app = appLimitedTo(2, clientKey, isUncounted);
+      const wifi = '203.0.113.30';
+      const probe = () => request(app).get('/health/live').set('X-Forwarded-For', wifi);
+
+      // Well past a limit of two. The exemption is the only thing allowing it.
+      await probe().expect(200);
+      await probe().expect(200);
+      await probe().expect(200);
+      await probe().expect(200);
+
+      // And the budget is untouched, which is the point: the request the room
+      // was waiting to make still goes through.
+      await from(app, wifi).expect(200);
+    });
+
+    /**
+     * The exemption is one path, not the `/health` prefix. `/health/ready`
+     * opens a database connection, so an unlimited supply of them is a way to
+     * lean on the pool from outside — exactly what the ceiling is for.
+     */
+    it('does not exempt the readiness probe next to it', async () => {
+      const app = appLimitedTo(2, clientKey, isUncounted);
+      const wifi = '203.0.113.31';
+      const ready = () => request(app).get('/health/ready').set('X-Forwarded-For', wifi);
+
+      await ready().expect(200);
+      await ready().expect(200);
+      await ready().expect(429);
     });
   });
 });
