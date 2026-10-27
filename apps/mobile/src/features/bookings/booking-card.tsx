@@ -113,7 +113,7 @@ export function BookingCard({
         </Text>
         <Text variant="caption" tone="muted" numeric>
           {formatMonthDay(showtime.startsAt)} · {formatTime(showtime.startsAt)} ·{' '}
-          {describeShow(showtime)}
+          {describeShow(showtime, showtime.screen.name)}
         </Text>
 
         <View

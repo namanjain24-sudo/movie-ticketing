@@ -337,11 +337,25 @@ export type SeatUpdateMessage = z.infer<typeof seatUpdateMessageSchema>;
  * An event says what it is instead. "Match" carries everything "2D · Live"
  * was pretending to, and carries it correctly.
  */
-export function describeShow(show: {
-  format: ShowFormat;
-  language: string;
-  event?: { kind: EventKind } | null;
-}): string {
+export function describeShow(
+  show: {
+    format: ShowFormat;
+    language: string;
+    event?: { kind: EventKind } | null;
+  },
+  /**
+   * The room this is playing in, when the caller has already printed it.
+   *
+   * Chains name a room after what it does — PVR ICON's IMAX screen is called
+   * "IMAX" — so a card reading "PVR ICON · IMAX" and then "10:15 am · IMAX ·
+   * English" says the same word twice in two lines. The format is dropped
+   * when the screen name has already said it, the same way the seat map says
+   * "Eden Gardens" once rather than twice when a ground is its own room.
+   */
+  screenName?: string,
+): string {
   if (show.event) return EVENT_KIND_SINGULAR[show.event.kind];
-  return `${SHOW_FORMAT_LABELS[show.format]} · ${show.language}`;
+  const format = SHOW_FORMAT_LABELS[show.format];
+  if (screenName && screenName.trim().toLowerCase() === format.toLowerCase()) return show.language;
+  return `${format} · ${show.language}`;
 }
