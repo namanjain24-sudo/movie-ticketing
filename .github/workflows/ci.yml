@@ -1,0 +1,101 @@
+# The checks the repository already has, on every push.
+#
+# It had none. `npm run format:check` was failing on twenty-three files and
+# nothing was going to say so, because the only workflow here pings the demo
+# API. Each of these runs locally in seconds and is the repo's own command —
+# the point is only that something runs them when nobody remembers to.
+#
+# The API suite is not mocked. Its claims are about behaviour under concurrent
+# transactions — `SELECT ... FOR UPDATE` against a real planner — so it needs a
+# real Postgres, which is what the service containers below are for. They are
+# published on the same ports docker-compose uses (5434, 6380) because
+# apps/api/vitest.config.ts names those, and one source for that number is
+# better than two that can disagree.
+
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Types, lint, formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Prisma's generated client is imported by the API's types, so this has
+      # to exist before anything typechecks.
+      - run: npm run db:generate --workspace @app/api
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+
+  mobile:
+    name: Mobile tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test --workspace @app/mobile
+
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ticketing
+          POSTGRES_PASSWORD: ticketing
+          POSTGRES_DB: ticketing_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U ticketing -d ticketing_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate --workspace @app/api
+      # The suite migrates the database itself in its setup file, so there is
+      # nothing to do here but hand it a server that is up.
+      - run: npm test --workspace @app/api
