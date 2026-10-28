@@ -181,6 +181,11 @@ export default function Checkout() {
     successFeedback();
     // The new ticket has to be in My bookings by the time the user looks.
     void queryClient.invalidateQueries({ queryKey: queryKeys.bookings });
+    // And the hold is spent. The server already leaves a converted hold out
+    // of `/holds/active`, but the banner on the tabs reads a cache, and a
+    // "you have seats held, finish paying" strip under a ticket somebody has
+    // just paid for is the one moment it must not be there.
+    void queryClient.invalidateQueries({ queryKey: queryKeys.activeHolds });
     // Replace, so the back gesture cannot return to a spent hold.
     router.replace(`/booking/${confirmedReference}`);
   }, [confirmedReference, router, queryClient]);

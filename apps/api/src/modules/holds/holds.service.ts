@@ -309,7 +309,7 @@ export async function listActiveHolds(params: { userId: string }): Promise<Activ
           startsAt: true,
           currency: true,
           movie: { select: { id: true, slug: true, title: true, posterUrl: true } },
-          event: { select: { id: true, slug: true, title: true, posterUrl: true } },
+          event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
           screen: {
             select: {
               id: true,

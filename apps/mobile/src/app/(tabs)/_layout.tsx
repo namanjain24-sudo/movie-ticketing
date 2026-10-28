@@ -2,9 +2,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
-import type { ColorValue } from 'react-native';
+import { View, type ColorValue } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { bookingApi } from '../../api/booking';
+import { HeldSeatsBanner } from '../../features/checkout/held-seats-banner';
 import { useAuth } from '../../features/auth/auth-provider';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
@@ -70,7 +71,8 @@ export default function TabsLayout() {
    */
 
   return (
-    <Tabs
+    <View style={{ flex: 1 }}>
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
@@ -156,6 +158,13 @@ export default function TabsLayout() {
           ),
         }}
       />
-    </Tabs>
+      </Tabs>
+      {/* Between the screen and the tab bar, not above the screen: every tab
+          here owns its own AppBar against the status bar, and a strip pushed
+          in over the top of those would be the one thing on the page not
+          lining up with anything. Down here it reads as what it is — a thing
+          still going on, underneath whatever is being looked at now. */}
+      <HeldSeatsBanner />
+    </View>
   );
 }

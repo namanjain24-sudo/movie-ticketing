@@ -69,7 +69,18 @@ export const activeHoldSchema = z.object({
       .nullable()
       .default(null),
     event: z
-      .object({ id: z.string(), slug: z.string(), title: z.string(), posterUrl: z.string() })
+      .object({
+        id: z.string(),
+        slug: z.string(),
+        /**
+         * Carried here as it is on a showtime and a booking. This was the one
+         * of the three that left it out, which made the hold the only payload
+         * in the app that `subjectOf` could not read.
+         */
+        kind: eventKindSchema,
+        title: z.string(),
+        posterUrl: z.string(),
+      })
       .nullable()
       .default(null),
     cinema: z.object({ id: z.string(), name: z.string(), city: z.string() }),
