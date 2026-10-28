@@ -63,7 +63,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
+      # No setup-android action. The ubuntu runner image already ships the
+      # SDK with its licences accepted, and the action insists on installing
+      # the long-obsolete `tools` package, which the SDK repository no longer
+      # carries — it fails with "Failed to find package 'tools'" before the
+      # build gets a chance to start. Gradle fetches whatever platform and
+      # build-tools version this project pins, as it does locally.
+      - name: Show the Android SDK the runner already has
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls "$ANDROID_HOME/build-tools" 2>/dev/null || echo "(no build-tools yet; gradle will fetch them)"
 
       - name: Install the workspace
         run: npm ci
