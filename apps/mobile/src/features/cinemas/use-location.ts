@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 
 export type Coords = { lat: number; lng: number };
 
@@ -22,6 +22,40 @@ export type LocationState =
  * `Balanced` accuracy rather than `High`: this list is sorted in kilometres.
  * GPS-grade precision would cost seconds and battery to change nothing.
  */
+/**
+ * The last position the person actually granted, for the rest of the session.
+ *
+ * `useUserLocation` keeps its state per component, which is right for the
+ * screen that does the asking — but it meant a grant on the Cinemas tab was
+ * forgotten the moment that screen unmounted. A film page could not sort its
+ * cinemas by distance without asking all over again, on a screen where
+ * "cinemas near me" is not visibly what is being requested, and a second
+ * prompt is the one most people deny.
+ *
+ * So the answer is remembered and the question is not repeated. Screens that
+ * would merely *benefit* from a position read this and do nothing when it is
+ * empty; only the Cinemas tab ever asks.
+ *
+ * In memory only. A coordinate is the sort of thing that should not outlive
+ * the session that was given it, and a stale one is worse than none: it would
+ * sort a film page in Mumbai by how near things are to last week's Delhi.
+ */
+let lastKnown: Coords | null = null;
+
+const listeners = new Set<() => void>();
+
+/** Reads the remembered position, re-rendering if one arrives later. */
+export function useLastKnownLocation(): Coords | null {
+  return useSyncExternalStore(
+    (onChange) => {
+      listeners.add(onChange);
+      return () => listeners.delete(onChange);
+    },
+    () => lastKnown,
+    () => null,
+  );
+}
+
 export function useUserLocation() {
   const [state, setState] = useState<LocationState>({ status: 'idle' });
 
@@ -36,10 +70,10 @@ export function useUserLocation() {
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-      setState({
-        status: 'granted',
-        coords: { lat: position.coords.latitude, lng: position.coords.longitude },
-      });
+      const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+      lastKnown = coords;
+      for (const notify of listeners) notify();
+      setState({ status: 'granted', coords });
     } catch (error) {
       // Indoors with location services off is the common case, and it throws
       // rather than resolving. The list still works without a position.
@@ -51,7 +85,13 @@ export function useUserLocation() {
     }
   }, []);
 
-  const clear = useCallback(() => setState({ status: 'idle' }), []);
+  const clear = useCallback(() => {
+    // Turning it off on the screen that asked turns it off everywhere. Half a
+    // retraction is not one.
+    lastKnown = null;
+    for (const notify of listeners) notify();
+    setState({ status: 'idle' });
+  }, []);
 
   return { state, request, clear };
 }

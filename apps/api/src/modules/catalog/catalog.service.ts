@@ -153,6 +153,9 @@ export async function listShowtimes(params: {
   eventId?: string;
   city?: string;
   date?: string;
+  /** Caller's position. Both or neither, as on the directory. */
+  lat?: number;
+  lng?: number;
 }): Promise<CinemaShowtimes[]> {
   const { start, end } = dayWindow(params.date);
 
@@ -184,9 +187,24 @@ export async function listShowtimes(params: {
 
   const availability = await availabilityFor(showtimes.map((s) => s.id));
 
+  const origin =
+    params.lat !== undefined && params.lng !== undefined
+      ? { lat: params.lat, lng: params.lng }
+      : null;
+
   const grouped = new Map<string, CinemaShowtimes>();
   for (const s of showtimes) {
-    const cinema = s.screen.cinema;
+    const cinema = {
+      ...s.screen.cinema,
+      // Same rounding as the directory, so the same venue does not read 3.4km
+      // on one screen and 3.37km on another.
+      distanceKm: origin
+        ? Math.round(
+            distanceKm(origin, { lat: s.screen.cinema.latitude, lng: s.screen.cinema.longitude }) *
+              10,
+          ) / 10
+        : null,
+    };
     const entry = grouped.get(cinema.id) ?? { cinema, showtimes: [] };
     entry.showtimes.push({
       id: s.id,
@@ -206,7 +224,16 @@ export async function listShowtimes(params: {
     grouped.set(cinema.id, entry);
   }
 
-  return [...grouped.values()].sort((a, b) => a.cinema.name.localeCompare(b.cinema.name));
+  /**
+   * Nearest first when the caller said where they are, alphabetical when they
+   * did not. Alphabetical is a fine default and a poor answer: it put whichever
+   * chain begins with A at the top of every film page in the country.
+   */
+  return [...grouped.values()].sort((a, b) =>
+    origin
+      ? (a.cinema.distanceKm ?? Infinity) - (b.cinema.distanceKm ?? Infinity)
+      : a.cinema.name.localeCompare(b.cinema.name),
+  );
 }
 
 /**

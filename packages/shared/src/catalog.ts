@@ -174,7 +174,14 @@ export const cinemaSchema = z.object({
 export type Cinema = z.infer<typeof cinemaSchema>;
 
 export const cinemaShowtimesSchema = z.object({
-  cinema: cinemaSchema,
+  cinema: cinemaSchema.extend({
+    /**
+     * Kilometres from the position the caller supplied, null when they
+     * supplied none. Computed server-side, as on the directory, so every
+     * client agrees about which cinema is nearer.
+     */
+    distanceKm: z.number().nullable().default(null),
+  }),
   showtimes: z.array(showtimeSummarySchema),
 });
 export type CinemaShowtimes = z.infer<typeof cinemaShowtimesSchema>;
@@ -218,6 +225,18 @@ export const showtimeListQuerySchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
     .optional(),
+  /**
+   * Caller's position, for distance and ordering. Both or neither, as on the
+   * directory.
+   *
+   * The directory has sorted by distance since it existed. This list — the
+   * one on a film's page, where somebody is actually deciding *where* to go —
+   * came back alphabetically, so a chain beginning with A was always the
+   * first thing offered and the cinema at the end of the road was somewhere
+   * in the middle.
+   */
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
 });
 export type ShowtimeListQuery = z.infer<typeof showtimeListQuerySchema>;
 

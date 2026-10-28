@@ -37,13 +37,14 @@ import {
 } from '../../../features/notifications/notifications';
 import { formatMonthDay, formatRuntime, upcomingDays } from '../../../lib/format';
 import { successFeedback, tapFeedback } from '../../../lib/haptics';
-import { openDirections } from '../../../lib/maps';
+import { formatDistance, openDirections } from '../../../lib/maps';
 import { queryKeys } from '../../../lib/query-client';
 import { shareLink } from '../../../lib/share-link';
 import { useWatchlist } from '../../../features/watchlist/use-watchlist';
 import { useTheme } from '../../../theme';
 import { HIT_SIZE } from '../../../theme/tokens';
 import { markClosed, nextCloseAfter } from '../../../features/catalog/closing';
+import { useLastKnownLocation } from '../../../features/cinemas/use-location';
 import { useTickAt } from '../../../lib/use-tick-at';
 
 /** How far ahead the date strip runs. The API windows a week by default. */
@@ -124,7 +125,20 @@ export default function MovieDetail() {
 
   // Showtimes key off the movie's id, not the slug in the URL, so the cache
   // holds one entry per movie however the screen was reached.
-  const showtimeQuery = { movieId: movie.data?.id, date };
+  /**
+   * Whatever position the person already granted on the Cinemas tab, if any.
+   *
+   * Read, never asked for: this screen is about a film, and a location prompt
+   * here would arrive without the question it answers being visible. When
+   * there is nothing to read the list comes back alphabetically, exactly as
+   * it always did.
+   */
+  const here = useLastKnownLocation();
+  const showtimeQuery = {
+    movieId: movie.data?.id,
+    date,
+    ...(here ? { lat: here.lat, lng: here.lng } : {}),
+  };
   const showtimes = useQuery({
     queryKey: queryKeys.showtimes(showtimeQuery),
     queryFn: () => catalogApi.showtimes(showtimeQuery),
@@ -464,7 +478,11 @@ export default function MovieDetail() {
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                         <Pressable
                           accessibilityRole="button"
-                          accessibilityLabel={`${cinema.name}, ${cinema.address}. Open this cinema`}
+                          accessibilityLabel={`${cinema.name}, ${
+                            cinema.distanceKm === null
+                              ? ''
+                              : `${formatDistance(cinema.distanceKm)} away, `
+                          }${cinema.address}. Open this cinema`}
                           onPress={() => router.push(`/cinema/${cinema.slug}`)}
                           hitSlop={4}
                           style={{ flex: 1, gap: spacing['2xs'] }}
@@ -478,7 +496,9 @@ export default function MovieDetail() {
                             <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
                           </View>
                           <Text variant="caption" tone="muted" numberOfLines={1}>
-                            {cinema.address}
+                            {cinema.distanceKm === null
+                              ? cinema.address
+                              : `${formatDistance(cinema.distanceKm)} · ${cinema.address}`}
                           </Text>
                         </Pressable>
 

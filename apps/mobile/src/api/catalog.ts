@@ -8,8 +8,14 @@ import type {
 } from '@app/shared';
 import { api } from './client';
 
-/** Drops undefined and empty values so the URL carries only real filters. */
-function queryString(params: Record<string, string | boolean | undefined>): string {
+/**
+ * Drops undefined and empty values so the URL carries only real filters.
+ *
+ * Zero is not one of them. A latitude of 0 is the Gulf of Guinea and a
+ * longitude of 0 runs through London; dropping either because it is falsy
+ * would turn a position into half of one, which the server then ignores.
+ */
+function queryString(params: Record<string, string | number | boolean | undefined>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === false || value === '') continue;
