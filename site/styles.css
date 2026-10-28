@@ -1215,6 +1215,13 @@ img {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  /* The menu button's bars cross into an X over 220ms. Everything else on
+     this page that moves is answered here; this was added later and missed
+     it, which is exactly how a reduced-motion rule quietly stops being true
+     of the whole page. */
+  .nav-toggle-bars i {
+    transition: none;
+  }
   .promo-track {
     animation: none;
     width: 100%;
