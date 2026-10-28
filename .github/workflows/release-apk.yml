@@ -1,0 +1,162 @@
+# Builds the Android APK and cuts the release, on GitHub's machines.
+#
+# The local path in docs/shipping-the-app.md still works and is still the
+# faster one when it works. It stopped working on the machine this is
+# developed on: `expo-modules-autolinking react-native-config` sits at 0% CPU
+# inside `readdir` and never returns, because the checkout lives under a
+# folder that is synced to iCloud and every recursive directory read goes
+# through the file provider. A plain `find` over node_modules there takes
+# longer than six minutes. Nothing in the repository causes that and nothing
+# in the repository can fix it — but a runner with an ordinary disk is
+# unaffected, and the build is the same build.
+#
+# It is also simply better placed here. A release built on a laptop carries
+# whatever that laptop happened to have; this one starts from the lockfile
+# every time.
+#
+# Signing, which is the part that has to be right. The release block of the
+# generated build.gradle is signed with `signingConfigs.debug`, and
+# `android/` is gitignored, so that keystore is the stock Android debug
+# keystore `expo prebuild` writes — identical on every machine. The published
+# v1.0.9 APK and a locally prebuilt keystore were compared before this was
+# written and carry the same certificate:
+#
+#   SHA-256 fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c
+#
+# That matters more than it looks. Android refuses an update signed by a
+# different key, so a build signed elsewhere would force everybody running
+# v1.0.9 to uninstall first. The check below fails the run rather than
+# shipping an APK nobody can upgrade into.
+
+name: Build and release the Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and check, but publish nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-apk
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install the workspace
+        run: npm ci
+
+      # The version is read from app.json rather than typed into the run, so
+      # the tag, the APK's versionName and the release title cannot disagree.
+      - name: Read the version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./apps/mobile/app.json').expo.version")
+          CODE=$(node -p "require('./apps/mobile/app.json').expo.android.versionCode")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "Building $VERSION (versionCode $CODE)"
+
+      - name: Refuse to release a tag that already exists
+        if: ${{ !inputs.dry_run }}
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "::error::v${{ steps.version.outputs.version }} is already released. Bump expo.version and expo.android.versionCode in apps/mobile/app.json."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Generate the native project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android
+
+      - name: Build the release APK
+        working-directory: apps/mobile/android
+        env:
+          # The one line that decides whether the APK can reach anything. The
+          # checked-in apps/mobile/.env points at localhost for development,
+          # and a build that inherits it is dead on every real phone.
+          EXPO_PUBLIC_API_URL: https://boxoffice-api-i1ra.onrender.com
+        run: ./gradlew assembleRelease --no-daemon
+
+      # docs/shipping-the-app.md calls this the one failure that looks like a
+      # broken app rather than a broken build, so it is a gate, not a note.
+      - name: Check the API URL reached the bundle
+        working-directory: apps/mobile/android/app/build/outputs/apk/release
+        run: |
+          unzip -p app-release.apk assets/index.android.bundle > /tmp/bundle.hbc
+          python3 - <<'PY'
+          data = open('/tmp/bundle.hbc', 'rb').read()
+          needle = 'onrender'
+          ascii_hits = data.count(needle.encode('ascii'))
+          utf16_hits = data.count(needle.encode('utf-16-le'))
+          print(f'ascii {ascii_hits}  utf16 {utf16_hits}')
+          if ascii_hits + utf16_hits == 0:
+              raise SystemExit(
+                  'The production API URL is not in the bundle. The build fell back to '
+                  'the development default and would be dead on every real phone.'
+              )
+          PY
+
+      - name: Check it is signed with the key the last release used
+        working-directory: apps/mobile/android/app/build/outputs/apk/release
+        run: |
+          EXPECTED=fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
+          ACTUAL=$("$APKSIGNER" verify --print-certs app-release.apk \
+            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          echo "expected $EXPECTED"
+          echo "actual   $ACTUAL"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::Signed with a different key. Android refuses an update signed by a different key, so this APK would force everyone on the previous version to uninstall first."
+            exit 1
+          fi
+
+      # The name is load-bearing: /releases/latest/download/boxoffice-android.apk
+      # is what every Download button on the site points at, and it only
+      # resolves while the asset is called exactly this.
+      - name: Name the asset the way the site expects
+        working-directory: apps/mobile/android/app/build/outputs/apk/release
+        run: |
+          cp app-release.apk boxoffice-android.apk
+          ls -la boxoffice-android.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boxoffice-android-${{ steps.version.outputs.version }}
+          path: apps/mobile/android/app/build/outputs/apk/release/boxoffice-android.apk
+          retention-days: 14
+
+      - name: Publish the release
+        if: ${{ !inputs.dry_run }}
+        working-directory: apps/mobile/android/app/build/outputs/apk/release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "Boxoffice ${{ steps.version.outputs.version }} for Android" \
+            --generate-notes \
+            boxoffice-android.apk

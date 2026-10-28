@@ -108,6 +108,37 @@ resource shrinking. Halving it was `expo-build-properties`, and the key is
 `buildArchs` — not `reactNativeArchitectures`, which is what I tried first and
 which silently changes nothing.
 
+### On GitHub's machines
+
+The one that runs now. `.github/workflows/release-apk.yml`, triggered by hand:
+
+```bash
+gh workflow run release-apk.yml
+```
+
+It reads the version from `app.json`, refuses a tag that already exists,
+prebuilds, builds, and then checks two things before it publishes anything:
+
+- **The API URL reached the bundle.** The failure below, as a gate rather than
+  a note.
+- **The APK is signed with the same key as the last release.** The release
+  block is signed with `signingConfigs.debug` and `android/` is gitignored, so
+  that keystore is the stock one `expo prebuild` writes — the same on every
+  machine, which is why this works at all. Android refuses an update signed by
+  a different key, so a build signed elsewhere would make everybody on the
+  previous version uninstall first. The expected SHA-256 is pinned in the
+  workflow.
+
+`--dry_run` builds and checks without publishing, and uploads the APK as a
+run artifact either way.
+
+This exists because the local path stopped working on the development
+machine: `expo-modules-autolinking react-native-config` sits at 0% CPU inside
+`readdir` and never returns, because the checkout lives under a folder synced
+to iCloud and every recursive directory read goes through the file provider.
+A plain `find` over `node_modules` there takes over six minutes. Nothing in
+the repository causes it; a runner with an ordinary disk is unaffected.
+
 ### Locally, with Gradle
 
 What produced that build. Needs JDK 17 and the Android SDK command line tools:
