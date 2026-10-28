@@ -33,9 +33,12 @@ import { idempotencyKey } from '../../lib/idempotency';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
 import { subjectTitle } from '../../features/catalog/subject';
+import { useAuth } from '../../features/auth/auth-provider';
+import { signInThenReturn } from '../../features/auth/return-to';
 
 export default function SeatMapScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { isSignedIn } = useAuth();
   const router = useRouter();
   const { colors, spacing, elevation } = useTheme();
   const insets = useSafeAreaInsets();
@@ -469,12 +472,29 @@ export default function SeatMapScreen() {
             </View>
 
             <Button
-              label={salesClosed ? 'Booking closed' : 'Proceed to pay'}
+              /**
+               * The seat map opens to anybody — the API answers it
+               * unauthenticated, and choosing seats is most of the decision.
+               * Holding them is the first thing that needs an account, so it
+               * is the first thing that asks for one, and it says so on the
+               * button rather than springing a form on the tap.
+               */
+              label={
+                salesClosed ? 'Booking closed' : isSignedIn ? 'Proceed to pay' : 'Sign in to book'
+              }
               emphasis="commit"
               disabled={salesClosed}
               loading={hold.isPending}
               onPress={() => {
                 setHoldError(null);
+                if (!isSignedIn) {
+                  // Back to this seat map afterwards. The selection does not
+                  // survive the trip — the seats were never held, and five
+                  // minutes of signing up is long enough that promising them
+                  // would be a lie — but the room, the film and the time do.
+                  signInThenReturn(`/showtime/${id}`);
+                  return;
+                }
                 hold.mutate(selection.selectedIds);
               }}
             />

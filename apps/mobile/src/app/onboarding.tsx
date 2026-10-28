@@ -77,7 +77,10 @@ export default function Onboarding() {
 
   const finish = useCallback(() => {
     onboarding.complete();
-    router.replace('/(auth)/sign-in');
+    // Into the app, not into a form. The intro's last word is about going to
+    // the cinema; following it with a password was the app asking to be paid
+    // in effort before showing anybody anything.
+    router.replace('/(tabs)');
   }, [onboarding, router]);
 
   const scrollHandler = useAnimatedScrollHandler({

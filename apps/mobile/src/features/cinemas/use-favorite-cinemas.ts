@@ -1,7 +1,10 @@
 import type { CinemaDirectoryEntry } from '@app/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePathname } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { favoriteCinemasApi } from '../../api/favorite-cinemas';
+import { useAuth } from '../auth/auth-provider';
+import { signInThenReturn } from '../auth/return-to';
 import { successFeedback, tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
 import { withoutSavedCinema, withSavedCinema } from './favorite-cinemas-cache';
@@ -12,12 +15,18 @@ import { withoutSavedCinema, withSavedCinema } from './favorite-cinemas-cache';
  * heart that waits for a round trip feels broken, one that lies is worse.
  */
 export function useFavoriteCinemas() {
+  const { isSignedIn } = useAuth();
+  const here = usePathname();
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: queryKeys.favoriteCinemas,
     queryFn: favoriteCinemasApi.list,
     staleTime: 60_000,
+    // Somebody's own list, so it is not asked for until there is a
+    // somebody. A 401 here would sign the session out and bounce a visitor
+    // who is only browsing to the sign-in form.
+    enabled: isSignedIn,
   });
 
   const savedIds = useMemo(() => new Set((query.data ?? []).map((c) => c.id)), [query.data]);
@@ -43,12 +52,19 @@ export function useFavoriteCinemas() {
 
   const toggle = useCallback(
     (cinema: CinemaDirectoryEntry) => {
+      // Pinned cinemas are kept for somebody. Same reasoning as the watchlist
+      // heart: the tap is answered with the form, not with a 401.
+      if (!isSignedIn) {
+        tapFeedback();
+        signInThenReturn(here);
+        return;
+      }
       const save = !savedIds.has(cinema.id);
       if (save) successFeedback();
       else tapFeedback();
       mutation.mutate({ cinema, save });
     },
-    [mutation, savedIds],
+    [isSignedIn, here, mutation, savedIds],
   );
 
   return {

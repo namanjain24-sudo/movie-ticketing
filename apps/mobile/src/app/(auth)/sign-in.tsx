@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginInput } from '@app/shared';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, View } from 'react-native';
@@ -13,7 +13,11 @@ import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
 export default function SignIn() {
-  const router = useRouter();
+  /**
+   * Where they were when the app asked. Somebody who has chosen two seats and
+   * tapped Pay is not asking to see the home screen.
+   */
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const { spacing } = useTheme();
   const signIn = useAuthStore((s) => s.signIn);
   const [formError, setFormError] = useState<string | null>(null);
@@ -33,7 +37,9 @@ export default function SignIn() {
     setFormError(null);
     try {
       await signIn(values.email, values.password);
-      router.replace('/(tabs)');
+      // No navigation here. `(auth)/_layout` redirects the moment the store
+      // says somebody is signed in, and two of them racing is how `next` got
+      // lost.
     } catch (err) {
       setFormError(authErrorMessage(err, 'Could not sign in. Please try again.'));
     }
@@ -46,7 +52,7 @@ export default function SignIn() {
       footer={
         <View style={{ flexDirection: 'row', gap: spacing.xs, justifyContent: 'center' }}>
           <Text tone="muted">New here?</Text>
-          <Link href="/(auth)/sign-up">
+          <Link href={{ pathname: '/(auth)/sign-up', params: next ? { next } : {} }}>
             <Text tone="primary" variant="label">
               Create an account
             </Text>

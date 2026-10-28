@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterInput } from '@app/shared';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
@@ -13,7 +13,8 @@ import { useAuthStore } from '../../features/auth/auth-store';
 import { useTheme } from '../../theme';
 
 export default function SignUp() {
-  const router = useRouter();
+  /** Carried through from sign-in, so the trip ends where it started. */
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const { spacing } = useTheme();
   const signUp = useAuthStore((s) => s.signUp);
   const [formError, setFormError] = useState<string | null>(null);
@@ -34,7 +35,9 @@ export default function SignUp() {
     setFormError(null);
     try {
       await signUp(values.name, values.email, values.password);
-      router.replace('/(tabs)');
+      // No navigation here. `(auth)/_layout` redirects the moment the store
+      // says somebody is signed in, and two of them racing is how `next` got
+      // lost.
     } catch (err) {
       setFormError(authErrorMessage(err, 'Could not create your account. Please try again.'));
     }
@@ -47,7 +50,7 @@ export default function SignUp() {
       footer={
         <View style={{ flexDirection: 'row', gap: spacing.xs, justifyContent: 'center' }}>
           <Text tone="muted">Already have an account?</Text>
-          <Link href="/(auth)/sign-in">
+          <Link href={{ pathname: '/(auth)/sign-in', params: next ? { next } : {} }}>
             <Text tone="primary" variant="label">
               Sign in
             </Text>

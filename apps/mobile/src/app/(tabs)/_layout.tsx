@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
-import { Redirect, Tabs } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
 import type { ColorValue } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -58,7 +58,16 @@ export default function TabsLayout() {
   });
   const upcomingCount = bookings.data?.upcoming.length ?? 0;
 
-  if (!isSignedIn) return <Redirect href="/(auth)/sign-in" />;
+  /**
+   * No guard here any more.
+   *
+   * This was the only one in the app, and it covered the whole of it: the
+   * catalogue, the cinemas, the events, every film page. The API asks for an
+   * account to *take* a seat and for nothing else, so the password this stood
+   * behind was buying nobody anything. Signing in is now asked for at the two
+   * tabs that are somebody's own account and at the moment seats are held,
+   * which is where it means something.
+   */
 
   return (
     <Tabs

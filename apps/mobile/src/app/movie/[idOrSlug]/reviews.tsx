@@ -12,6 +12,7 @@ import { reviewsApi } from '../../../api/reviews';
 import { EmptyState, ErrorState } from '../../../components/query-state';
 import { AppBar, Button, Skeleton, Text } from '../../../components/ui';
 import { useAuth } from '../../../features/auth/auth-provider';
+import { signInThenReturn } from '../../../features/auth/return-to';
 import { RatingBreakdown } from '../../../features/reviews/rating-breakdown';
 import { ReviewCard } from '../../../features/reviews/review-card';
 import { ReviewComposer } from '../../../features/reviews/review-composer';
@@ -275,7 +276,9 @@ export default function ReviewsScreen() {
           variant={data.mine ? 'secondary' : 'primary'}
           onPress={() => {
             if (!isSignedIn) {
-              router.push('/(auth)/sign-in');
+              // Back to this film's reviews afterwards, with the composer a
+              // tap away, rather than to the home screen.
+              signInThenReturn(`/movie/${idOrSlug}/reviews`);
               return;
             }
             setWriteError(null);

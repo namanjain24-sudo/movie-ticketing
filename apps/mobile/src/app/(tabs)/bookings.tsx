@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { bookingApi } from '../../api/booking';
+import { useAuth } from '../../features/auth/auth-provider';
+import { SignedOutState } from '../../features/auth/signed-out-state';
 import { EmptyState, ErrorState } from '../../components/query-state';
 import { AppBar, Skeleton, Text } from '../../components/ui';
 import { BookingCard } from '../../features/bookings/booking-card';
@@ -22,12 +24,18 @@ export default function Bookings() {
   const { colors, radius, spacing } = useTheme();
   const [tab, setTab] = useState<Tab>('upcoming');
 
+  const { isSignedIn } = useAuth();
+
   const bookings = useQuery({
     queryKey: queryKeys.bookings,
     queryFn: bookingApi.bookings,
     // Coming back from a confirmed payment should not show a stale list.
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+    // Without this a signed-out visitor's first tap on Tickets would 401, and
+    // a 401 signs the session out and replaces the screen with the sign-in
+    // form — turning a browse into a bounce.
+    enabled: isSignedIn,
   });
 
   const list: Booking[] =
@@ -87,7 +95,15 @@ export default function Bookings() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <AppBar title="My bookings" subtitle="Tickets" />
 
-      {bookings.isPending ? (
+      {!isSignedIn ? (
+        // Checked before `isPending`, because a disabled query never leaves
+        // pending — a skeleton would sit here for the rest of the session.
+        <SignedOutState
+          icon="ticket-outline"
+          title="Your tickets live here"
+          message="Sign in to see what you have booked, add it to your calendar, or cancel."
+        />
+      ) : bookings.isPending ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
           <Skeleton style={{ height: 44, borderRadius: 10 }} />
           <Skeleton style={{ height: 116, borderRadius: 14 }} />

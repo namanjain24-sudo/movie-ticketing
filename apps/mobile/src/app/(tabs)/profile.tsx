@@ -11,7 +11,9 @@ import { ErrorState } from '../../components/query-state';
 import { AppBar, Button, Skeleton, Text, TextField } from '../../components/ui';
 import { TierCard } from '../../features/bookings/tier-card';
 import { useWatchlist } from '../../features/watchlist/use-watchlist';
+import { useAuth } from '../../features/auth/auth-provider';
 import { useAuthStore } from '../../features/auth/auth-store';
+import { SignedOutState } from '../../features/auth/signed-out-state';
 import { appVersion } from '../../lib/config';
 import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
@@ -19,6 +21,7 @@ import { useTheme, type ThemePreference } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
 export default function Profile() {
+  const { isSignedIn } = useAuth();
   const router = useRouter();
   const { colors, radius, spacing } = useTheme();
   const queryClient = useQueryClient();
@@ -34,15 +37,24 @@ export default function Profile() {
     isError,
     error,
     refetch,
-  } = useQuery({ queryKey: queryKeys.me, queryFn: authApi.me });
+    // Every query on this screen is somebody's own account, so every one of
+    // them is gated. A 401 here signs the session out and replaces the screen
+    // with the sign-in form, which for a visitor who has never signed in
+    // would be a bounce rather than an answer.
+  } = useQuery({ queryKey: queryKeys.me, queryFn: authApi.me, enabled: isSignedIn });
 
   // Not decoration: how many tickets you hold is the thing you came here for
   // after your own name.
-  const bookings = useQuery({ queryKey: queryKeys.bookings, queryFn: bookingApi.bookings });
+  const bookings = useQuery({
+    queryKey: queryKeys.bookings,
+    queryFn: bookingApi.bookings,
+    enabled: isSignedIn,
+  });
   const watchlist = useWatchlist();
   const loyaltyBalance = useQuery({
     queryKey: queryKeys.loyaltyBalance,
     queryFn: loyaltyApi.balance,
+    enabled: isSignedIn,
   });
 
   const save = useMutation({
@@ -54,6 +66,21 @@ export default function Profile() {
       setEditing(false);
     },
   });
+
+  // Before `isPending`, because a disabled query never leaves pending and a
+  // skeleton would sit here for the rest of the session.
+  if (!isSignedIn) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <AppBar title="Profile" subtitle="Account" />
+        <SignedOutState
+          icon="person-circle-outline"
+          title="Sign in to Boxoffice"
+          message="Keep your tickets, your watchlist and your points in one place."
+        />
+      </View>
+    );
+  }
 
   if (isPending) return <ProfileSkeleton />;
   if (isError || !user) {
@@ -214,7 +241,9 @@ export default function Profile() {
           onPress={async () => {
             await signOut();
             queryClient.clear();
-            router.replace('/(auth)/sign-in');
+            // Back to browsing, which no longer needs an account. Signing out
+            // is not a request to be shown the door.
+            router.replace('/(tabs)');
           }}
         />
 
