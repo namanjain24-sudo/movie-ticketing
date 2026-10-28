@@ -112,6 +112,17 @@ jobs:
           EXPO_PUBLIC_API_URL: https://boxoffice-api-i1ra.onrender.com
         run: ./gradlew assembleRelease --no-daemon
 
+      - uses: actions/upload-artifact@v4
+        # Even when a gate below fails: a build that is refused is exactly the
+        # one somebody needs to look at.
+        if: always()
+        with:
+          name: boxoffice-android-${{ steps.version.outputs.version }}
+          # The build's own name. The rename to boxoffice-android.apk happens
+          # after the gates, and this upload runs before them on purpose.
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14
+
       # docs/shipping-the-app.md calls this the one failure that looks like a
       # broken app rather than a broken build, so it is a gate, not a note.
       - name: Check the API URL reached the bundle
@@ -134,16 +145,35 @@ jobs:
       - name: Check it is signed with the key the last release used
         working-directory: apps/mobile/android/app/build/outputs/apk/release
         run: |
+          set -o pipefail
           EXPECTED=fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c
-          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
-          ACTUAL=$("$APKSIGNER" verify --print-certs app-release.apk \
-            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          echo "expected $EXPECTED"
-          echo "actual   $ACTUAL"
-          if [ "$ACTUAL" != "$EXPECTED" ]; then
-            echo "::error::Signed with a different key. Android refuses an update signed by a different key, so this APK would force everyone on the previous version to uninstall first."
+
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner is not in $ANDROID_HOME/build-tools. Without it this APK cannot be checked, and an unchecked signature is the one thing this gate exists to prevent."
+            ls -la "$ANDROID_HOME/build-tools" || true
             exit 1
           fi
+          echo "using $APKSIGNER"
+
+          # Printed in full first. An empty `actual` told us nothing the first
+          # time this ran, and a gate that cannot say what it saw is a gate
+          # nobody can act on.
+          "$APKSIGNER" verify --print-certs app-release.apk | tee /tmp/certs.txt
+
+          ACTUAL=$(sed -n 's/.*SHA-256 digest: *//p' /tmp/certs.txt | head -1 | tr 'A-Z' 'a-z' | tr -d ' ')
+          echo "expected: $EXPECTED"
+          echo "actual:   ${ACTUAL:-(none found)}"
+
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::Could not read a certificate digest out of apksigner's output (above). Not shipping an APK whose signature is unknown."
+            exit 1
+          fi
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::Signed with a different key. Android refuses an update signed by a different key, so this APK would force everyone on v1.0.9 to uninstall before they could update."
+            exit 1
+          fi
+          echo "Signature matches the key v1.0.9 was signed with."
 
       # The name is load-bearing: /releases/latest/download/boxoffice-android.apk
       # is what every Download button on the site points at, and it only
@@ -153,12 +183,6 @@ jobs:
         run: |
           cp app-release.apk boxoffice-android.apk
           ls -la boxoffice-android.apk
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: boxoffice-android-${{ steps.version.outputs.version }}
-          path: apps/mobile/android/app/build/outputs/apk/release/boxoffice-android.apk
-          retention-days: 14
 
       - name: Publish the release
         if: ${{ !inputs.dry_run }}
