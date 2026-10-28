@@ -10,7 +10,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, ScrollView, View, type AppStateStatus } from 'react-native';
+import {
+  Alert,
+  AppState,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+  type AppStateStatus,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { bookingApi } from '../../api/booking';
 import { concessionsApi } from '../../api/concessions';
@@ -22,6 +30,7 @@ import { AppBar, Button, Card, Text } from '../../components/ui';
 import { ConcessionsBox } from '../../features/checkout/concessions-box';
 import { LoyaltyBox } from '../../features/checkout/loyalty-box';
 import { useCountdown } from '../../features/checkout/use-countdown';
+import { joinWords } from '../../lib/format';
 import {
   cancelHoldExpiryNudge,
   scheduleHoldExpiryNudge,
@@ -198,6 +207,35 @@ export default function Checkout() {
     return () => clearTimeout(timer);
   }, [paymentId]);
 
+  /**
+   * Giving the seats back.
+   *
+   * A hold runs for five minutes whether or not anybody still wants it, and
+   * until now nothing in the app could end one early: somebody who decided
+   * against these seats simply closed the screen, and the next person to want
+   * row G waited out the rest of the clock for seats nobody was buying. The
+   * endpoint for this was written with exactly that in mind — "returns the
+   * seats immediately rather than making the next user wait out the TTL" —
+   * and had no caller.
+   *
+   * Deliberately not wired to the back gesture. Backing out of checkout is
+   * usually somebody going to compare a different showtime, and the held-seats
+   * strip on the tabs exists to bring them back to this. Giving the seats up
+   * is a different decision and gets its own control.
+   */
+  const release = useMutation({
+    mutationFn: () => bookingApi.releaseHold(holdId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.activeHolds });
+      // The map this came from is now wrong by exactly these seats.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.seatMap(held.showtimeId) });
+      cancelHoldExpiryNudge(holdId);
+      // Back to the room rather than to the tabs: somebody who let go of row G
+      // is usually after a different row, not a different evening.
+      router.replace(`/showtime/${held.showtimeId}`);
+    },
+  });
+
   const keyRef = useRef<string | null>(null);
   const pay = useMutation({
     mutationFn: () => {
@@ -274,6 +312,8 @@ export default function Checkout() {
           Math.floor((held.subtotalMinor - (applied?.discountMinor ?? 0)) / POINT_VALUE_MINOR),
         );
   const expired = countdown.hasExpired || held.status === 'EXPIRED' || held.status === 'RELEASED';
+  /** "G8 and G9", so the confirmation names what is being given up. */
+  const seatList = joinWords(held.seats.map((seat) => `${seat.rowLabel}${seat.number}`));
   /**
    * `pay.isPending` belongs here, not just `paymentId`. The id only exists
    * once the charge has come back, so between tapping Pay and that response
@@ -560,9 +600,41 @@ export default function Checkout() {
             pay.mutate();
           }}
         />
+
+        {/*
+          Below the commit, quiet, and gone once a payment is in flight —
+          there is nothing to give back at that point, and a control that
+          looks live while it cannot act is worse than no control.
+        */}
+        {expired || waiting || pay.isPending ? null : (
+          <Button
+            label={release.isPending ? 'Releasing' : 'Release these seats'}
+            variant="ghost"
+            loading={release.isPending}
+            onPress={() => confirmRelease(seatList, () => release.mutate())}
+          />
+        )}
       </View>
     </View>
   );
+}
+
+/**
+ * Asks before giving the seats up, because the seats are gone the moment it
+ * is answered and there is no undo — the next person can take them.
+ */
+function confirmRelease(seats: string, onConfirm: () => void) {
+  const body = `${seats} go back on sale straight away. Nothing has been charged.`;
+
+  if (Platform.OS === 'web') {
+    if (globalThis.confirm(`Release these seats?\n\n${body}`)) onConfirm();
+    return;
+  }
+
+  Alert.alert('Release these seats?', body, [
+    { text: 'Keep them', style: 'cancel' },
+    { text: 'Release', style: 'destructive', onPress: onConfirm },
+  ]);
 }
 
 function Row({
