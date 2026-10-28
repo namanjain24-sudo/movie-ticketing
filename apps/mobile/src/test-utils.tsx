@@ -31,10 +31,22 @@ afterEach(() => {
 function Providers({ children }: { children: ReactNode }) {
   // Fresh per render, not the app's own singleton: a shared cache would leak
   // query state between tests that otherwise have nothing to do with one
-  // another. No retries — a test should fail fast, not wait out a backoff.
+  // another.
   const [client] = useState(() => {
     const created = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        // No retries: a test should fail fast, not wait out a backoff.
+        //
+        // No cache retention either. `gcTime` defaults to five minutes, and
+        // every query and mutation that settles arms a timer for that long.
+        // A mutation started by a press settles *after* the test's assertions
+        // have run, so its timer is armed after the teardown above has already
+        // let go of the client, and nothing is left to clear it. That is all
+        // "a worker process has failed to exit gracefully" ever was: a suite
+        // holding five-minute timers over caches no test will read again.
+        queries: { retry: false, gcTime: 0 },
+        mutations: { retry: false, gcTime: 0 },
+      },
     });
     clients.push(created);
     return created;
