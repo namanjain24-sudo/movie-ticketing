@@ -112,7 +112,8 @@ function Banner({ held }: { held: ActiveHold }) {
         <Ionicons name="timer-outline" size={18} color={accent} />
         <View style={{ flex: 1, gap: 1 }}>
           <Text variant="label" numberOfLines={1}>
-            {held.hold.seats.length} {held.hold.seats.length === 1 ? 'seat' : 'seats'} held · {title}
+            {held.hold.seats.length} {held.hold.seats.length === 1 ? 'seat' : 'seats'} held ·{' '}
+            {title}
           </Text>
           <Text variant="caption" tone="muted" numberOfLines={1} style={NUMERIC}>
             {seats} · {formatMoney(held.hold.totalMinor, held.hold.currency)}

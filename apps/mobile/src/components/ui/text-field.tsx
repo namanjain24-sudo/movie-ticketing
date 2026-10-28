@@ -41,59 +41,59 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         {label}
       </Text>
       <View>
-      <TextInput
-        ref={ref}
-        secureTextEntry={canReveal && !revealed}
-        accessibilityLabel={label}
-        accessibilityHint={hint}
-        placeholderTextColor={colors.textMuted}
-        onFocus={(e) => {
-          setFocused(true);
-          onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setFocused(false);
-          onBlur?.(e);
-        }}
-        style={[
-          styles.input,
-          {
-            backgroundColor: colors.surface,
-            borderColor,
-            borderRadius: radius.md,
-            color: colors.text,
-            paddingHorizontal: spacing.md,
-            // Room for the toggle, so a long password does not run under it.
-            paddingRight: canReveal ? HIT_SIZE + spacing.sm : spacing.md,
-          },
-          style,
-        ]}
-        {...rest}
-      />
-      {canReveal ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
-          accessibilityState={{ selected: revealed }}
-          onPress={() => setRevealed((v) => !v)}
-          hitSlop={6}
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: HIT_SIZE,
-            alignItems: 'center',
-            justifyContent: 'center',
+        <TextInput
+          ref={ref}
+          secureTextEntry={canReveal && !revealed}
+          accessibilityLabel={label}
+          accessibilityHint={hint}
+          placeholderTextColor={colors.textMuted}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
           }}
-        >
-          <Ionicons
-            name={revealed ? 'eye-off-outline' : 'eye-outline'}
-            size={20}
-            color={colors.textMuted}
-          />
-        </Pressable>
-      ) : null}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.surface,
+              borderColor,
+              borderRadius: radius.md,
+              color: colors.text,
+              paddingHorizontal: spacing.md,
+              // Room for the toggle, so a long password does not run under it.
+              paddingRight: canReveal ? HIT_SIZE + spacing.sm : spacing.md,
+            },
+            style,
+          ]}
+          {...rest}
+        />
+        {canReveal ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+            accessibilityState={{ selected: revealed }}
+            onPress={() => setRevealed((v) => !v)}
+            hitSlop={6}
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: HIT_SIZE,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons
+              name={revealed ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={colors.textMuted}
+            />
+          </Pressable>
+        ) : null}
       </View>
       {error ? (
         <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">

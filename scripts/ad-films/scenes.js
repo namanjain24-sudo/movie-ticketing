@@ -147,7 +147,7 @@ function stage(ctx, w, h, palette, t) {
   const horizon = h * 0.52;
   for (let i = 0; i < 14; i += 1) {
     // Rows bunch towards the horizon, and the scroll offset makes them move.
-    const p = ((i + (t * 2 % 1)) / 14) ** 2.2;
+    const p = ((i + ((t * 2) % 1)) / 14) ** 2.2;
     const y = horizon + p * (h - horizon) * 1.25;
     if (y > h) continue;
     ctx.globalAlpha = 0.35 * (1 - p) + 0.05;
@@ -504,11 +504,7 @@ function archforge(ctx, t, w, h, p) {
 /** The market line. A fixed walk — the same curve in every render. */
 function marketY(baseY, p) {
   return (
-    baseY +
-    Math.sin(p * 7.2) * 26 +
-    Math.sin(p * 3.1 + 1.2) * 18 -
-    p * 70 +
-    Math.sin(p * 17) * 5
+    baseY + Math.sin(p * 7.2) * 26 + Math.sin(p * 3.1 + 1.2) * 18 - p * 70 + Math.sin(p * 17) * 5
   );
 }
 

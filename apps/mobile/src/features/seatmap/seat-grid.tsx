@@ -1,9 +1,4 @@
-import {
-  SEAT_TIER_LABELS,
-  formatMoney,
-  type SeatMap,
-  type SeatMapSeat,
-} from '@app/shared';
+import { SEAT_TIER_LABELS, formatMoney, type SeatMap, type SeatMapSeat } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   forwardRef,

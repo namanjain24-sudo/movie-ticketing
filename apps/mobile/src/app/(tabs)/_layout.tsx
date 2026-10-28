@@ -73,91 +73,91 @@ export default function TabsLayout() {
   return (
     <View style={{ flex: 1 }}>
       <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-        },
-        sceneStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon
-              name={focused ? 'home' : 'home-outline'}
-              color={color}
-              size={size}
-              focused={focused}
-            />
-          ),
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textMuted,
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+          },
+          sceneStyle: { backgroundColor: colors.background },
         }}
-      />
-      {/* Live events sit next to films, because they are the other half of
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon
+                name={focused ? 'home' : 'home-outline'}
+                color={color}
+                size={size}
+                focused={focused}
+              />
+            ),
+          }}
+        />
+        {/* Live events sit next to films, because they are the other half of
           what this app sells, not a sub-section of the cinema directory. */}
-      <Tabs.Screen
-        name="events"
-        options={{
-          title: 'Events',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon
-              name={focused ? 'musical-notes' : 'musical-notes-outline'}
-              color={color}
-              size={size}
-              focused={focused}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="cinemas"
-        options={{
-          title: 'Cinemas',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon
-              name={focused ? 'location' : 'location-outline'}
-              color={color}
-              size={size}
-              focused={focused}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="bookings"
-        options={{
-          title: 'Tickets',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon
-              name={focused ? 'ticket' : 'ticket-outline'}
-              color={color}
-              size={size}
-              focused={focused}
-            />
-          ),
-          tabBarBadge: upcomingCount > 0 ? upcomingCount : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.primarySolid },
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon
-              name={focused ? 'person-circle' : 'person-circle-outline'}
-              color={color}
-              size={size}
-              focused={focused}
-            />
-          ),
-        }}
-      />
+        <Tabs.Screen
+          name="events"
+          options={{
+            title: 'Events',
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon
+                name={focused ? 'musical-notes' : 'musical-notes-outline'}
+                color={color}
+                size={size}
+                focused={focused}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="cinemas"
+          options={{
+            title: 'Cinemas',
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon
+                name={focused ? 'location' : 'location-outline'}
+                color={color}
+                size={size}
+                focused={focused}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="bookings"
+          options={{
+            title: 'Tickets',
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon
+                name={focused ? 'ticket' : 'ticket-outline'}
+                color={color}
+                size={size}
+                focused={focused}
+              />
+            ),
+            tabBarBadge: upcomingCount > 0 ? upcomingCount : undefined,
+            tabBarBadgeStyle: { backgroundColor: colors.primarySolid },
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon
+                name={focused ? 'person-circle' : 'person-circle-outline'}
+                color={color}
+                size={size}
+                focused={focused}
+              />
+            ),
+          }}
+        />
       </Tabs>
       {/* Between the screen and the tab bar, not above the screen: every tab
           here owns its own AppBar against the status bar, and a strip pushed

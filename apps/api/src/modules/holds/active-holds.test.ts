@@ -40,8 +40,7 @@ describe('active holds', () => {
       .send({ showSeatIds: seats })
       .expect(201);
 
-  const list = (who: TestUser) =>
-    request(app).get('/v1/holds/active').set(who.auth).expect(200);
+  const list = (who: TestUser) => request(app).get('/v1/holds/active').set(who.auth).expect(200);
 
   it('needs a session', async () => {
     await request(app).get('/v1/holds/active').expect(401);

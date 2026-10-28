@@ -32,9 +32,11 @@ export function PasswordRules({ value }: { value: string }) {
       accessibilityRole="summary"
       accessibilityLabel={
         started
-          ? `Password needs: ${PASSWORD_RULES.filter((r) => !r.test(value))
-              .map((r) => r.label)
-              .join(', ') || 'nothing more'}`
+          ? `Password needs: ${
+              PASSWORD_RULES.filter((r) => !r.test(value))
+                .map((r) => r.label)
+                .join(', ') || 'nothing more'
+            }`
           : `Password needs ${PASSWORD_RULES.map((r) => r.label).join(', ')}`
       }
       style={{ gap: spacing['2xs'], marginTop: spacing['2xs'] }}

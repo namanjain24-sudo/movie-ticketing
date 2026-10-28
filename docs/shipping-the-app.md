@@ -209,7 +209,7 @@ points at. Name the file `boxoffice-1.0.1-android.apk` and the buttons 404 on
 the day you ship.
 
 Up to and including v1.0.7 the buttons pointed at `/releases/latest`, which is
-the release *page*, not the file. On a phone GitHub collapses the assets list,
+the release _page_, not the file. On a phone GitHub collapses the assets list,
 so the APK was two taps and a scroll past where people stopped looking, and
 the commonest report was that the download did not work at all. The version
 still lives in the release title and in the manifest; only the file name is

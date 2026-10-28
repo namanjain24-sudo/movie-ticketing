@@ -26,7 +26,11 @@ async function threeCinemasOneFilm() {
   const middle = await createShowtime();
   const far = await createShowtime();
 
-  const place = async (made: Awaited<ReturnType<typeof createShowtime>>, name: string, at: { lat: number; lng: number }) => {
+  const place = async (
+    made: Awaited<ReturnType<typeof createShowtime>>,
+    name: string,
+    at: { lat: number; lng: number },
+  ) => {
     const screen = await prisma.screen.findUniqueOrThrow({
       where: { id: made.screenId },
       select: { cinemaId: true },
@@ -67,11 +71,9 @@ describe('GET /v1/showtimes', () => {
       'Zed Cinema, Colaba',
     ]);
     // And says so rather than guessing a number it cannot know.
-    expect(res.body.cinemas.map((c: { cinema: { distanceKm: number | null } }) => c.cinema.distanceKm)).toEqual([
-      null,
-      null,
-      null,
-    ]);
+    expect(
+      res.body.cinemas.map((c: { cinema: { distanceKm: number | null } }) => c.cinema.distanceKm),
+    ).toEqual([null, null, null]);
   });
 
   it('puts the nearest cinema first once the caller says where they are', async () => {

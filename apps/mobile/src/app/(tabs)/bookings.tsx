@@ -175,19 +175,19 @@ export default function Bookings() {
             }
             ListEmptyComponent={
               <EmptyState
-                  icon="ticket-outline"
-                  title={tab === 'upcoming' ? 'No upcoming tickets' : 'Nothing in your history yet'}
-                  message={
-                    tab === 'upcoming'
-                      ? 'Book a film and your ticket will wait for you here.'
-                      : 'Films you have already seen will appear here.'
-                  }
-                  action={
-                    tab === 'upcoming'
-                      ? { label: 'Browse films', onPress: () => router.push('/(tabs)') }
-                      : undefined
-                  }
-                />
+                icon="ticket-outline"
+                title={tab === 'upcoming' ? 'No upcoming tickets' : 'Nothing in your history yet'}
+                message={
+                  tab === 'upcoming'
+                    ? 'Book a film and your ticket will wait for you here.'
+                    : 'Films you have already seen will appear here.'
+                }
+                action={
+                  tab === 'upcoming'
+                    ? { label: 'Browse films', onPress: () => router.push('/(tabs)') }
+                    : undefined
+                }
+              />
             }
           />
         </Animated.View>

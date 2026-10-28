@@ -260,28 +260,29 @@ export default function NowShowing() {
       </View>
     ) : null;
 
-  const footer =
-    searching ? eventResults : narrowed ? null : (
-      <View style={{ gap: spacing.lg, paddingTop: spacing['2xl'] }}>
-        {comingSoon.data?.length ? (
-          <>
-            <SectionHeader title="Coming soon" note="Not on sale yet" />
-            <FlatList
-              data={comingSoon.data}
-              horizontal
-              keyExtractor={(movie) => movie.id}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg }}
-              renderItem={({ item }) => (
-                <MovieCard movie={item} width={130} releaseNote onPress={() => open(item)} />
-              )}
-            />
-          </>
-        ) : null}
+  const footer = searching ? (
+    eventResults
+  ) : narrowed ? null : (
+    <View style={{ gap: spacing.lg, paddingTop: spacing['2xl'] }}>
+      {comingSoon.data?.length ? (
+        <>
+          <SectionHeader title="Coming soon" note="Not on sale yet" />
+          <FlatList
+            data={comingSoon.data}
+            horizontal
+            keyExtractor={(movie) => movie.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg }}
+            renderItem={({ item }) => (
+              <MovieCard movie={item} width={130} releaseNote onPress={() => open(item)} />
+            )}
+          />
+        </>
+      ) : null}
 
-        <SponsorSlot />
-      </View>
-    );
+      <SponsorSlot />
+    </View>
+  );
 
   if (movies.isError) {
     return (
@@ -355,9 +356,9 @@ export default function NowShowing() {
                   ? `No films match “${trimmed}”, but this did`
                   : searching
                     ? `No films match “${trimmed}”`
-                  : narrowed
-                    ? `Nothing matches ${[genre, language].filter(Boolean).join(' · ')} right now`
-                    : 'Nothing showing here'
+                    : narrowed
+                      ? `Nothing matches ${[genre, language].filter(Boolean).join(' · ')} right now`
+                      : 'Nothing showing here'
               }
               message={
                 // Telling somebody to check their spelling when the app found
@@ -366,9 +367,9 @@ export default function NowShowing() {
                   ? undefined
                   : searching
                     ? 'Try a shorter search, or check the spelling.'
-                  : city
-                    ? `No films are screening in ${city} right now.`
-                    : 'No films are screening right now. Check back soon.'
+                    : city
+                      ? `No films are screening in ${city} right now.`
+                      : 'No films are screening right now. Check back soon.'
               }
               action={
                 searching

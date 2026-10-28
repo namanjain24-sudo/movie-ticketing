@@ -50,11 +50,7 @@ describe('partOfDay', () => {
 describe('filterOptions', () => {
   it('offers only the parts of the day that exist, in the order of the day', () => {
     const cinemas = [{ showtimes: [at(22), at(9), at(19)] }];
-    expect(filterOptions(cinemas).parts.map((p) => p.id)).toEqual([
-      'morning',
-      'evening',
-      'night',
-    ]);
+    expect(filterOptions(cinemas).parts.map((p) => p.id)).toEqual(['morning', 'evening', 'night']);
   });
 });
 
@@ -71,9 +67,7 @@ describe('applyFilter', () => {
   });
 
   it('combines with the format filter rather than replacing it', () => {
-    const cinemas = [
-      { showtimes: [at(19), at(20, { id: 's20', format: 'IMAX' }), at(9)] },
-    ];
+    const cinemas = [{ showtimes: [at(19), at(20, { id: 's20', format: 'IMAX' }), at(9)] }];
     const out = applyFilter(cinemas, { partOfDay: 'evening', format: 'IMAX' });
     expect(out[0]?.showtimes.map((s) => s.id)).toEqual(['s20']);
   });

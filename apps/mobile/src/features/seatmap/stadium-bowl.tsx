@@ -97,7 +97,13 @@ export function StadiumBowl({
           const from = stand.bearing - share / 2 + gap / 2;
           const to = stand.bearing + share / 2 - gap / 2;
           const active = stand.tier === activeTier;
-          const mid = pointOn(cx, cy, (inner.rx + outer.rx) / 2, (inner.ry + outer.ry) / 2, stand.bearing);
+          const mid = pointOn(
+            cx,
+            cy,
+            (inner.rx + outer.rx) / 2,
+            (inner.ry + outer.ry) / 2,
+            stand.bearing,
+          );
           return (
             <G key={stand.tier}>
               <Path

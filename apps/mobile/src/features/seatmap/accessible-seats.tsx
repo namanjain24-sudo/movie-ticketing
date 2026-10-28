@@ -89,7 +89,9 @@ export function AccessibleSeats({
           color={soldOut ? colors.textMuted : colors.text}
         />
         <Text variant="caption" tone={soldOut ? 'muted' : 'default'} style={NUMERIC}>
-          {soldOut ? `Wheelchair spaces taken` : `${free} wheelchair ${free === 1 ? 'space' : 'spaces'}`}
+          {soldOut
+            ? `Wheelchair spaces taken`
+            : `${free} wheelchair ${free === 1 ? 'space' : 'spaces'}`}
         </Text>
         {soldOut ? null : (
           <Text variant="caption" tone="muted">

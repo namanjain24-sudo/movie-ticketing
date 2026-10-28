@@ -56,10 +56,7 @@ async function balanceOf(db: Pick<Db, '$queryRaw'>, userId: string): Promise<num
  * spend is not a fresh earning. Summing `REVERSED` blind would count those
  * twice and hand out tiers nobody reached.
  */
-async function lifetimeEarnedOf(
-  db: Pick<Db, '$queryRaw'>,
-  userId: string,
-): Promise<number> {
+async function lifetimeEarnedOf(db: Pick<Db, '$queryRaw'>, userId: string): Promise<number> {
   const rows = await db.$queryRaw<{ sum: bigint | null }[]>`
     SELECT COALESCE(SUM(points), 0)::bigint AS sum
     FROM "LoyaltyLedger"

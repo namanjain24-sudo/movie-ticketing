@@ -90,8 +90,8 @@ export function TierCard({ lifetimePoints }: { lifetimePoints?: number }) {
         </Text>
       ) : (
         <Text variant="caption" tone="muted">
-          The top tier. It is a record of what you have booked — it does not change prices or
-          unlock anything.
+          The top tier. It is a record of what you have booked — it does not change prices or unlock
+          anything.
         </Text>
       )}
     </Animated.View>

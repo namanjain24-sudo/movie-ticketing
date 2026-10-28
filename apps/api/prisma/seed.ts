@@ -253,7 +253,8 @@ const CINEMAS = [
     longitude: 72.8317,
     phone: '+91 22 6726 0000',
     amenities: ['4DX', 'Recliners', 'Dolby Atmos'],
-    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+    screens: [
+      { name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -300,7 +301,8 @@ const CINEMAS = [
     longitude: 77.1553,
     phone: '+91 11 4087 7777',
     amenities: ['Director’s Cut lounge', 'À la carte dining', 'Recliners', 'Valet parking'],
-    screens: [{ name: "Director's Cut", pricing: 'imax' as const, layout: LAYOUTS.lounge },
+    screens: [
+      { name: "Director's Cut", pricing: 'imax' as const, layout: LAYOUTS.lounge },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -330,7 +332,8 @@ const CINEMAS = [
     longitude: 77.6113,
     phone: '+91 80 4123 4123',
     amenities: ['Recliners', 'Dolby Atmos', 'Mall parking'],
-    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+    screens: [
+      { name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -346,7 +349,8 @@ const CINEMAS = [
     longitude: 77.5551,
     phone: '+91 80 6726 4000',
     amenities: ['Dolby Atmos', 'Recliners', 'Food court'],
-    screens: [{ name: 'Audi 3', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+    screens: [
+      { name: 'Audi 3', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -362,7 +366,8 @@ const CINEMAS = [
     longitude: 77.6072,
     phone: '+91 80 4112 6000',
     amenities: ['Wheelchair access', 'Mall parking'],
-    screens: [{ name: 'Audi 2', pricing: 'standard' as const, layout: LAYOUTS.compact },
+    screens: [
+      { name: 'Audi 2', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -380,7 +385,8 @@ const CINEMAS = [
     longitude: 78.3546,
     phone: '+91 40 4855 5555',
     amenities: ['Dolby Atmos', 'Recliners', 'Gourmet concessions', 'Valet parking'],
-    screens: [{ name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+    screens: [
+      { name: 'Audi 1', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -396,7 +402,8 @@ const CINEMAS = [
     longitude: 78.4649,
     phone: '+91 40 2323 0473',
     amenities: ['IMAX', 'Dolby Atmos', 'Lakefront location', 'Parking'],
-    screens: [{ name: 'IMAX', pricing: 'imax' as const, layout: LAYOUTS.imax },
+    screens: [
+      { name: 'IMAX', pricing: 'imax' as const, layout: LAYOUTS.imax },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -431,7 +438,8 @@ const CINEMAS = [
     longitude: 80.2176,
     phone: '+91 44 4224 5000',
     amenities: ['Recliners', 'Dolby Atmos', 'Mall parking'],
-    screens: [{ name: 'Luxe 1', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    screens: [
+      { name: 'Luxe 1', pricing: 'premium' as const, layout: LAYOUTS.compact },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -449,7 +457,8 @@ const CINEMAS = [
     longitude: 73.9167,
     phone: '+91 20 6720 6720',
     amenities: ['Dolby Atmos', 'Recliners', 'Food court', 'Mall parking'],
-    screens: [{ name: 'Audi 4', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
+    screens: [
+      { name: 'Audi 4', pricing: 'premium' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -465,7 +474,8 @@ const CINEMAS = [
     longitude: 73.8785,
     phone: '+91 20 6601 6601',
     amenities: ['Dolby Atmos', 'Wheelchair access'],
-    screens: [{ name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.compact },
+    screens: [
+      { name: 'Audi 1', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },
@@ -483,7 +493,8 @@ const CINEMAS = [
     longitude: 88.3665,
     phone: '+91 33 4040 4040',
     amenities: ['Insignia', 'Dolby Atmos', 'Recliners', 'Mall parking'],
-    screens: [{ name: 'Audi 2', pricing: 'premium' as const, layout: LAYOUTS.compact },
+    screens: [
+      { name: 'Audi 2', pricing: 'premium' as const, layout: LAYOUTS.compact },
       { name: 'Audi 3', pricing: 'standard' as const, layout: LAYOUTS.multiplex },
       { name: 'Audi 4', pricing: 'standard' as const, layout: LAYOUTS.compact },
       { name: 'Audi 5', pricing: 'premium' as const, layout: LAYOUTS.compact },

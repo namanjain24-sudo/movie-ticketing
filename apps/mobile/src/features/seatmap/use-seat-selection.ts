@@ -118,7 +118,9 @@ export function useSeatSelection(map: SeatMap | undefined, partySize?: number) {
     () =>
       [...selected]
         .map((id) => seatsById.get(id))
-        .filter((seat): seat is SeatMapSeat => seat !== undefined && !SELECTABLE.includes(seat.status))
+        .filter(
+          (seat): seat is SeatMapSeat => seat !== undefined && !SELECTABLE.includes(seat.status),
+        )
         .sort((a, b) => a.y - b.y || a.x - b.x)
         .map((seat) => `${seat.rowLabel}${seat.number}`),
     [selected, seatsById],

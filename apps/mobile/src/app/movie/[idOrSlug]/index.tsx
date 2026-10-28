@@ -68,7 +68,6 @@ export default function MovieDetail() {
   const { record: recordViewed } = useRecentlyViewed();
   const insets = useSafeAreaInsets();
 
-
   const days = useMemo(() => upcomingDays(DAYS_AHEAD), []);
   const [date, setDate] = useState(days[0].value);
   const [filter, setFilter] = useState<ShowtimeFilter>({});

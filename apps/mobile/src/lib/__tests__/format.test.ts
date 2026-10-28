@@ -1,4 +1,11 @@
-import { endsNextDay, formatRelativeDay, formatRuntime, minutesUntil, toDateKey, upcomingDays } from '../format';
+import {
+  endsNextDay,
+  formatRelativeDay,
+  formatRuntime,
+  minutesUntil,
+  toDateKey,
+  upcomingDays,
+} from '../format';
 
 describe('formatRuntime', () => {
   it.each([
