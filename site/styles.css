@@ -1145,7 +1145,9 @@ img {
 /* --- scroll reveal -------------------------------------------------------- */
 /* IntersectionObserver driven, never a scroll listener. */
 
-.reveal {
+/* Only ever hidden when something is certainly going to show it again: the
+   `js` class is set by an inline script in <head>. See the note there. */
+.js .reveal {
   opacity: 0;
   transform: translateY(18px);
   transition:
@@ -1153,13 +1155,13 @@ img {
     transform 0.7s var(--ease);
   transition-delay: calc(var(--i, 0) * 70ms);
 }
-.reveal[data-shown='true'] {
+.js .reveal[data-shown='true'] {
   opacity: 1;
   transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
+  .js .reveal {
     opacity: 1;
     transform: none;
     transition: none;

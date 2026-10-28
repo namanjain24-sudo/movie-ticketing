@@ -33,7 +33,22 @@
       crossorigin
     />
     <link rel="stylesheet" href="styles.css" />
-  </head>
+      <!--
+      Marks the document as having working JavaScript, before anything paints.
+      `.reveal` hides fifty-six elements on this page and only the observer in
+      site.js ever un-hides them, so without this the whole page — the
+      headline, the pitch, the download button it exists for — was a blank
+      screen under the header whenever that script did not run. Not only for
+      somebody who turns JavaScript off: one syntax error, one blocked or
+      half-loaded script on a bad connection, and the page is empty.
+
+      Scoped to `html.js` below, so nothing is ever hidden that something is
+      not already guaranteed to show again.
+    -->
+    <script>
+      document.documentElement.classList.add('js');
+    </script>
+</head>
 
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
