@@ -31,6 +31,23 @@ config.watchFolders = [workspaceRoot];
  * import, so it has to be in the map.
  */
 config.resolver.blockList = [
+  /**
+   * Tests, wherever they are.
+   *
+   * Expo Router builds its route tree with `require.context('./app')`, which
+   * takes every .tsx under that directory. A test file that landed there was
+   * therefore a module of the app: the production bundle followed it into
+   * test-utils, then @testing-library/react-native, then `require('console')`
+   * — which React Native does not have — and the release build failed at the
+   * bundling step with that exact import stack.
+   *
+   * Moving the file fixed that one. This stops the next one, which would
+   * otherwise be found the same way: by a release build, on the day somebody
+   * wanted to ship.
+   */
+  /[\\/]__tests__[\\/].*$/,
+  /\.(test|spec)\.[jt]sx?$/,
+
   new RegExp(`^${escape(path.join(workspaceRoot, '.git'))}\\/.*$`),
   new RegExp(`^${escape(path.join(workspaceRoot, 'apps', 'api'))}\\/.*$`),
   new RegExp(`^${escape(path.join(workspaceRoot, 'site'))}\\/.*$`),

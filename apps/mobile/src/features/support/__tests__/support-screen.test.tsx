@@ -1,11 +1,26 @@
+/**
+ * The support screen, tested from outside the routes directory.
+ *
+ * This lived in `src/app/__tests__/` until a release build on a clean
+ * checkout failed on it. Expo Router builds its route tree with
+ * `require.context('./app')`, which takes every .tsx under that directory —
+ * including a test — so the production bundle pulled in test-utils, then
+ * @testing-library/react-native, then `require('console')`, which React
+ * Native does not have. The import stack came out of the bundler exactly
+ * like that.
+ *
+ * Nothing under `src/app` is only a test. metro.config.js now keeps test
+ * files out of the bundle wherever they are, and this sits with the rest of
+ * the suite.
+ */
 import type { SupportAnswer } from '@app/shared';
 import { userEvent } from '@testing-library/react-native';
-import { ApiRequestError } from '../../api/client';
-import { supportApi } from '../../api/support';
-import SupportScreen from '../support';
-import { render, waitFor } from '../../test-utils';
+import { ApiRequestError } from '../../../api/client';
+import { supportApi } from '../../../api/support';
+import SupportScreen from '../../../app/support';
+import { render, waitFor } from '../../../test-utils';
 
-jest.mock('../../api/support', () => ({
+jest.mock('../../../api/support', () => ({
   supportApi: { ask: jest.fn() },
 }));
 
