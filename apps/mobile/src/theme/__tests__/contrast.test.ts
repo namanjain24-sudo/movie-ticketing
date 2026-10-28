@@ -30,6 +30,27 @@ export function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
+/**
+ * What a translucent fill actually looks like once it is drawn.
+ *
+ * `accentMuted` is `rgba(123,91,255,0.18)` in the dark theme — a wash, not a
+ * colour. Measuring it as though it were opaque is meaningless: what the eye
+ * sees is that wash composited over whatever is behind it, and that is what
+ * the label on top has to be read against.
+ */
+function over(fill: string, backdrop: string): string {
+  const rgba = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/.exec(fill);
+  if (!rgba) return fill;
+  const [r, g, b] = [rgba[1], rgba[2], rgba[3]].map(Number);
+  const alpha = rgba[4] === undefined ? 1 : Number(rgba[4]);
+  const back = backdrop.replace('#', '');
+  const mix = [0, 2, 4].map((i, n) => {
+    const under = parseInt(back.slice(i, i + 2), 16);
+    return Math.round([r, g, b][n] * alpha + under * (1 - alpha));
+  });
+  return `#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
 const AA_NORMAL = 4.5;
 
 describe('contrast', () => {
@@ -82,6 +103,34 @@ describe('contrast', () => {
     it('reads body text comfortably', () => {
       expect(contrast(colors.text, colors.background)).toBeGreaterThanOrEqual(7);
       expect(contrast(colors.textMuted, colors.background)).toBeGreaterThanOrEqual(AA_NORMAL);
+    });
+
+    /**
+     * The three status colours, which are text as often as they are a dot.
+     *
+     * These were written for the dark page and reused unchanged on the light
+     * one, where they measured 3.41, 2.17 and 4.39 against white. Amber at
+     * 2.17 is not a ratio anybody reads a word in, and it was carrying
+     * "Filling fast" on a stand, a late show's end time on a chip, and the A
+     * on a certificate badge — three places where the colour *is* the
+     * message.
+     *
+     * All three surfaces, because `Badge` puts a success or warning label on
+     * its own muted fill in the light theme, which is a lighter ground than
+     * either of the other two and so the strictest of the three.
+     */
+    it.each([
+      ['success', 'successMuted'],
+      ['warning', 'warningMuted'],
+      ['accent', 'accentMuted'],
+    ] as const)('reads %s as text on the page, a card and its own badge', (ink, fill) => {
+      expect(contrast(colors[ink], colors.background)).toBeGreaterThanOrEqual(AA_NORMAL);
+      expect(contrast(colors[ink], colors.surface)).toBeGreaterThanOrEqual(AA_NORMAL);
+      // Composited first: the dark theme's accent badge is a translucent
+      // wash, and what the label is read against is the wash over the card.
+      expect(contrast(colors[ink], over(colors[fill], colors.surface))).toBeGreaterThanOrEqual(
+        AA_NORMAL,
+      );
     });
 
     it('reads text on the chrome bar, which is dark in both themes', () => {

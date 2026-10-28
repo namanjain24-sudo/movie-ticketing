@@ -46,8 +46,19 @@ const palette = {
   white: '#FFFFFF',
 
   green500: '#1EA043',
+  /**
+   * The light theme's reading weights.
+   *
+   * green500, amber500 and violet500 were written for a dark page, where they
+   * sit at 5.57, 8.75 and 6.57 against the background. On white the same three
+   * read 3.41, 2.17 and 4.39 — and amber at 2.17 is not a colour anybody can
+   * read a word in. "Filling fast", a late show's end time and an A
+   * certificate were all being said in it.
+   */
+  green700: '#146C32',
   green100: '#DCF5E3',
   amber500: '#E8A317',
+  amber700: '#8A5A00',
   amber100: '#FDF0D5',
 
   // Accent pair. The app's one gesture towards the future is light: a cinema
@@ -55,6 +66,7 @@ const palette = {
   // light rather than like paint — they glow, they gradient, and they only
   // ever appear on something that is doing work.
   violet500: '#7B5BFF',
+  violet600: '#5B3DE8',
   violet400: '#9C86FF',
   cyan400: '#35D6E8',
   gold400: '#FFC24B',
@@ -140,9 +152,9 @@ export const lightColors: Colors = {
   onChromeMuted: palette.ink300,
   chromeSurface: 'rgba(255,255,255,0.14)',
 
-  success: palette.green500,
+  success: palette.green700,
   successMuted: palette.green100,
-  warning: palette.amber500,
+  warning: palette.amber700,
   warningMuted: palette.amber100,
   danger: palette.red600,
   dangerMuted: palette.red100,
@@ -157,7 +169,7 @@ export const lightColors: Colors = {
   seatGone: palette.ink300,
   scrim: 'rgba(16,16,21,0.55)',
 
-  accent: palette.violet500,
+  accent: palette.violet600,
   accentMuted: '#EFECFF',
   glass: 'rgba(255,255,255,0.72)',
   glassBorder: 'rgba(16,16,21,0.08)',
