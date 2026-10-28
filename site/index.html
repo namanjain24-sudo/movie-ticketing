@@ -17,7 +17,35 @@
       property="og:description"
       content="Ten load tests, up to 5,000 people booking the same 300 seats at once. Zero oversells, zero double charges. The whole proof is public."
     />
+    <!--
+      The card `twitter:card` was already promising. `summary_large_image`
+      says "there is a large picture here", and there was no og:image to be
+      it, so every share of this link — and a page whose whole job is a link
+      somebody passes on — arrived as a bare title with a blank box.
+
+      Absolute, because Open Graph is read by machines that never saw this
+      page's own address and cannot resolve a relative path against it.
+      1200x630 is the slot; saying so saves a scraper from downloading the
+      file to find out, and keeps the card from being rendered small while it
+      waits.
+    -->
+    <meta property="og:url" content="https://namanjain24-sudo.github.io/movie-ticketing/" />
+    <meta
+      property="og:image"
+      content="https://namanjain24-sudo.github.io/movie-ticketing/media/og.png"
+    />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Boxoffice. A seat that cannot be sold twice. Zero oversells, zero double charges, 5,000 booking at once, ten load tests."
+    />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:image"
+      content="https://namanjain24-sudo.github.io/movie-ticketing/media/og.png"
+    />
 
     <link
       rel="icon"
