@@ -187,3 +187,51 @@
   const year = document.getElementById('year');
   if (year) year.textContent = String(new Date().getFullYear());
 })();
+
+/**
+ * The phone's menu.
+ *
+ * Below 880px the nav links are hidden and, until this, nothing took their
+ * place: seven sections reachable only by scrolling past all of them, on the
+ * one device the app being sold actually runs on.
+ *
+ * A disclosure, not a modal. Nothing is trapped, the page keeps scrolling
+ * underneath, and the sheet closes on the three things that mean "done":
+ * choosing a link, pressing Escape, and growing the window wide enough that
+ * the real links have come back.
+ */
+(() => {
+  const toggle = document.getElementById('navToggle');
+  const sheet = document.getElementById('navSheet');
+  if (!toggle || !sheet) return;
+
+  const setOpen = (open) => {
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close the menu' : 'Open the menu');
+    sheet.hidden = !open;
+  };
+
+  toggle.addEventListener('click', () => {
+    setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+  });
+
+  // Chosen a destination: the menu has done its job.
+  sheet.addEventListener('click', (event) => {
+    if (event.target.closest('a')) setOpen(false);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || sheet.hidden) return;
+    setOpen(false);
+    // Focus goes back to the control that opened it, not to the top of the
+    // document, which is where a keyboard lands otherwise.
+    toggle.focus();
+  });
+
+  const wide = window.matchMedia('(min-width: 881px)');
+  // `addEventListener` on a media query, not a resize handler: it fires once
+  // on the crossing rather than on every pixel of a drag.
+  wide.addEventListener('change', (event) => {
+    if (event.matches) setOpen(false);
+  });
+})();

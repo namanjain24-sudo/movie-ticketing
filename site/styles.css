@@ -72,6 +72,10 @@
 }
 
 html {
+  /* The bar is sticky and 64px tall, so a heading jumped to lands behind it.
+     `#proof` did exactly that. A little over the bar's height leaves the
+     heading clear of it rather than touching it. */
+  scroll-padding-top: 80px;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
@@ -298,8 +302,132 @@ img {
   color: var(--text);
 }
 
+/* --- the phone's menu ------------------------------------------------------
+   Below 880px the row of links above does not fit, and for a long time it was
+   simply deleted with nothing in its place: seven sections reachable only by
+   scrolling past all of them, on the one device this app actually runs on.
+   A button and a sheet, no library, no overlay to trap anybody in. */
+
+.nav-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.nav-toggle:hover {
+  border-color: var(--line-bright, var(--line));
+}
+.nav-toggle-bars {
+  display: block;
+  width: 18px;
+}
+.nav-toggle-bars i {
+  display: block;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--text);
+  /* Each bar moves about its own centre, so the cross is square rather than
+     leaning the way two bars rotated about a shared origin would. */
+  transition:
+    transform 0.22s var(--ease),
+    opacity 0.16s var(--ease);
+}
+.nav-toggle-bars i + i {
+  margin-top: 5px;
+}
+.nav-toggle[aria-expanded='true'] .nav-toggle-bars i:first-child {
+  transform: translateY(3.25px) rotate(45deg);
+}
+.nav-toggle[aria-expanded='true'] .nav-toggle-bars i:last-child {
+  transform: translateY(-3.25px) rotate(-45deg);
+}
+
+.nav-sheet {
+  position: sticky;
+  top: 64px;
+  z-index: 49;
+  background: var(--bg-raised, #121216);
+  border-bottom: 1px solid var(--line);
+}
+.nav-sheet[hidden] {
+  display: none;
+}
+.nav-sheet ul {
+  list-style: none;
+  margin: 0;
+  /* Same gutter as `.wrap`, so the menu lines up with the page under it. */
+  padding: 6px 20px 14px;
+}
+.nav-sheet a {
+  display: block;
+  /* 44px of target, which is the smallest a thumb should be asked to hit. */
+  padding: 12px 0;
+  font-size: 16px;
+  color: var(--text-dim);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+.nav-sheet li:last-child a {
+  border-bottom: 0;
+}
+.nav-sheet a:hover,
+.nav-sheet a:focus-visible {
+  color: var(--text);
+}
+
 @media (max-width: 880px) {
   .nav-links {
+    display: none;
+  }
+  .nav-toggle {
+    display: inline-flex;
+    /* Never squeezed. Left to shrink it was pressed to 20px and still pushed
+       the row six pixels past a 360px screen. */
+    flex: 0 0 auto;
+  }
+}
+
+/* The narrow phones. At 360px the bar wants
+   20 + brand 103 + gap 32 + button 159 + gap 32 + toggle 40 + 20 = 406,
+   which is 46 more than there is. The gap and the button's own padding are
+   the two things that can give without anything being removed. */
+@media (max-width: 420px) {
+  .site-nav .wrap {
+    gap: 12px;
+  }
+  .site-nav .btn-sm {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* Narrower still — a 320px phone — and the wordmark has to go as well. The
+   mark beside it still says whose site this is, and the link keeps its name
+   for anything reading the page aloud, which `display: none` would have
+   taken away along with the pixels. */
+@media (max-width: 360px) {
+  .brand-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* The menu is a phone's affair. Widen the window with it open and the real
+   links come back, so the sheet has to go with them. */
+@media (min-width: 881px) {
+  .nav-sheet {
     display: none;
   }
 }
@@ -338,6 +466,20 @@ img {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+/* On a phone the two wrap onto their own lines and size to their labels, so
+   "Download the APK" sat wider than "See the numbers" and the pair had a
+   ragged right edge for no reason anybody could read as intent. Stacked, they
+   match — and both become a target the width of the thumb's reach. */
+@media (max-width: 560px) {
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-actions .btn {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 960px) {
