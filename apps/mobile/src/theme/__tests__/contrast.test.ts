@@ -53,6 +53,38 @@ function over(fill: string, backdrop: string): string {
 
 const AA_NORMAL = 4.5;
 
+/**
+ * Both themes, token for token.
+ *
+ * `Colors` is a type, and a type cannot stop a palette being half-updated at
+ * runtime — a token added to one theme and forgotten in the other reads as
+ * `undefined`, which React Native renders as no colour at all rather than as
+ * an error. The two palettes are written out by hand, side by side, which is
+ * exactly the shape of edit that loses one.
+ */
+describe('the two palettes', () => {
+  it('define the same tokens', () => {
+    expect(Object.keys(lightColors).sort()).toEqual(Object.keys(darkColors).sort());
+  });
+
+  it('give every one of them something to paint with', () => {
+    // A hex, an rgba, or `transparent` — which `seatFree` legitimately is, a
+    // free seat being drawn as its outline and the room showing through. What
+    // this is actually guarding against is `undefined`, which React Native
+    // renders as no colour rather than as an error.
+    for (const [theme, colors] of [
+      ['light', lightColors],
+      ['dark', darkColors],
+    ] as const) {
+      for (const [token, value] of Object.entries(colors)) {
+        expect(`${theme}.${token}=${String(value)}`).toMatch(
+          /=(#[0-9A-Fa-f]{3,8}|rgba?\(|transparent$)/,
+        );
+      }
+    }
+  });
+});
+
 describe('contrast', () => {
   /**
    * The formula first, against the values the WCAG authors publish, so a bug
