@@ -13,17 +13,30 @@
 # was asleep for almost all of its life and the first person to open the app
 # paid for it every time.
 #
-# So the run does the repeating itself rather than asking the scheduler to.
-# One run pings for fifty minutes, which is a short and ordinary job, and the
-# schedule asks for one every half hour. When GitHub honours that, runs
-# overlap harmlessly. When GitHub drops four of them, the one that does start
-# still covers the best part of an hour instead of a single second.
+# So the run does the repeating itself rather than asking the scheduler to,
+# and it repeats for as long as one job is allowed to live.
+#
+# The first version of that looped for fifty minutes. Measured over the two
+# days after it shipped, GitHub started a run about every five hours — gaps of
+# 4.1, 5.8 and 7.2 hours — so fifty minutes of pinging covered roughly a sixth
+# of the day and the service was still asleep for the rest of it. The run was
+# doing its job; there just was not enough of it.
+#
+# A job may run for six hours, so one now pings for five and a quarter and
+# leaves the rest as headroom. That turns a sixth of the day into very nearly
+# all of it without changing how often GitHub is asked for anything. The cap
+# is the reason this cannot simply be solved here: a seven hour gap is longer
+# than any single job, so a gap that wide still ends in one slow open.
+#
+# Overlap is cheap and deliberate. The schedule still asks every half hour,
+# but since GitHub actually starts only about five a day, the usual state is
+# one or two live runs rather than the twelve the schedule implies.
 #
 # It is still best effort and it is still not a monitor. The reliable fixes
-# are a paid Render instance, which does not sleep at all, or a purpose-built
-# uptime pinger; this is what can be done from inside the repository. A missed
-# ping costs one slow open, so the run never fails and never puts a red tick
-# on the repository for that.
+# are a paid Render instance, which does not sleep at all, or an external
+# uptime pinger on a schedule that is actually honoured; this is what can be
+# done from inside the repository. A missed ping costs one slow open, so the
+# run never fails and never puts a red tick on the repository for that.
 name: Keep the demo API awake
 
 on:
@@ -42,23 +55,31 @@ jobs:
     # there is deliberately no concurrency group cancelling them: two pingers
     # are harmless, and one of them may be the only one GitHub actually
     # started.
-    timeout-minutes: 55
+    #
+    # Six hours is the ceiling GitHub puts on a job. The loop below aims at
+    # five and a quarter and this leaves it half an hour of slack, because a
+    # run that is killed at the ceiling is reported as cancelled, and this
+    # workflow is not worth a red tick.
+    timeout-minutes: 350
     steps:
-      - name: Keep the API awake for the next fifty minutes
+      - name: Keep the API awake for the next five hours
         run: |
           URL=https://boxoffice-api-i1ra.onrender.com/health/ready
-          # Ten rounds, five minutes apart: well inside Render's fifteen
-          # minute idle window even if a round is slow.
-          for i in $(seq 1 10); do
+          # Sixty-four rounds, five minutes apart: five and a quarter hours of
+          # cover, each round well inside Render's fifteen minute idle window
+          # even if it is slow. The gap stays at five rather than stretching
+          # toward fifteen because a ping costs nothing and a missed one costs
+          # a user a minute.
+          for i in $(seq 1 64); do
             # --max-time covers a genuine cold start, which is the case this
             # exists to prevent and therefore the one it has to sit through.
             start=$(date +%s)
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 180 "$URL" || echo 000)
             took=$(( $(date +%s) - start ))
-            echo "$(date -u +%H:%M:%S) round $i/10 -> $code in ${took}s"
+            echo "$(date -u +%H:%M:%S) round $i/64 -> $code in ${took}s"
             if [ "$code" != "200" ]; then
               echo "::warning::API answered $code. It will wake on the next real request."
             fi
-            if [ "$i" -lt 10 ]; then sleep 300; fi
+            if [ "$i" -lt 64 ]; then sleep 300; fi
           done
           echo "Done. The next run takes over."
