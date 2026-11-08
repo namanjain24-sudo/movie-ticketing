@@ -17,8 +17,17 @@ LOG_DIR="$ROOT/.tooling/logs"
 PORT_PG=5432
 PORT_REDIS=6379
 
-# Homebrew's Postgres is keg-only, so its binaries are not on PATH by default.
-for dir in /opt/homebrew/opt/postgresql@16/bin /opt/homebrew/opt/postgresql@17/bin \
+# Where the two servers are found, nearest first.
+#
+# `.tooling/bin` is this repo's own copy: symlinks into a Postgres.app and a
+# redis bottle unpacked under .tooling. It comes first because it is the only
+# one guaranteed to be here — a checkout that has run the bootstrap has it
+# whether or not the machine has ever installed Postgres globally.
+#
+# The rest are Homebrew's. Its Postgres is keg-only, so the versioned opt
+# directories are listed explicitly; they are not on PATH by default.
+for dir in "$ROOT/.tooling/bin" \
+  /opt/homebrew/opt/postgresql@16/bin /opt/homebrew/opt/postgresql@17/bin \
   /usr/local/opt/postgresql@16/bin /opt/homebrew/bin /usr/local/bin; do
   [ -d "$dir" ] && PATH="$dir:$PATH"
 done
@@ -26,6 +35,17 @@ done
 need() {
   command -v "$1" >/dev/null 2>&1 || {
     echo "Missing '$1'. Install it with: brew install postgresql@16 redis" >&2
+    exit 1
+  }
+  # A binary that is on PATH can still be unable to start. The bottles under
+  # .tooling link against libraries by absolute path, so moving the checkout
+  # leaves them pointing at where the repo used to be, and the failure arrives
+  # as a dyld message about a missing dylib rather than as anything about this
+  # project. Ask the binary its version -- cheap, and it loads every library it
+  # needs to run -- and say which binary broke if it cannot answer.
+  "$1" --version >/dev/null 2>&1 || {
+    echo "'$1' is on PATH at $(command -v "$1") but will not run:" >&2
+    "$1" --version >&2 2>&1 | head -3 >&2 || true
     exit 1
   }
 }
