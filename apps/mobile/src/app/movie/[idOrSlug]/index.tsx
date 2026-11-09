@@ -19,6 +19,13 @@ import { catalogApi } from '../../../api/catalog';
 import { EmptyState, ErrorState } from '../../../components/query-state';
 import { Badge, Card, Poster, RatingStars, Skeleton, Text } from '../../../components/ui';
 import { DateStrip } from '../../../features/catalog/date-strip';
+import {
+  cheapestAt,
+  cheapestInList,
+  orderCinemas,
+  type ShowtimeOrder,
+} from '../../../features/catalog/ordering';
+import { ShowtimeOrderPicker } from '../../../features/catalog/showtime-order';
 import { ShowtimeChip } from '../../../features/catalog/showtime-chip';
 import { SimilarMoviesRail } from '../../../features/catalog/similar-movies-rail';
 import { useRecentlyViewed } from '../../../features/catalog/use-recently-viewed';
@@ -71,6 +78,7 @@ export default function MovieDetail() {
   const days = useMemo(() => upcomingDays(DAYS_AHEAD), []);
   const [date, setDate] = useState(days[0].value);
   const [filter, setFilter] = useState<ShowtimeFilter>({});
+  const [order, setOrder] = useState<ShowtimeOrder>('nearest');
   const [synopsisOpen, setSynopsisOpen] = useState(false);
   const [notifyRequested, setNotifyRequested] = useState(false);
 
@@ -181,7 +189,16 @@ export default function MovieDetail() {
   }
 
   const film = movie.data;
-  const visible = marked ? applyFilter(marked, filter) : [];
+  const filtered = marked ? applyFilter(marked, filter) : [];
+  const visible = orderCinemas(filtered, order);
+  /**
+   * The cheapest seat anywhere in what is on screen, not in the whole day.
+   *
+   * Taken after filtering, so the badge marks the cheapest of what somebody
+   * is actually being shown. A badge pointing at a price the current filters
+   * have hidden is a badge pointing at nothing.
+   */
+  const lowestMinor = cheapestInList(visible);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -456,6 +473,18 @@ export default function MovieDetail() {
               />
             ) : null}
 
+            {/* Only once there is more than one venue to arrange. Offering a
+                sort over a single cinema is a control that cannot do
+                anything. */}
+            {visible.length > 1 ? (
+              <ShowtimeOrderPicker
+                value={order}
+                onChange={setOrder}
+                cheapestMinor={lowestMinor}
+                currency={visible[0]?.showtimes[0]?.currency ?? 'INR'}
+              />
+            ) : null}
+
             <View style={{ paddingHorizontal: spacing.lg }}>
               <Legend />
             </View>
@@ -518,6 +547,15 @@ export default function MovieDetail() {
                               {cinema.name}
                             </Text>
                             <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
+                            {/* Marked rather than only sorted, so the cheapest
+                                venue is findable while reading the list by
+                                distance - which is how most people read it.
+                                Only with something to be cheaper than. */}
+                            {visible.length > 1 &&
+                            lowestMinor !== null &&
+                            cheapestAt({ cinema, showtimes: slots }) === lowestMinor ? (
+                              <Badge label="Cheapest" tone="success" />
+                            ) : null}
                           </View>
                           <Text variant="caption" tone="muted" numberOfLines={1}>
                             {cinema.distanceKm === null
