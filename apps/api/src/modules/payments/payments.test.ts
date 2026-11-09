@@ -173,7 +173,12 @@ describe('checkout and payment', () => {
 
     expect(second.body.paymentId).toBe(first.body.paymentId);
     expect(second.headers['idempotent-replay']).toBe('true');
-    expect(await prisma.payment.count()).toBe(1);
+    // Scoped to this booking, not the whole table. Tests inside one file run
+    // their requests concurrently on purpose, so a table-wide count is
+    // asserting something about the other tests as well - and it fails the
+    // moment one of them opens a charge in this window. The claim here is
+    // that the retry did not open a second charge for *this* booking.
+    expect(await prisma.payment.count({ where: { bookingId: first.body.bookingId } })).toBe(1);
   });
 
   it('refuses a webhook whose signature does not verify', async () => {
@@ -191,7 +196,11 @@ describe('checkout and payment', () => {
       .send(body)
       .expect(400);
 
-    expect(await prisma.webhookEvent.count()).toBe(0);
+    // The forged event by id, rather than an empty table. Same reason as the
+    // replay test above, and it is the stronger assertion anyway: it says
+    // this specific forgery was not recorded, instead of saying nothing in
+    // the system recorded anything.
+    expect(await prisma.webhookEvent.findUnique({ where: { id: 'evt_forged' } })).toBeNull();
   });
 
   it('refunds rather than oversells when the capture lands after the hold expired', async () => {
