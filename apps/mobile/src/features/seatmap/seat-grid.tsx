@@ -97,15 +97,49 @@ function SeatBody({
   );
 }
 
+/**
+ * What a seat says to a screen reader.
+ *
+ * Pure and exported so the wording can be asserted rather than eyeballed: it
+ * is the only description of a seat that some people ever get, and a
+ * rendering test of a virtualised grid would not be the place to check it.
+ *
+ * The band and the price are on every seat, not only in the tier header above
+ * the block. A sighted person reads that header once and carries it down;
+ * somebody swiping seat to seat gets one element at a time and may never land
+ * on it. This screen already guards against picking out of the wrong band by
+ * accident, and that guard is a thing you look at. Without the price here the
+ * ten-times-dearer seat sounds exactly like the one beside it.
+ *
+ * Three more words a seat, which is real verbosity. It buys not spending six
+ * thousand rupees by mistake.
+ */
+export function seatAccessibilityLabel(
+  seat: Pick<SeatMapSeat, 'rowLabel' | 'number' | 'tier' | 'priceMinor' | 'accessible'>,
+  status: SeatRenderStatus,
+  currency: string,
+): string {
+  const selectable = status === 'AVAILABLE' || status === 'SELECTED' || status === 'HELD_BY_YOU';
+  return (
+    `Row ${seat.rowLabel} seat ${seat.number}, ${SEAT_TIER_LABELS[seat.tier]}, ` +
+    `${formatMoney(seat.priceMinor, currency)}` +
+    (seat.accessible ? ', wheelchair accessible' : '') +
+    (selectable ? '' : ', unavailable')
+  );
+}
+
 const Seat = memo(function Seat({
   seat,
   status,
   labelWidth,
+  currency,
   onPress,
 }: {
   seat: SeatMapSeat;
   status: SeatRenderStatus;
   labelWidth: number;
+  /** Constant for a map, so threading it costs `memo` nothing. */
+  currency: string;
   onPress: (seat: SeatMapSeat) => void;
 }) {
   const { colors, radius } = useTheme();
@@ -138,9 +172,7 @@ const Seat = memo(function Seat({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected, disabled: !selectable }}
-      accessibilityLabel={`Row ${seat.rowLabel} seat ${seat.number}${
-        seat.accessible ? ', wheelchair accessible' : ''
-      }${selectable ? '' : ', unavailable'}`}
+      accessibilityLabel={seatAccessibilityLabel(seat, status, currency)}
       disabled={!selectable}
       onPress={() => onPress(seat)}
       // A couple of px, not more: the 6px gap between seats leaves only so
@@ -176,6 +208,7 @@ const Row = memo(
     firstColumn,
     lastColumn,
     labelWidth,
+    currency,
     scrollX,
     onPressSeat,
   }: {
@@ -188,6 +221,8 @@ const Row = memo(
     lastColumn: number;
     /** Measured from the longest label in the map; see `rowLabelWidthFor`. */
     labelWidth: number;
+    /** Passed through to each seat, which says its price aloud. */
+    currency: string;
     /** Horizontal offset, so the row can pin its label to the viewport edge. */
     scrollX: SharedValue<number>;
     onPressSeat: (seat: SeatMapSeat) => void;
@@ -214,6 +249,7 @@ const Row = memo(
               seat={seat}
               status={statuses[index]}
               labelWidth={labelWidth}
+              currency={currency}
               onPress={onPressSeat}
             />
           ) : null,
@@ -462,6 +498,7 @@ export const SeatGrid = forwardRef<
           row={item.row}
           statuses={item.statuses}
           signature={item.signature}
+          currency={map.currency}
           firstColumn={firstColumn}
           lastColumn={lastColumn}
           labelWidth={labelWidth}
@@ -470,7 +507,7 @@ export const SeatGrid = forwardRef<
         />
       );
     },
-    [frame.width, firstColumn, lastColumn, labelWidth, scrollX, onPressSeat],
+    [frame.width, map.currency, firstColumn, lastColumn, labelWidth, scrollX, onPressSeat],
   );
 
   return (
