@@ -64,7 +64,9 @@ export function HoldMotif({ active }: { active: boolean }) {
                     position: 'absolute',
                     width: 40,
                     height: 40,
-                    borderRadius: 20,
+                    // A circle, not a 20pt corner that happens to be half of
+                    // 40: saying `full` keeps it round if the size changes.
+                    borderRadius: radius.full,
                     borderWidth: 2,
                     borderColor: colors.accent,
                     borderRightColor: 'transparent',

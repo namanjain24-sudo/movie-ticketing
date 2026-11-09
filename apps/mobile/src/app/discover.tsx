@@ -33,7 +33,7 @@ import { HIT_SIZE } from '../theme/tokens';
  */
 export default function DiscoverScreen() {
   const router = useRouter();
-  const { colors, spacing } = useTheme();
+  const { colors, radius, spacing } = useTheme();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -84,7 +84,7 @@ export default function DiscoverScreen() {
           height: HIT_SIZE,
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 999,
+          borderRadius: radius.full,
           backgroundColor: colors.glass,
           borderWidth: 1,
           borderColor: colors.glassBorder,

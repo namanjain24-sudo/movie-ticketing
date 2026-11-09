@@ -70,9 +70,9 @@ export default function EventDetail() {
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <AppBar title="" onBack={() => router.back()} />
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
-          <Skeleton style={{ height: 180, borderRadius: 14 }} />
+          <Skeleton style={{ height: 180, borderRadius: radius.lg }} />
           <Skeleton style={{ height: 24, borderRadius: 8 }} />
-          <Skeleton style={{ height: 80, borderRadius: 10 }} />
+          <Skeleton style={{ height: 80, borderRadius: radius.md }} />
         </View>
       </View>
     );

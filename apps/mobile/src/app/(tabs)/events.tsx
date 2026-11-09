@@ -128,8 +128,8 @@ export default function Events() {
       {events.isPending ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
           <Skeleton style={{ height: 44, borderRadius: 22 }} />
-          <Skeleton style={{ height: 120, borderRadius: 14 }} />
-          <Skeleton style={{ height: 120, borderRadius: 14 }} />
+          <Skeleton style={{ height: 120, borderRadius: radius.lg }} />
+          <Skeleton style={{ height: 120, borderRadius: radius.lg }} />
         </View>
       ) : events.isError ? (
         <ErrorState

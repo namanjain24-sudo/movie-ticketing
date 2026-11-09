@@ -93,7 +93,7 @@ export default function Cinemas() {
             backgroundColor: colors.surface,
             borderColor: colors.border,
             borderWidth: 1,
-            borderRadius: radius.md,
+            borderRadius: radius.full,
             paddingHorizontal: spacing.md,
             minHeight: HIT_SIZE,
           }}
@@ -276,9 +276,9 @@ export default function Cinemas() {
 
       {isPending ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
-          <Skeleton style={{ height: HIT_SIZE, borderRadius: 10 }} />
-          <Skeleton style={{ height: 150, borderRadius: 14 }} />
-          <Skeleton style={{ height: 150, borderRadius: 14 }} />
+          <Skeleton style={{ height: HIT_SIZE, borderRadius: radius.full }} />
+          <Skeleton style={{ height: 150, borderRadius: radius.lg }} />
+          <Skeleton style={{ height: 150, borderRadius: radius.lg }} />
         </View>
       ) : (
         <FlatList

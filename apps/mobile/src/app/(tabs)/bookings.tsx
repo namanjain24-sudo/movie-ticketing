@@ -105,9 +105,9 @@ export default function Bookings() {
         />
       ) : bookings.isPending ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
-          <Skeleton style={{ height: 44, borderRadius: 10 }} />
-          <Skeleton style={{ height: 116, borderRadius: 14 }} />
-          <Skeleton style={{ height: 116, borderRadius: 14 }} />
+          <Skeleton style={{ height: 44, borderRadius: radius.md }} />
+          <Skeleton style={{ height: 116, borderRadius: radius.lg }} />
+          <Skeleton style={{ height: 116, borderRadius: radius.lg }} />
         </View>
       ) : bookings.isError ? (
         // A phone that kept tickets has something better to offer than an

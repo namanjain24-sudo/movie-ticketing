@@ -8,11 +8,16 @@ import { MovieCard } from '../features/catalog/movie-card';
 import { useWatchlist } from '../features/watchlist/use-watchlist';
 import { useTheme } from '../theme';
 
-const COLUMNS = 2;
+/**
+ * Three, matching the home grid, and for the same reason: these are the same
+ * 260px poster files, and at two columns each one is asked to fill about
+ * twice its own width. See the note on `COLUMNS` in `(tabs)/index.tsx`.
+ */
+const COLUMNS = 3;
 
 export default function Watchlist() {
   const router = useRouter();
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, radius } = useTheme();
   const watchlist = useWatchlist();
 
   const open = (movie: MovieSummary) => router.push(`/movie/${movie.slug}`);
@@ -35,8 +40,12 @@ export default function Watchlist() {
             padding: spacing.lg,
           }}
         >
-          <Skeleton style={{ flex: 1, aspectRatio: 2 / 3, borderRadius: 14 }} />
-          <Skeleton style={{ flex: 1, aspectRatio: 2 / 3, borderRadius: 14 }} />
+          {Array.from({ length: COLUMNS }, (_, column) => (
+            <Skeleton
+              key={column}
+              style={{ flex: 1, aspectRatio: 2 / 3, borderRadius: radius.xl }}
+            />
+          ))}
         </View>
       ) : watchlist.isError ? (
         <ErrorState

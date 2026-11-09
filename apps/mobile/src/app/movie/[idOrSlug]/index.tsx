@@ -463,8 +463,8 @@ export default function MovieDetail() {
             <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
               {showtimes.isPending ? (
                 <>
-                  <Skeleton style={{ height: 128, borderRadius: 14 }} />
-                  <Skeleton style={{ height: 128, borderRadius: 14 }} />
+                  <Skeleton style={{ height: 128, borderRadius: radius.lg }} />
+                  <Skeleton style={{ height: 128, borderRadius: radius.lg }} />
                 </>
               ) : showtimes.isError ? (
                 <ErrorState

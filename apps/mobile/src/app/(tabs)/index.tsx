@@ -493,16 +493,33 @@ export default function NowShowing() {
   );
 }
 
-/** Shaped like the screen it stands in for: a banner, then a grid of posters. */
+/**
+ * Shaped like the screen it stands in for, which is the only thing a skeleton
+ * is for: the hero's two lines of large type, the pill, the rail, then the
+ * grid at the column count the grid actually uses.
+ *
+ * It had drifted on all three counts. Two poster placeholders against a
+ * three-column grid, a 10pt-cornered rectangle where the search field is now
+ * a pill, and radii written as the literals 10, 14 and 20 - which were the
+ * old scale, so every corner here disagreed with the component it was
+ * standing in for. Taken from `radius` now, so the next change carries.
+ */
 function HomeSkeleton() {
-  const { spacing } = useTheme();
+  const { spacing, radius } = useTheme();
   return (
     <View style={{ padding: spacing.lg, gap: spacing.xl }}>
-      <Skeleton style={{ height: HIT_SIZE, borderRadius: 10 }} />
-      <Skeleton style={{ height: 210, borderRadius: 20 }} />
+      <View style={{ gap: spacing.md }}>
+        <Skeleton style={{ height: 11, width: 120, borderRadius: radius.sm }} />
+        <Skeleton style={{ height: 40, width: '85%', borderRadius: radius.md }} />
+        <Skeleton style={{ height: 40, width: '60%', borderRadius: radius.md }} />
+        <Skeleton style={{ height: 34, width: 180, borderRadius: radius.full }} />
+      </View>
+      <Skeleton style={{ height: HIT_SIZE, borderRadius: radius.full }} />
+      <Skeleton style={{ height: 210, borderRadius: radius.xl }} />
       <View style={{ flexDirection: 'row', gap: spacing.lg }}>
-        <Skeleton style={{ flex: 1, aspectRatio: 2 / 3, borderRadius: 14 }} />
-        <Skeleton style={{ flex: 1, aspectRatio: 2 / 3, borderRadius: 14 }} />
+        {Array.from({ length: COLUMNS }, (_, column) => (
+          <Skeleton key={column} style={{ flex: 1, aspectRatio: 2 / 3, borderRadius: radius.xl }} />
+        ))}
       </View>
     </View>
   );

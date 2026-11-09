@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useReducedMotion } from 'react-native-reanimated';
 import { Text } from '../../components/ui';
+import { radius } from '../../theme/tokens';
 import type { Sponsor } from './sponsors';
 
 /**
@@ -136,7 +137,11 @@ export function SponsorFilm({
               style={{
                 width: 34,
                 height: 34,
-                borderRadius: 10,
+                // `radius` only, not `useTheme`: this whole surface is video
+                // chrome and deliberately theme-independent, but the corner
+                // scale is not a theme and there is no reason for this tile
+                // to be the one shape in the app off the system.
+                borderRadius: radius.md,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: sponsor.accent,

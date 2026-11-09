@@ -185,8 +185,8 @@ export default function CinemaScreen() {
 
           {showtimes.isPending ? (
             <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
-              <Skeleton style={{ height: 72, borderRadius: 10 }} />
-              <Skeleton style={{ height: 72, borderRadius: 10 }} />
+              <Skeleton style={{ height: 72, borderRadius: radius.md }} />
+              <Skeleton style={{ height: 72, borderRadius: radius.md }} />
             </View>
           ) : showtimes.isError ? (
             /**
@@ -262,7 +262,7 @@ export default function CinemaScreen() {
  * showtime-sized bars — so the venue page doesn't flash blank before a
  * spinner, then flash again into its real layout. */
 function CinemaScreenSkeleton() {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, radius } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <AppBar title="Cinema" />
@@ -274,14 +274,14 @@ function CinemaScreenSkeleton() {
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
           <Skeleton style={{ height: 16, width: '70%', borderRadius: 6 }} />
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
-            <Skeleton style={{ flex: 1, height: 44, borderRadius: 10 }} />
-            <Skeleton style={{ flex: 1, height: 44, borderRadius: 10 }} />
+            <Skeleton style={{ flex: 1, height: 44, borderRadius: radius.md }} />
+            <Skeleton style={{ flex: 1, height: 44, borderRadius: radius.md }} />
           </View>
         </View>
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
           <Skeleton style={{ height: 22, width: 120, borderRadius: 6 }} />
-          <Skeleton style={{ height: 72, borderRadius: 10 }} />
-          <Skeleton style={{ height: 72, borderRadius: 10 }} />
+          <Skeleton style={{ height: 72, borderRadius: radius.md }} />
+          <Skeleton style={{ height: 72, borderRadius: radius.md }} />
         </View>
       </ScrollView>
     </View>

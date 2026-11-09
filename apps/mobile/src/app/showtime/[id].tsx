@@ -40,7 +40,7 @@ export default function SeatMapScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isSignedIn } = useAuth();
   const router = useRouter();
-  const { colors, spacing, elevation } = useTheme();
+  const { colors, spacing, elevation, radius } = useTheme();
   const insets = useSafeAreaInsets();
   const [holdError, setHoldError] = useState<string | null>(null);
   const [partySize, setPartySize] = useState<number | undefined>(undefined);
@@ -357,7 +357,7 @@ export default function SeatMapScreen() {
               zIndex: 1,
               paddingHorizontal: spacing.sm,
               paddingVertical: 3,
-              borderRadius: 999,
+              borderRadius: radius.full,
               backgroundColor: colors.surfaceMuted,
             }}
           >
