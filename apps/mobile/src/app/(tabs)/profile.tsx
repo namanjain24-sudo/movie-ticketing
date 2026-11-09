@@ -10,6 +10,7 @@ import { loyaltyApi } from '../../api/loyalty';
 import { ErrorState } from '../../components/query-state';
 import { AppBar, Button, Skeleton, Text, TextField } from '../../components/ui';
 import { RewardsSection } from '../../features/bookings/scratch-card';
+import { PlansSection } from '../../features/catalog/plans-section';
 import { bookingStreak } from '../../features/bookings/streak';
 import { StreakCard } from '../../features/bookings/streak-card';
 import { TierCard } from '../../features/bookings/tier-card';
@@ -196,6 +197,8 @@ export default function Profile() {
             already happened, and this is the one thing on the screen with
             something still in it. */}
         <RewardsSection />
+
+        <PlansSection />
 
         <StreakCard streak={bookingStreak(bookings.data)} />
 

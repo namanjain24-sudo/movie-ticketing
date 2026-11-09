@@ -33,6 +33,10 @@ model User {
 
   scratchCards ScratchCard[]
 
+  plansOrganised  Plan[]       @relation("PlanOrganiser")
+  planMemberships PlanMember[]
+  planVotes       PlanVote[]
+
   @@index([email])
 }
 
@@ -92,6 +96,8 @@ model Movie {
   showtimes Showtime[]
   reviews   Review[]
   savedBy   WatchlistItem[]
+
+  plans Plan[]
 
   @@index([isNowShowing, releaseDate])
 }
@@ -413,6 +419,8 @@ model Showtime {
   /// One show per screen per start time. This is the conflict detection the
   /// operator dashboard relies on, enforced by the database rather than by a
   /// check the dashboard could forget to run.
+  planOptions PlanOption[]
+
   @@unique([screenId, startsAt])
   @@index([movieId, startsAt])
   @@index([eventId, startsAt])
@@ -757,4 +765,87 @@ model ScratchCard {
   createdAt DateTime @default(now())
 
   @@index([userId, scratchedAt])
+}
+
+/// A group deciding which showing to go to together.
+///
+/// The thing being agreed is a showtime, and the hard part is not the booking
+/// but the half hour of messages before it. So a plan is a shortlist of
+/// candidate showings plus a tally: everybody marks the ones they could make,
+/// the organiser can see which one clears, and the booking happens afterwards
+/// through the ordinary seat flow. Nothing here holds seats or takes money.
+model Plan {
+  id String @id @default(cuid())
+
+  /// What gets pasted into the group chat. Short, unique, and stored
+  /// upper-case so a code typed back in any casing still finds the plan.
+  code String @unique
+
+  movieId String
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  /// Denormalised from the candidate showtimes so the plan can say where it
+  /// is without joining through to cinemas on every read.
+  city String
+
+  organiserId String
+  organiser   User   @relation("PlanOrganiser", fields: [organiserId], references: [id], onDelete: Cascade)
+
+  /// When the last candidate showing starts. A plan past this is history, and
+  /// the list endpoints hide it rather than offering a vote on a film that
+  /// has already begun.
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  options PlanOption[]
+  members PlanMember[]
+
+  @@index([organiserId, expiresAt])
+}
+
+/// Somebody who opened the code. Joining is what makes a tally mean anything:
+/// three votes out of three is a decision, three out of nine is not.
+model PlanMember {
+  id     String @id @default(cuid())
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([planId, userId])
+  @@index([userId])
+}
+
+/// One candidate showing on the shortlist.
+model PlanOption {
+  id         String   @id @default(cuid())
+  planId     String
+  plan       Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  showtimeId String
+  showtime   Showtime @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+
+  votes PlanVote[]
+
+  /// The same showing cannot be on one shortlist twice.
+  @@unique([planId, showtimeId])
+  @@index([showtimeId])
+}
+
+/// "I could make this one." Deliberately not a single choice: the useful
+/// question is which showings somebody can do, not which they like best, and
+/// a plan where everybody picked a different favourite has decided nothing.
+model PlanVote {
+  id       String     @id @default(cuid())
+  optionId String
+  option   PlanOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([optionId, userId])
+  @@index([userId])
 }

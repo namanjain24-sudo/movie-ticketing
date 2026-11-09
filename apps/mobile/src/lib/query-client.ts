@@ -51,6 +51,8 @@ export const queryKeys = {
   promoOffers: ['promo-offers'] as const,
   loyaltyBalance: ['loyalty-balance'] as const,
   rewards: ['rewards'] as const,
+  plans: ['plans'] as const,
+  plan: (code: string) => ['plan', code] as const,
   concessions: ['concessions'] as const,
   bookings: ['bookings'] as const,
   activeHolds: ['active-holds'] as const,

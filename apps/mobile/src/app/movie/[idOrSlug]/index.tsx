@@ -408,9 +408,34 @@ export default function MovieDetail() {
 
         {film.isNowShowing ? (
           <View style={{ paddingVertical: spacing.lg, gap: spacing.lg }}>
-            <Text variant="heading" style={{ paddingHorizontal: spacing.lg }}>
-              Choose a showtime
-            </Text>
+            {/* The plan entry belongs here rather than in the action row
+                above: this is the moment somebody is deciding *which*
+                showing, which is the decision a watch party exists to make
+                with other people. The row above is already three controls and
+                says so. */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: spacing.sm,
+                paddingHorizontal: spacing.lg,
+              }}
+            >
+              <Text variant="heading">Choose a showtime</Text>
+              <Pressable
+                onPress={() => router.push(`/plan/new?movie=${film.slug}`)}
+                accessibilityRole="button"
+                accessibilityLabel="Plan this film with friends"
+                hitSlop={8}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+              >
+                <Ionicons name="people" size={15} color={colors.primary} />
+                <Text variant="label" style={{ color: colors.primary }}>
+                  Plan with friends
+                </Text>
+              </Pressable>
+            </View>
 
             <DateStrip
               days={days}

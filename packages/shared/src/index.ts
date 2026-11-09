@@ -3,6 +3,7 @@ export * from './user';
 export * from './auth';
 export * from './event';
 export * from './catalog';
+export * from './plan';
 export * from './reward';
 export * from './review';
 export * from './booking';
