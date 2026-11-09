@@ -206,6 +206,16 @@ export const bookingSchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED', 'FAILED']),
   createdAt: z.string(),
   confirmedAt: z.string().nullable(),
+  /**
+   * When a refund should have landed, for a cancellation that sends money
+   * back. Null otherwise, including for a booking paid entirely in points.
+   *
+   * Computed on the server in working days, because it is a promise about
+   * somebody's money and the date has to be able to change without an app
+   * release. The complaint about cancelling a ticket is never the amount,
+   * which every app shows; it is the silence afterwards.
+   */
+  refundExpectedBy: z.string().nullable().default(null),
   subtotalMinor: z.number().int(),
   feeMinor: z.number().int(),
   addOnsMinor: z.number().int(),

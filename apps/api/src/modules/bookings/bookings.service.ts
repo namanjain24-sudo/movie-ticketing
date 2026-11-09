@@ -50,12 +50,39 @@ export function verifyQrPayload(payload: string): boolean {
 
 export const __testing = { qrPayload };
 
+/**
+ * When a refund should have landed, counted in working days.
+ *
+ * The complaint people actually make about cancelling a ticket is not the
+ * amount, which every app shows, but the silence afterwards: the money leaves
+ * and nothing says when it comes back. A refund that has not arrived is also
+ * the thing the Consumer Protection Act treats as a deficiency of service, so
+ * a date the product commits to in writing is worth more than a reassurance.
+ *
+ * Working days, because that is how a reversal actually clears: a Friday
+ * evening cancellation is not five calendar days from Wednesday. Saturdays
+ * and Sundays are skipped; public holidays are not, because they vary by
+ * state and a date that is wrong in one direction is better than a promise
+ * this service cannot keep in the other.
+ */
+export function refundExpectedBy(cancelledAt: Date, workingDays: number): Date {
+  const date = new Date(cancelledAt.getTime());
+  let remaining = workingDays;
+  while (remaining > 0) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    const day = date.getUTCDay();
+    if (day !== 0 && day !== 6) remaining -= 1;
+  }
+  return date;
+}
+
 const bookingSelect = {
   id: true,
   reference: true,
   status: true,
   createdAt: true,
   confirmedAt: true,
+  cancelledAt: true,
   subtotalMinor: true,
   feeMinor: true,
   addOnsMinor: true,
@@ -129,6 +156,15 @@ function toDto(row: NonNullable<BookingRow>): Booking {
     status: row.status,
     createdAt: row.createdAt.toISOString(),
     confirmedAt: row.confirmedAt?.toISOString() ?? null,
+    /**
+     * Only for a cancellation that actually sends money back. A booking paid
+     * entirely in points has nothing to return, and promising a date for it
+     * would be a date nobody is waiting for.
+     */
+    refundExpectedBy:
+      row.status === 'CANCELLED' && row.cancelledAt && refundableMinor(row) > 0
+        ? refundExpectedBy(row.cancelledAt, env.REFUND_WINDOW_WORKING_DAYS).toISOString()
+        : null,
     subtotalMinor: row.subtotalMinor,
     feeMinor: row.feeMinor,
     addOnsMinor: row.addOnsMinor,

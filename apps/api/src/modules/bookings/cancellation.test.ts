@@ -1,3 +1,4 @@
+import { refundExpectedBy } from './bookings.service';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '@app/shared';
@@ -185,5 +186,48 @@ describe('cancellation', () => {
       .set(alice.auth)
       .expect(409);
     expect(res.body.error.code).toBe(ERROR_CODES.CANCELLATION_CLOSED);
+  });
+});
+
+describe('refundExpectedBy', () => {
+  /** A date at noon UTC, so no assertion here turns on a timezone edge. */
+  const at = (iso: string) => new Date(`${iso}T12:00:00.000Z`);
+
+  it('counts five working days from a Monday', () => {
+    // Monday 9 November 2026 -> Monday 16th.
+    expect(refundExpectedBy(at('2026-11-09'), 5).toISOString().slice(0, 10)).toBe('2026-11-16');
+  });
+
+  it('steps over the weekend rather than through it', () => {
+    // Thursday 12th + 5 working days: Fri, Mon, Tue, Wed, Thu -> the 19th.
+    // Five calendar days would have said Tuesday the 17th, which is the whole
+    // reason this is not arithmetic on `getDate`.
+    expect(refundExpectedBy(at('2026-11-12'), 5).toISOString().slice(0, 10)).toBe('2026-11-19');
+  });
+
+  it('treats a Friday evening cancellation as starting on Monday', () => {
+    // Friday 13th + 1 working day is Monday the 16th, not Saturday the 14th.
+    expect(refundExpectedBy(at('2026-11-13'), 1).toISOString().slice(0, 10)).toBe('2026-11-16');
+  });
+
+  it('starts from the next working day when cancelled on a Saturday', () => {
+    expect(refundExpectedBy(at('2026-11-14'), 1).toISOString().slice(0, 10)).toBe('2026-11-16');
+  });
+
+  it('never lands on a weekend', () => {
+    for (let day = 1; day <= 28; day += 1) {
+      for (const window of [1, 3, 5, 7, 10]) {
+        const landed = refundExpectedBy(at(`2026-11-${String(day).padStart(2, '0')}`), window);
+        expect([0, 6]).not.toContain(landed.getUTCDay());
+      }
+    }
+  });
+
+  it('keeps the time of day it was cancelled at', () => {
+    // The promise is a date, and the client formats it as one, but silently
+    // moving the instant would make "expected by" mean a different thing on
+    // either side of midnight.
+    const cancelled = new Date('2026-11-09T18:30:00.000Z');
+    expect(refundExpectedBy(cancelled, 5).toISOString().slice(11)).toBe('18:30:00.000Z');
   });
 });

@@ -16,6 +16,8 @@ const JAWAN: Booking = {
   status: 'CONFIRMED',
   createdAt: '2026-01-01T00:00:00.000Z',
   confirmedAt: '2026-01-01T00:01:00.000Z',
+  // Null unless a cancellation actually sends money back.
+  refundExpectedBy: null,
   subtotalMinor: 50_000,
   feeMinor: 3_000,
   addOnsMinor: 0,

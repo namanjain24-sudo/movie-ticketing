@@ -50,6 +50,16 @@ const envSchema = z.object({
   /// How close to the screening a booking may still be cancelled. Two hours
   /// is the industry convention; past it the seat is unlikely to resell.
   CANCELLATION_WINDOW_MINUTES: z.coerce.number().int().nonnegative().default(120),
+  /**
+   * Working days a refund is promised within, counted from the cancellation.
+   *
+   * Five is what the card networks and the RBI's own guidance put on a
+   * reversal, and it is what the gateway's refund actually takes. It is
+   * configuration rather than a constant in the app because it is a promise
+   * about somebody's money: if the provider gets slower, the figure has to be
+   * able to change without waiting for an app release.
+   */
+  REFUND_WINDOW_WORKING_DAYS: z.coerce.number().int().positive().default(5),
   /// How often the sweeper tidies expired holds. This is a cleanup interval,
   /// never a correctness deadline: expiry is decided on every read path.
   SWEEPER_INTERVAL_SECONDS: z.coerce.number().int().positive().default(15),

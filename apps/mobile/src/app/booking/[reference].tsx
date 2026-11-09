@@ -249,6 +249,15 @@ export default function BookingTicket() {
    */
   const restricted = showtime.movie?.certification === 'A' || Boolean(showtime.event?.minAge);
   const cancelled = ticket.status === 'CANCELLED' || ticket.status === 'FAILED';
+
+  /**
+   * Whether the refund is late. Against `useTickAt`'s clock rather than
+   * `Date.now()`, for the same reason the leave-by line is: reading the wall
+   * clock during render is impure, and this line has to change on its own the
+   * moment the date passes.
+   */
+  const refundOverdue =
+    ticket.refundExpectedBy !== null && new Date(ticket.refundExpectedBy).getTime() < now;
   // `discountMinor` is the two folded together; the points portion is exact
   // (pointsRedeemed is in the same minor units a promo discount is), so
   // whatever is left over is the promo code's share.
@@ -436,6 +445,48 @@ export default function BookingTicket() {
             )}
           </Text>
         </View>
+
+        {/* When the money comes back, which is the part every app leaves out.
+            The amount is shown by every ticketing app and the silence
+            afterwards is what people complain about - and a refund that has
+            not arrived is what the Consumer Protection Act treats as a
+            deficiency of service, so a date worth committing to is worth
+            printing. The server works it out in working days; this only
+            renders it. */}
+        {ticket.refundExpectedBy ? (
+          <View style={{ paddingHorizontal: spacing.xs, gap: spacing['2xs'] }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text tone="muted">{refundOverdue ? 'Was expected by' : 'Expected by'}</Text>
+              <Text
+                variant="label"
+                numeric
+                style={refundOverdue ? { color: colors.warning } : undefined}
+              >
+                {formatMonthDay(ticket.refundExpectedBy)}
+              </Text>
+            </View>
+            {refundOverdue ? (
+              /* Past the date the product promised, so it says what to do
+                 rather than leaving somebody to find the help screen. The
+                 support agent can read this account's bookings, so it arrives
+                 already knowing which one this is. */
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Ask about this refund"
+                onPress={() => router.push('/support')}
+                hitSlop={6}
+              >
+                <Text variant="caption" style={{ color: colors.primary }}>
+                  Not arrived? Ask about this booking
+                </Text>
+              </Pressable>
+            ) : (
+              <Text variant="caption" tone="muted">
+                Back to the card you paid with. The booking fee is not refunded.
+              </Text>
+            )}
+          </View>
+        ) : null}
 
         {promoPortionMinor > 0 ? (
           <View
