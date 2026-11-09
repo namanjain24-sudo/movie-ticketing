@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -13,6 +14,7 @@ import { installNotificationHandler } from '../features/notifications/notificati
 import { OnboardingProvider, useOnboarding } from '../features/onboarding/onboarding-provider';
 import { queryClient } from '../lib/query-client';
 import { ThemeProvider, useTheme } from '../theme';
+import { fontAssets } from '../theme/fonts';
 
 export { ErrorBoundary } from '../components/error-boundary';
 
@@ -26,7 +28,13 @@ function RootNavigator() {
   const { isReady } = useAuth();
   const { colors, isDark, themeReady } = useTheme();
   const onboarding = useOnboarding();
-  const ready = isReady && themeReady && onboarding.ready;
+  // `|| fontsError`, not `&&`: every size in the type scale names a specific
+  // face, and if those files cannot be registered the app still has to open.
+  // An unknown family falls back to the platform's own face, which is how the
+  // product looked until the fonts existed - worth shipping, and much better
+  // than a splash screen that never leaves.
+  const [fontsLoaded, fontsError] = useFonts(fontAssets);
+  const ready = isReady && themeReady && onboarding.ready && (fontsLoaded || !!fontsError);
   const [showAppSplash, setShowAppSplash] = useState(true);
 
   useEffect(() => {

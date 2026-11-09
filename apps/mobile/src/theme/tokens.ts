@@ -358,6 +358,33 @@ export const radius = {
 } as const;
 
 /**
+ * The typeface, named one face per weight.
+ *
+ * React Native does not synthesise a weight from a family. Ask Android for
+ * "Plus Jakarta Sans" at weight 800 and it renders the regular file, because
+ * the only thing it matches on is the family name it was registered under. So
+ * each weight is registered as its own family and named here explicitly, and
+ * the `fontWeight` on each variant below is kept in agreement with the face
+ * rather than left to do the choosing.
+ *
+ * The app shipped in the system font until now, which is a legible, careful,
+ * completely anonymous choice: San Francisco on one phone and Roboto on the
+ * other, so the product had no voice of its own on either. Plus Jakarta Sans
+ * is a geometric grotesque with a heavy end that holds up at `displayLg`,
+ * which is the size that has to carry the page.
+ *
+ * `assets/fonts` holds the four files and the licence they ship under. The
+ * `require` map that registers them lives in `./fonts`, so that importing a
+ * colour does not pull four binaries into a unit test.
+ */
+export const FONT_FAMILY = {
+  regular: 'PlusJakartaSans-Regular',
+  semibold: 'PlusJakartaSans-SemiBold',
+  bold: 'PlusJakartaSans-Bold',
+  extrabold: 'PlusJakartaSans-ExtraBold',
+} as const;
+
+/**
  * Steps are deliberately far apart. On a phone held at arm's length a two-point
  * difference is not a hierarchy, it is a rendering artefact.
  *
@@ -367,15 +394,45 @@ export const radius = {
  * most screens do not get one at all.
  */
 export const typography = {
-  displayLg: { fontSize: 40, lineHeight: 44, fontWeight: '800', letterSpacing: -1.2 },
-  display: { fontSize: 34, lineHeight: 38, fontWeight: '800', letterSpacing: -0.9 },
-  title: { fontSize: 24, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5 },
-  heading: { fontSize: 18, lineHeight: 23, fontWeight: '700', letterSpacing: -0.2 },
-  body: { fontSize: 15, lineHeight: 22, fontWeight: '400' },
-  label: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: '500' },
+  displayLg: {
+    fontFamily: FONT_FAMILY.extrabold,
+    fontSize: 40,
+    lineHeight: 44,
+    fontWeight: '800',
+    letterSpacing: -1.2,
+  },
+  display: {
+    fontFamily: FONT_FAMILY.extrabold,
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: '800',
+    letterSpacing: -0.9,
+  },
+  title: {
+    fontFamily: FONT_FAMILY.bold,
+    fontSize: 24,
+    lineHeight: 29,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  heading: {
+    fontFamily: FONT_FAMILY.bold,
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  body: { fontFamily: FONT_FAMILY.regular, fontSize: 15, lineHeight: 22, fontWeight: '400' },
+  label: { fontFamily: FONT_FAMILY.semibold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  caption: { fontFamily: FONT_FAMILY.semibold, fontSize: 12, lineHeight: 16, fontWeight: '600' },
   /** Section eyebrows and legend text. Wide tracking earns the small size. */
-  overline: { fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 0.8 },
+  overline: {
+    fontFamily: FONT_FAMILY.bold,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
 } as const;
 
 export type TypographyVariant = keyof typeof typography;
