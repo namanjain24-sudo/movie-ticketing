@@ -421,6 +421,10 @@ model Showtime {
   /// check the dashboard could forget to run.
   planOptions PlanOption[]
 
+  /// What this screening offers, for the MIB disclosure. Empty is the
+  /// common case and means exactly that: nothing is claimed.
+  accessibility AccessibilityFeature[]
+
   @@unique([screenId, startsAt])
   @@index([movieId, startsAt])
   @@index([eventId, startsAt])
@@ -848,4 +852,23 @@ model PlanVote {
 
   @@unique([optionId, userId])
   @@index([userId])
+}
+
+/// Sensory accessibility on a screening, as the Ministry of Information and
+/// Broadcasting requires ticketing platforms to show before anybody books.
+///
+/// Distinct from the wheelchair spaces already on `Seat`: that is whether
+/// somebody can get into the room, this is whether they can follow what is in
+/// it. A cinema runs specific accessible screenings rather than fitting a
+/// whole film, which is why this sits on the showtime and not the movie.
+enum AccessibilityFeature {
+  /// A narration track describing what is on screen, for blind and low-vision
+  /// audiences. Usually delivered to a personal headset.
+  AUDIO_DESCRIPTION
+  /// On-screen captions covering dialogue and sound, for deaf and
+  /// hard-of-hearing audiences. Not the same as subtitles for another
+  /// language, which the `language` column already covers.
+  CLOSED_CAPTIONS
+  /// An Indian Sign Language interpreter, inset or in the room.
+  INDIAN_SIGN_LANGUAGE
 }

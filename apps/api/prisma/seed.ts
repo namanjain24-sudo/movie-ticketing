@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { SeatTier } from '@prisma/client';
+import type { AccessibilityFeature, SeatTier } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import type { CatalogueEntry } from '../src/scripts/fetch-catalogue';
 // The application's own client, so the seed connects through the same adapter
@@ -864,6 +864,7 @@ async function main() {
           durationMins: movie.durationMins,
           format: screen.seatCount > 1_000 ? 'IMAX' : slotIndex % 3 === 0 ? 'THREE_D' : 'TWO_D',
           language: movie.languages[0] ?? 'Hindi',
+          accessibility: accessibilityFor(day, slotIndex, screen.screenIndex),
         });
         showtimeCount++;
       }
@@ -910,6 +911,30 @@ async function main() {
   console.log(`Load-test showtime id: ${loadShowtime?.id}`);
 }
 
+/**
+ * Which accessible screenings a multiplex actually runs.
+ *
+ * A minority, and not evenly spread: chains schedule a handful of captioned
+ * shows a week and far fewer with audio description or an interpreter.
+ * Deterministic from the slot rather than random, so the seeded catalogue
+ * looks the same on every machine and a screenshot of it stays true.
+ *
+ * Empty for most showings, which is the honest default: the disclosure says
+ * nothing is claimed, not that the cinema has nothing.
+ */
+function accessibilityFor(
+  day: number,
+  slotIndex: number,
+  screenIndex: number,
+): AccessibilityFeature[] {
+  const n = day * 7 + slotIndex * 3 + screenIndex;
+  const features: AccessibilityFeature[] = [];
+  if (n % 6 === 0) features.push('CLOSED_CAPTIONS');
+  if (n % 12 === 0) features.push('AUDIO_DESCRIPTION');
+  if (n % 24 === 0) features.push('INDIAN_SIGN_LANGUAGE');
+  return features;
+}
+
 async function createShowtime(input: {
   movieId: string;
   screenId: string;
@@ -919,6 +944,7 @@ async function createShowtime(input: {
   durationMins: number;
   format: 'TWO_D' | 'THREE_D' | 'IMAX' | 'FOUR_DX';
   language: string;
+  accessibility?: AccessibilityFeature[];
 }): Promise<number> {
   const [hours = 0, minutes = 0] = input.time.split(':').map(Number);
   const startsAt = new Date();
@@ -941,6 +967,7 @@ async function createShowtime(input: {
       salesCloseAt,
       format: input.format,
       language: input.language,
+      accessibility: input.accessibility ?? [],
       tierPrices: {
         create: (Object.keys(prices) as CinemaTier[]).map((tier) => ({
           tier,

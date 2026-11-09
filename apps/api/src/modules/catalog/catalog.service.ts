@@ -217,6 +217,9 @@ export async function listShowtimes(params: {
       endsAt: true,
       format: true,
       language: true,
+      // Next to `language` on purpose: captions for the hard of hearing are
+      // not subtitles for a translation, and the two get conflated.
+      accessibility: true,
       currency: true,
       salesCloseAt: true,
       tierPrices: { select: { priceMinor: true } },
@@ -256,6 +259,7 @@ export async function listShowtimes(params: {
       endsAt: s.endsAt.toISOString(),
       format: s.format as ShowFormat,
       language: s.language,
+      accessibility: s.accessibility,
       currency: s.currency,
       salesCloseAt: s.salesCloseAt.toISOString(),
       fromPriceMinor: Math.min(...s.tierPrices.map((t) => t.priceMinor)),

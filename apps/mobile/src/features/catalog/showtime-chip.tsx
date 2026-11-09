@@ -1,4 +1,10 @@
-import { describeShow, formatMoney, type ShowtimeSummary } from '@app/shared';
+import {
+  ACCESSIBILITY_LABELS,
+  ACCESSIBILITY_SHORT,
+  describeShow,
+  formatMoney,
+  type ShowtimeSummary,
+} from '@app/shared';
 import { Pressable, View } from 'react-native';
 import { Text } from '../../components/ui';
 import { endsNextDay, formatTime } from '../../lib/format';
@@ -50,7 +56,16 @@ export function ShowtimeChip({
         late ? `, ends ${formatTime(showtime.endsAt)} the next day` : ''
       }, ${describeShow(showtime)}, ${
         bookable ? AVAILABILITY_LABELS[showtime.availability] : unavailableLabel
-      }, from ${formatMoney(showtime.fromPriceMinor, showtime.currency)}`}
+      }, from ${formatMoney(showtime.fromPriceMinor, showtime.currency)}${
+        /* Spelled out, never the initials. The people this disclosure exists
+           for are the ones hearing this string rather than reading the chip,
+           and "AD, CC" is not information to a screen reader. */
+        (showtime.accessibility ?? []).length > 0
+          ? `. With ${(showtime.accessibility ?? [])
+              .map((feature) => ACCESSIBILITY_LABELS[feature].toLowerCase())
+              .join(', ')}`
+          : ''
+      }`}
       onPress={onPress}
       style={({ pressed }) => ({
         minWidth: 104,
@@ -77,6 +92,28 @@ export function ShowtimeChip({
           ends {formatTime(showtime.endsAt)}
         </Text>
       ) : null}
+      {/* The MIB requires a ticketing platform to say whether a screening
+          carries audio description, closed captions or sign language before
+          anybody books, and this chip is where that decision is made.
+          Initials here because there is room for three characters; the full
+          words are in the accessibility label above, which is what the people
+          who need this actually receive. */}
+      {(showtime.accessibility ?? []).length > 0 ? (
+        <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+          {(showtime.accessibility ?? []).map((feature) => (
+            <Text
+              key={feature}
+              variant="overline"
+              style={{ color: colors.accent }}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
+              {ACCESSIBILITY_SHORT[feature]}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
       <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 1 }} />
       <Text variant="caption" tone="muted" numeric>
         {bookable

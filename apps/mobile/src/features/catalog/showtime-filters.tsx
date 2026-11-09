@@ -1,10 +1,29 @@
-import { SHOW_FORMAT_LABELS, type ShowtimeSummary, type ShowFormat } from '@app/shared';
+import {
+  ACCESSIBILITY_FEATURES,
+  ACCESSIBILITY_LABELS,
+  ACCESSIBILITY_SHORT,
+  SHOW_FORMAT_LABELS,
+  type AccessibilityFeature,
+  type ShowFormat,
+  type ShowtimeSummary,
+} from '@app/shared';
 import { Pressable, ScrollView } from 'react-native';
 import { Text } from '../../components/ui';
 import { tapFeedback } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 
-export type ShowtimeFilter = { format?: ShowFormat; language?: string; partOfDay?: PartOfDay };
+export type ShowtimeFilter = {
+  format?: ShowFormat;
+  language?: string;
+  partOfDay?: PartOfDay;
+  /**
+   * A need rather than a preference, which is why it is a filter and not
+   * only a badge: a handful of screenings a week carry audio description,
+   * and finding them by reading every chip is the version of this screen
+   * handed to the person with the least room to manoeuvre.
+   */
+  accessibility?: AccessibilityFeature;
+};
 
 /**
  * When a show starts, in the words people use when they are deciding whether
@@ -46,11 +65,16 @@ export function filterOptions<T extends ShowtimeSummary>(cinemas: Grouped<T>[]) 
   const formats = new Set<ShowFormat>();
   const languages = new Set<string>();
   const parts = new Set<PartOfDay>();
+  const access = new Set<AccessibilityFeature>();
   for (const entry of cinemas) {
     for (const slot of entry.showtimes) {
       formats.add(slot.format);
       languages.add(slot.language);
       parts.add(partOfDay(slot.startsAt));
+      // `?? []` because the field is new: a response cached before it
+      // existed, or an older API, has no array here and iterating
+      // `undefined` would take the film page down.
+      for (const feature of slot.accessibility ?? []) access.add(feature);
     }
   }
   return {
@@ -59,6 +83,9 @@ export function filterOptions<T extends ShowtimeSummary>(cinemas: Grouped<T>[]) 
     // In the order of the day rather than the order they were found, so the
     // chips read Morning, Afternoon, Evening, Night however the list arrived.
     parts: PARTS_OF_DAY.filter((p) => parts.has(p.id)),
+    // In the order the labels are declared, so the chips do not reshuffle
+    // with whatever the day happened to contain.
+    accessibility: ACCESSIBILITY_FEATURES.filter((feature) => access.has(feature)),
   };
 }
 
@@ -66,7 +93,9 @@ export function applyFilter<T extends ShowtimeSummary, G extends Grouped<T>>(
   cinemas: G[],
   filter: ShowtimeFilter,
 ): G[] {
-  if (!filter.format && !filter.language && !filter.partOfDay) return cinemas;
+  if (!filter.format && !filter.language && !filter.partOfDay && !filter.accessibility) {
+    return cinemas;
+  }
   return (
     cinemas
       .map((entry) => ({
@@ -75,7 +104,8 @@ export function applyFilter<T extends ShowtimeSummary, G extends Grouped<T>>(
           (slot) =>
             (!filter.format || slot.format === filter.format) &&
             (!filter.language || slot.language === filter.language) &&
-            (!filter.partOfDay || partOfDay(slot.startsAt) === filter.partOfDay),
+            (!filter.partOfDay || partOfDay(slot.startsAt) === filter.partOfDay) &&
+            (!filter.accessibility || (slot.accessibility ?? []).includes(filter.accessibility)),
         ),
       }))
       // A cinema with nothing left is noise, not information.
@@ -87,24 +117,44 @@ export function ShowtimeFilters({
   formats,
   languages,
   parts = [],
+  accessibility = [],
   value,
   onChange,
 }: {
   formats: ShowFormat[];
   languages: string[];
   parts?: readonly (typeof PARTS_OF_DAY)[number][];
+  accessibility?: readonly AccessibilityFeature[];
   value: ShowtimeFilter;
   onChange: (next: ShowtimeFilter) => void;
 }) {
   const { colors, radius, spacing } = useTheme();
 
   // With a single option there is nothing to choose between.
-  if (formats.length < 2 && languages.length < 2 && parts.length < 2) return null;
+  // One accessible screening is still worth a chip: unlike a format, it is
+  // the only one somebody may be able to attend, so `>= 1` rather than
+  // `> 1` the way the preferences are treated.
+  if (
+    formats.length < 2 &&
+    languages.length < 2 &&
+    parts.length < 2 &&
+    accessibility.length === 0
+  ) {
+    return null;
+  }
 
-  const chip = (label: string, selected: boolean, onPress: () => void, key: string) => (
+  const chip = (
+    label: string,
+    selected: boolean,
+    onPress: () => void,
+    key: string,
+    /** What a screen reader says, when the visible label is an initialism. */
+    spokenLabel?: string,
+  ) => (
     <Pressable
       key={key}
       accessibilityRole="button"
+      accessibilityLabel={spokenLabel ?? label}
       accessibilityState={{ selected }}
       onPress={() => {
         if (!selected) tapFeedback();
@@ -132,7 +182,27 @@ export function ShowtimeFilters({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}
     >
-      {chip('All', !value.format && !value.language && !value.partOfDay, () => onChange({}), 'all')}
+      {chip(
+        'All',
+        !value.format && !value.language && !value.partOfDay && !value.accessibility,
+        () => onChange({}),
+        'all',
+      )}
+      {/* Before the rest, because for the people who need one of these it
+          is the binding constraint and everything else is a preference. */}
+      {accessibility.map((feature) =>
+        chip(
+          ACCESSIBILITY_SHORT[feature],
+          value.accessibility === feature,
+          () =>
+            onChange({
+              ...value,
+              accessibility: value.accessibility === feature ? undefined : feature,
+            }),
+          `a-${feature}`,
+          ACCESSIBILITY_LABELS[feature],
+        ),
+      )}
       {/* When comes first: it is the constraint most people arrive with, and
           the one a four-screen multiplex makes hardest to scan by eye. */}
       {parts.length > 1 &&

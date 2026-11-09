@@ -61,6 +61,46 @@ export const ratingSummarySchema = z.object({
 });
 export type RatingSummary = z.infer<typeof ratingSummarySchema>;
 
+/**
+ * Sensory accessibility on a screening.
+ *
+ * The Ministry of Information and Broadcasting requires ticketing platforms
+ * to say, before anybody books, whether a screening carries audio
+ * description, closed captions or Indian Sign Language. It is a disclosure
+ * rather than a feature: an empty list is the common case and means exactly
+ * that nothing is claimed, which is different from claiming none.
+ *
+ * Separate from the wheelchair spaces on the seat map. That is whether
+ * somebody can get into the room; this is whether they can follow what is in
+ * it. Also separate from `language`, which is about which language a film is
+ * in - captions for the hard of hearing are not subtitles for a translation.
+ */
+export const ACCESSIBILITY_FEATURES = [
+  'AUDIO_DESCRIPTION',
+  'CLOSED_CAPTIONS',
+  'INDIAN_SIGN_LANGUAGE',
+] as const;
+export const accessibilityFeatureSchema = z.enum(ACCESSIBILITY_FEATURES);
+export type AccessibilityFeature = z.infer<typeof accessibilityFeatureSchema>;
+
+/** Said in full where there is room to say it. */
+export const ACCESSIBILITY_LABELS: Record<AccessibilityFeature, string> = {
+  AUDIO_DESCRIPTION: 'Audio description',
+  CLOSED_CAPTIONS: 'Closed captions',
+  INDIAN_SIGN_LANGUAGE: 'Indian Sign Language',
+};
+
+/**
+ * The initials, for a chip on a showtime where there is room for two or three
+ * characters and nothing else. Spelled out in every accessibility label, so a
+ * screen reader never reads "AD".
+ */
+export const ACCESSIBILITY_SHORT: Record<AccessibilityFeature, string> = {
+  AUDIO_DESCRIPTION: 'AD',
+  CLOSED_CAPTIONS: 'CC',
+  INDIAN_SIGN_LANGUAGE: 'ISL',
+};
+
 export const movieSummarySchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -127,6 +167,11 @@ export const showtimeSummarySchema = z.object({
   salesCloseAt: z.string(),
   fromPriceMinor: z.number().int(),
   availability: availabilityBandSchema,
+  /**
+   * What this screening offers, for the MIB disclosure. Empty is the common
+   * case: nothing is claimed rather than nothing exists.
+   */
+  accessibility: z.array(accessibilityFeatureSchema).default([]),
   /**
    * A listing grouped by cinema (no `movieId` filter) can hold showtimes for
    * several different films at once, so the film has to travel with each

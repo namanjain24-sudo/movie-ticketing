@@ -10,6 +10,9 @@ const base = {
   salesCloseAt: '2026-01-01T10:00:00.000Z',
   fromPriceMinor: 25_000,
   availability: 'PLENTY',
+  // Empty is the ordinary case: the disclosure claims nothing rather than
+  // claiming the screening has nothing.
+  accessibility: [],
 } satisfies Omit<ShowtimeSummary, 'id' | 'movie' | 'event'>;
 
 function film(id: string, movieId: string, title: string): ShowtimeSummary {

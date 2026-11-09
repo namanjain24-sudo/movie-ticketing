@@ -1,4 +1,4 @@
-import type { ShowtimeSummary } from '@app/shared';
+import type { AccessibilityFeature, ShowtimeSummary } from '@app/shared';
 import { applyFilter, filterOptions, partOfDay } from '../showtime-filters';
 
 /** A showtime at a given local hour today, which is what the filter reads. */
@@ -75,5 +75,70 @@ describe('applyFilter', () => {
   it('returns the list untouched when nothing is chosen', () => {
     const cinemas = [{ showtimes: [at(9), at(19)] }];
     expect(applyFilter(cinemas, {})).toBe(cinemas);
+  });
+});
+
+describe('accessibility', () => {
+  const withFeatures = (hour: number, accessibility: AccessibilityFeature[]) =>
+    at(hour, { accessibility });
+
+  it('offers only the features the day actually has, in a fixed order', () => {
+    const cinemas = [
+      {
+        showtimes: [
+          withFeatures(19, ['CLOSED_CAPTIONS']),
+          withFeatures(21, ['INDIAN_SIGN_LANGUAGE', 'CLOSED_CAPTIONS']),
+        ],
+      },
+    ];
+    // Declared order, not discovery order, so the chips do not reshuffle with
+    // whatever the day happened to contain.
+    expect(filterOptions(cinemas).accessibility).toEqual([
+      'CLOSED_CAPTIONS',
+      'INDIAN_SIGN_LANGUAGE',
+    ]);
+  });
+
+  it('offers nothing when no screening claims anything', () => {
+    expect(filterOptions([{ showtimes: [at(19), at(21)] }]).accessibility).toEqual([]);
+  });
+
+  it('keeps only the screenings that carry the chosen feature', () => {
+    const cinemas = [
+      {
+        showtimes: [
+          withFeatures(14, ['AUDIO_DESCRIPTION']),
+          withFeatures(19, ['CLOSED_CAPTIONS']),
+          at(21),
+        ],
+      },
+    ];
+    const described = applyFilter(cinemas, { accessibility: 'AUDIO_DESCRIPTION' });
+    expect(described[0]?.showtimes).toHaveLength(1);
+    expect(described[0]?.showtimes[0]?.accessibility).toEqual(['AUDIO_DESCRIPTION']);
+  });
+
+  it('combines with the other filters rather than replacing them', () => {
+    const cinemas = [
+      {
+        showtimes: [withFeatures(9, ['CLOSED_CAPTIONS']), withFeatures(19, ['CLOSED_CAPTIONS'])],
+      },
+    ];
+    const evening = applyFilter(cinemas, {
+      accessibility: 'CLOSED_CAPTIONS',
+      partOfDay: 'evening',
+    });
+    expect(evening[0]?.showtimes).toHaveLength(1);
+  });
+
+  it('survives a showtime that has no accessibility array at all', () => {
+    // The field is new. A response cached before it existed, or an older API,
+    // has nothing here - and iterating `undefined` took the film page down
+    // until this was guarded.
+    const legacy = [{ showtimes: [{ ...at(19), accessibility: undefined } as never] }];
+    expect(() => filterOptions(legacy)).not.toThrow();
+    expect(filterOptions(legacy).accessibility).toEqual([]);
+    expect(() => applyFilter(legacy, { accessibility: 'CLOSED_CAPTIONS' })).not.toThrow();
+    expect(applyFilter(legacy, { accessibility: 'CLOSED_CAPTIONS' })).toEqual([]);
   });
 });
