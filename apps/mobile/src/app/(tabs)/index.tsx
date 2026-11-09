@@ -19,6 +19,7 @@ import { AppBar, Skeleton } from '../../components/ui';
 import { EventCard } from '../../features/events/event-card';
 import { CitySheet } from '../../features/catalog/city-sheet';
 import { FeaturedRail } from '../../features/catalog/featured-rail';
+import { HomeHero } from '../../features/catalog/home-hero';
 import {
   GenreFilter,
   byGenre,
@@ -195,17 +196,38 @@ export default function NowShowing() {
 
   const header = (
     <View style={{ gap: spacing.xl, paddingBottom: spacing.lg }}>
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
+      {/* Only when browsing. Mid-search the hero is a large block of type
+          saying how many films exist, directly above a list of the three that
+          matched - which is the screen arguing with itself. */}
+      {!searching ? (
+        <View style={{ paddingTop: spacing.lg }}>
+          <HomeHero
+            city={city}
+            count={movies.isPending ? undefined : all.length}
+            onPressCity={() => setCityOpen(true)}
+          />
+        </View>
+      ) : null}
+
+      <View
+        style={{
+          paddingHorizontal: spacing.lg,
+          paddingTop: searching ? spacing.lg : 0,
+        }}
+      >
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             gap: spacing.sm,
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderWidth: 1,
-            borderRadius: radius.md,
-            paddingHorizontal: spacing.md,
+            // A filled pill rather than an outlined box. The old field was a
+            // 10pt-cornered rectangle with a hairline, which is the house
+            // style of a 2015 form; this is the shape every app a sixteen
+            // year old opens uses for search, and it stops competing with the
+            // cards below it for the same border colour.
+            backgroundColor: colors.surfaceMuted,
+            borderRadius: radius.full,
+            paddingHorizontal: spacing.lg,
             minHeight: HIT_SIZE,
           }}
         >
