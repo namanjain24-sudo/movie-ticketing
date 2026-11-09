@@ -9,6 +9,8 @@ import { bookingApi } from '../../api/booking';
 import { loyaltyApi } from '../../api/loyalty';
 import { ErrorState } from '../../components/query-state';
 import { AppBar, Button, Skeleton, Text, TextField } from '../../components/ui';
+import { bookingStreak } from '../../features/bookings/streak';
+import { StreakCard } from '../../features/bookings/streak-card';
 import { TierCard } from '../../features/bookings/tier-card';
 import { useWatchlist } from '../../features/watchlist/use-watchlist';
 import { useAuth } from '../../features/auth/auth-provider';
@@ -188,6 +190,8 @@ export default function Profile() {
           <Stat label="Saved" value={watchlist.movies?.length} />
           <Stat label="Points" value={loyaltyBalance.data?.balance} />
         </Animated.View>
+
+        <StreakCard streak={bookingStreak(bookings.data)} />
 
         <TierCard lifetimePoints={loyaltyBalance.data?.lifetimePoints} />
 
