@@ -3,73 +3,117 @@ import type { TextStyle } from 'react-native';
 /**
  * Every colour, space and radius in the app comes from here. Components never
  * hard-code a hex value, so re-skinning the product is a one-file change.
+ *
+ * The identity is a dark room with a lit screen in it.
+ *
+ * The product used to be red, a few degrees off the colour every other
+ * ticketing app in the market already owns, and the red cost it twice. Once in
+ * recognition, because a red cinema app is wallpaper. Once in the seat map,
+ * where the brand had to mean "the seat you picked" while green meant "free"
+ * and a muted grey meant "gone" - three states, two of which were fighting
+ * over the warm half of the wheel.
+ *
+ * So the brand moved to violet and the accent to lime. Violet is the thing you
+ * press. Lime is the thing that is alive: a show filling up, a reward landing,
+ * the projector's own light. Neither one is green, amber or red, which leaves
+ * all three free to go back to meaning only what they say.
  */
 
 const palette = {
   /**
-   * Signature accent. Marks the primary action and nothing else.
+   * The brand, as a ramp rather than a colour, because one violet cannot do
+   * every job a brand is asked to do.
    *
-   * `red500` is the brand, and it is what you see as a stroke, an icon, a tab
-   * tint or a line of text on a dark background — 5.15:1 against `ink900`,
-   * comfortably readable.
+   * `v500` is the brand at full voice: a stroke, an icon, a tab tint, a line
+   * of link text on a dark page. `v600` and `v700` are the half that white
+   * survives on (6.68:1 and 8.17:1), so every filled control is drawn from
+   * those and the bright end never has to carry a 17px label.
    *
-   * It is not what you see *behind white text*. White on `red500` is 3.50:1,
-   * and WCAG AA wants 4.5:1 for anything that is not large text — which the
-   * button label at 17px bold is not, and the seat number at 10px very much
-   * is not. `red600` is 4.71:1 with white and `red700` is 6.38:1, so filled
-   * controls use those and the brand colour keeps every other job. See
-   * `primarySolid` below.
+   * This is the same split the red palette arrived at the hard way. It is kept
+   * because the reason for it has not changed: a brand colour chosen to look
+   * good as a stroke is almost never dark enough to sit behind white text.
    */
-  red700: '#B81E3D',
-  red600: '#D92E50',
-  red500: '#F84464',
-  red400: '#FF6B84',
-  red100: '#FFE4E9',
+  v800: '#3A1FB8',
+  v700: '#4A26D9',
+  v600: '#5B31F0',
+  v500: '#6C4DFF',
+  v400: '#9079FF',
+  v300: '#B4A5FF',
+  v100: '#EAE4FF',
 
-  // Chrome. Dark in both themes: it anchors the app and lets posters read
-  // against a neutral rather than against the page.
-  chrome900: '#16161C',
-  chrome800: '#22222C',
-  chrome700: '#333545',
+  /**
+   * The accent, and the only one. Acid lime.
+   *
+   * It reads as emitted rather than painted, which is the whole reason it is
+   * here: a cinema is a dark room, and the things worth looking at in it are
+   * the things giving off light. It marks what is live and what has just been
+   * won, and nothing else. A lime that appears on every card is a lime that
+   * means nothing.
+   *
+   * `l400` is for the dark page, where it is a beacon at 15.58:1. On a white
+   * page the same colour is 1.3:1, which is not a colour you can read a word
+   * in, so the light theme uses `l600` at 5.08:1 instead. Same accent, two
+   * weights, exactly as the status colours do below.
+   */
+  l700: '#3F5600',
+  l600: '#54730A',
+  l500: '#8FD400',
+  l400: '#B8FF3C',
+  l300: '#D2FF7D',
+  l100: '#EEFFCB',
 
-  ink900: '#101015',
-  ink850: '#16161D',
-  ink800: '#1B1B24',
-  ink700: '#24242E',
-  ink600: '#333340',
-  ink500: '#6B6B76',
-  ink400: '#9A9AA6',
-  ink300: '#C9C9D2',
-  ink200: '#E4E4EA',
-  ink100: '#EFEFF3',
-  ink50: '#F5F5F7',
+  /**
+   * Neutrals, shifted a few points cool.
+   *
+   * A true grey next to a violet brand reads as slightly yellow, which makes
+   * the whole app look dusty. These lean blue just enough to sit under the
+   * brand without anyone noticing the correction. Never `#000000`: pure black
+   * has no shadow to give, so depth stops working the moment you need it.
+   */
+  n950: '#0B0B10',
+  n900: '#111118',
+  n850: '#16161F',
+  n800: '#1C1C27',
+  n700: '#262633',
+  n600: '#353545',
+  n500: '#6E6E80',
+  n450: '#85859A',
+  n400: '#9E9EB2',
+  n300: '#C7C7D4',
+  n200: '#E3E3EB',
+  n100: '#EFEFF4',
+  n50: '#F6F6F9',
   white: '#FFFFFF',
 
-  green500: '#1EA043',
   /**
-   * The light theme's reading weights.
+   * Status, in two weights each, for the same reason the accent has two.
    *
-   * green500, amber500 and violet500 were written for a dark page, where they
-   * sit at 5.57, 8.75 and 6.57 against the background. On white the same three
-   * read 3.41, 2.17 and 4.39 — and amber at 2.17 is not a colour anybody can
-   * read a word in. "Filling fast", a late show's end time and an A
-   * certificate were all being said in it.
+   * The bright weight is written for a dark page and the dark weight for a
+   * white one. Shipping one weight for both is how the previous palette ended
+   * up with an amber at 2.17:1 carrying the words "Filling fast".
    */
-  green700: '#146C32',
-  green100: '#DCF5E3',
-  amber500: '#E8A317',
-  amber700: '#8A5A00',
-  amber100: '#FDF0D5',
+  em600: '#0F7A3D',
+  em500: '#19B85C',
+  em100: '#D7F7E3',
 
-  // Accent pair. The app's one gesture towards the future is light: a cinema
-  // is a dark room with a projector in it, so the accents behave like emitted
-  // light rather than like paint — they glow, they gradient, and they only
-  // ever appear on something that is doing work.
-  violet500: '#7B5BFF',
-  violet600: '#5B3DE8',
-  violet400: '#9C86FF',
-  cyan400: '#35D6E8',
+  am700: '#8A5200',
+  am500: '#F0A91B',
+  am100: '#FDF0D2',
+
+  /**
+   * Danger is a rose, not the old brand red, and now that the brand is violet
+   * it can be: there is nothing left for it to be confused with. Keeping it
+   * clearly red matters more than keeping it on-brand, because it is the
+   * colour that says a payment failed.
+   */
+  ro600: '#C9254B',
+  ro500: '#F2415F',
+  ro400: '#FF7088',
+  ro100: '#FFE2E8',
+
+  /** Celebration. One moment in the product owns this: a ticket you now hold. */
   gold400: '#FFC24B',
+  gold300: '#FFD98A',
 } as const;
 
 export type ColorName =
@@ -84,8 +128,8 @@ export type ColorName =
   | 'textInverse'
   | 'primary'
   // A fill that carries white text, as opposed to `primary`, which is a
-  // brand colour for strokes, icons and text. White on `primary` is 3.50:1
-  // and fails WCAG AA at the sizes this app actually uses.
+  // brand colour for strokes, icons and text. The bright end of the violet
+  // ramp is 3.1:1 under white and fails WCAG AA at the sizes this app uses.
   | 'primarySolid'
   | 'primarySolidPressed'
   | 'primaryPressed'
@@ -95,7 +139,7 @@ export type ColorName =
   | 'chrome'
   | 'onChrome'
   | 'onChromeMuted'
-  /** An inactive pill or control sitting on the chrome bar itself — never a
+  /** An inactive pill or control sitting on the chrome bar itself - never a
    * page surface, so it doesn't flip with light/dark like `surfaceMuted`. */
   | 'chromeSurface'
   | 'success'
@@ -105,7 +149,7 @@ export type ColorName =
   | 'danger'
   | 'dangerMuted'
   // A poster or still is never theme-tinted, so text laid over one needs a
-  // colour that doesn't flip with light/dark — same idea as `onChrome`, for
+  // colour that doesn't flip with light/dark - same idea as `onChrome`, for
   // photos instead of the chrome bar.
   | 'onImage'
   | 'onImageMuted'
@@ -117,7 +161,7 @@ export type ColorName =
   | 'seatGone'
   | 'scrim'
   // Secondary accent, for the things that are live rather than pressable:
-  // a rating, a distance, a seat that just freed up.
+  // a rating, a distance, a seat that just freed up, a reward.
   | 'accent'
   | 'accentMuted'
   // Glass: a translucent panel over content, with a hairline to give it an
@@ -129,116 +173,122 @@ export type ColorName =
 export type Colors = Record<ColorName, string>;
 
 export const lightColors: Colors = {
-  background: palette.ink50,
+  background: palette.n50,
   surface: palette.white,
-  surfaceMuted: palette.ink100,
-  surfaceSunken: palette.ink200,
-  border: palette.ink200,
-  borderStrong: palette.ink300,
+  surfaceMuted: palette.n100,
+  surfaceSunken: palette.n200,
+  border: palette.n200,
+  borderStrong: palette.n300,
 
-  text: palette.ink900,
-  textMuted: palette.ink500,
+  text: palette.n950,
+  textMuted: palette.n500,
   textInverse: palette.white,
 
-  primary: palette.red500,
-  primarySolid: palette.red600,
-  primarySolidPressed: palette.red700,
-  primaryPressed: palette.red600,
-  primaryMuted: palette.red100,
+  primary: palette.v600,
+  primarySolid: palette.v600,
+  primarySolidPressed: palette.v700,
+  primaryPressed: palette.v700,
+  primaryMuted: palette.v100,
   onPrimary: palette.white,
 
-  chrome: palette.chrome700,
+  chrome: palette.n900,
   onChrome: palette.white,
-  onChromeMuted: palette.ink300,
+  onChromeMuted: palette.n300,
   chromeSurface: 'rgba(255,255,255,0.14)',
 
-  success: palette.green700,
-  successMuted: palette.green100,
-  warning: palette.amber700,
-  warningMuted: palette.amber100,
-  danger: palette.red600,
-  dangerMuted: palette.red100,
+  success: palette.em600,
+  successMuted: palette.em100,
+  warning: palette.am700,
+  warningMuted: palette.am100,
+  danger: palette.ro600,
+  dangerMuted: palette.ro100,
 
   seatFree: palette.white,
-  seatFreeBorder: palette.green500,
-  // ink300, not ink200, for the same reason dark mode uses ink600 rather than
-  // ink700: a sold block has to read as "blocked" against the page behind it,
-  // and ink200 sat at 1.16:1 there — a sold-out house looked like an empty
-  // one. This lands at 1.51:1, within a hair of dark mode's 1.53:1, so the
-  // two themes say "taken" with the same emphasis.
-  seatGone: palette.ink300,
-  scrim: 'rgba(16,16,21,0.55)',
+  /**
+   * A free seat is an outline, and the outline is the accent rather than a
+   * green: green is now only ever a confirmation, and a seat nobody has
+   * bought yet has confirmed nothing. It also keeps the three seat states on
+   * three different hues, which is what makes them legible at 24px.
+   */
+  seatFreeBorder: palette.l600,
+  // n300, not n200, for the same reason dark mode uses n600 rather than n700:
+  // a sold block has to read as "blocked" against the page behind it, and the
+  // lighter step sat near 1.16:1 there, so a sold-out house looked like an
+  // empty one. This lands at 1.55:1, within a hair of dark mode's 1.56:1, so
+  // the two themes say "taken" with the same emphasis.
+  seatGone: palette.n300,
+  scrim: 'rgba(11,11,16,0.55)',
 
-  accent: palette.violet600,
-  accentMuted: '#EFECFF',
+  accent: palette.l600,
+  accentMuted: palette.l100,
   glass: 'rgba(255,255,255,0.72)',
-  glassBorder: 'rgba(16,16,21,0.08)',
+  glassBorder: 'rgba(11,11,16,0.08)',
 
   onImage: palette.white,
   onImageMuted: 'rgba(255,255,255,0.72)',
   onImageScrim: 'rgba(0,0,0,0.55)',
-  onImageSurface: palette.chrome900,
+  onImageSurface: palette.n950,
 };
 
 export const darkColors: Colors = {
-  background: palette.ink900,
-  surface: palette.ink800,
-  surfaceMuted: palette.ink700,
-  surfaceSunken: palette.ink850,
-  border: palette.ink700,
-  borderStrong: palette.ink600,
+  background: palette.n900,
+  surface: palette.n800,
+  surfaceMuted: palette.n700,
+  surfaceSunken: palette.n850,
+  border: palette.n700,
+  borderStrong: palette.n600,
 
-  text: palette.ink50,
-  textMuted: palette.ink400,
-  textInverse: palette.ink900,
+  text: palette.n50,
+  textMuted: palette.n400,
+  textInverse: palette.n950,
 
-  primary: palette.red500,
-  primarySolid: palette.red600,
-  primarySolidPressed: palette.red700,
-  primaryPressed: palette.red400,
-  // A translucent red tint rather than ink700: that flat grey is also
+  primary: palette.v400,
+  primarySolid: palette.v600,
+  primarySolidPressed: palette.v700,
+  primaryPressed: palette.v500,
+  // A translucent violet tint rather than a flat grey: the flat grey is also
   // `seatGone`'s fill, and a seat you are holding must never read as a seat
   // that is gone. Mirrors `accentMuted`'s own dark-mode pattern below.
-  primaryMuted: 'rgba(248,68,100,0.18)',
+  primaryMuted: 'rgba(108,77,255,0.22)',
   onPrimary: palette.white,
 
-  chrome: palette.chrome900,
+  chrome: palette.n950,
   onChrome: palette.white,
-  onChromeMuted: palette.ink400,
+  onChromeMuted: palette.n400,
   chromeSurface: 'rgba(255,255,255,0.14)',
 
-  success: palette.green500,
-  successMuted: palette.ink700,
-  warning: palette.amber500,
-  warningMuted: palette.ink700,
-  danger: palette.red400,
-  dangerMuted: palette.ink700,
+  success: palette.em500,
+  successMuted: palette.n700,
+  warning: palette.am500,
+  warningMuted: palette.n700,
+  danger: palette.ro400,
+  dangerMuted: palette.n700,
 
   seatFree: 'transparent',
-  seatFreeBorder: palette.green500,
-  // ink600, not ink700: a sold-out block has to read as "blocked" against the
-  // ink900 screen behind it, and ink700 sat at under 1.3:1 contrast there.
-  seatGone: palette.ink600,
+  seatFreeBorder: palette.l500,
+  // n600, not n700: a sold-out block has to read as "blocked" against the
+  // n900 screen behind it, and n700 sat at under 1.3:1 contrast there.
+  seatGone: palette.n600,
   scrim: 'rgba(0,0,0,0.6)',
 
-  accent: palette.violet400,
-  accentMuted: 'rgba(123,91,255,0.18)',
-  glass: 'rgba(28,28,38,0.72)',
+  accent: palette.l400,
+  accentMuted: 'rgba(184,255,60,0.18)',
+  glass: 'rgba(28,28,39,0.72)',
   glassBorder: 'rgba(255,255,255,0.10)',
 
   onImage: palette.white,
   onImageMuted: 'rgba(255,255,255,0.72)',
   onImageScrim: 'rgba(0,0,0,0.55)',
-  onImageSurface: palette.chrome900,
+  onImageSurface: palette.n950,
 };
 
 /**
  * A QR code needs real black-on-white contrast to scan reliably, independent
- * of theme — dark mode does not get a dark quiet zone. These are the only two
+ * of theme - dark mode does not get a dark quiet zone. These are the only two
  * colours in the app that deliberately do not come from `Colors`.
  */
 export const scannerBackground = palette.white;
-export const scannerInk = palette.ink900;
+export const scannerInk = palette.n950;
 
 /**
  * Gradients, as the two-stop arrays every gradient library wants.
@@ -251,29 +301,34 @@ export const gradients = {
   /**
    * The commit action, and nothing else.
    *
-   * It used to run `red400` → `red600`, and white on `red400` is 2.73:1 — the
-   * worst contrast in the app, on the most prominent button in it, the hero's
-   * "Book tickets". A gradient is only as readable as its lightest stop, so
-   * both ends now sit in the half of the brand that white survives on:
-   * `red600` at 4.71:1 and `red700` at 6.38:1. It still travels, it still has
-   * a light source, and the label can be read in daylight.
+   * Both stops sit in the half of the brand that white survives on: `v600` at
+   * 6.68:1 and `v800` at 10.15:1. A gradient is only as readable as its
+   * lightest stop, which is how the old hero CTA came to be at 2.73:1 while
+   * the flat buttons beside it were fine.
    */
-  primary: [palette.red600, palette.red700] as const,
-  /** Accent surfaces: rating pills, live badges, the map's own chrome. */
-  accent: ['#9C86FF', '#5B3BE0'] as const,
+  primary: [palette.v600, palette.v800] as const,
+  /** Accent surfaces: live pills, rating chips, the "filling fast" stand. */
+  accent: [palette.l400, palette.l500] as const,
   /** Behind a poster, so artwork fades into the page rather than stopping. */
-  night: ['rgba(16,16,21,0)', 'rgba(16,16,21,0.94)'] as const,
+  night: ['rgba(17,17,24,0)', 'rgba(17,17,24,0.94)'] as const,
   /** The auditorium screen's light, thrown up the seat map. */
-  projector: ['rgba(53,214,232,0.34)', 'rgba(53,214,232,0)'] as const,
+  projector: ['rgba(184,255,60,0.30)', 'rgba(184,255,60,0)'] as const,
   /** A won ticket. Used once, on the confirmation. */
-  gold: ['#FFD98A', '#E8A317'] as const,
+  gold: [palette.gold300, palette.gold400] as const,
+  /**
+   * The unscratched face of a reward card, which has to look like it is
+   * hiding something. Violet into near-black rather than the brand gradient:
+   * this is the one surface in the app that is deliberately not a button, and
+   * it should not be wearing a button's clothes.
+   */
+  reward: [palette.v500, palette.n950] as const,
 } as const;
 
 export type GradientName = keyof typeof gradients;
 
 /** A 4pt scale. Anything not on it is a mistake, not a design decision. */
 export const spacing = {
-  /** Only for a caption tight under its own title — never between two rows. */
+  /** Only for a caption tight under its own title - never between two rows. */
   '2xs': 2,
   xs: 4,
   sm: 8,
@@ -284,22 +339,38 @@ export const spacing = {
   '3xl': 48,
 } as const;
 
+/**
+ * Corners, one step softer than they were.
+ *
+ * The old scale topped out at 20 and started at 6, which is a 2015 phone app.
+ * Everything a sixteen-year-old uses daily is rounder than that, and a 6pt
+ * corner on a 44pt control reads as an accident rather than a decision. The
+ * jump from `xl` to `2xl` exists for the one case that wants to look like a
+ * card you could pick up: a poster tile, a reward, a bottom sheet.
+ */
 export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 20,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  '2xl': 28,
   full: 999,
 } as const;
 
 /**
  * Steps are deliberately far apart. On a phone held at arm's length a two-point
  * difference is not a hierarchy, it is a rendering artefact.
+ *
+ * `displayLg` is new and it is the loud one: a screen title meant to be the
+ * first thing read, and the reason the page feels like it belongs to this
+ * decade. It is not a default. Exactly one block per screen may use it, and
+ * most screens do not get one at all.
  */
 export const typography = {
-  display: { fontSize: 30, lineHeight: 36, fontWeight: '800', letterSpacing: -0.6 },
-  title: { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.4 },
-  heading: { fontSize: 17, lineHeight: 22, fontWeight: '700', letterSpacing: -0.2 },
+  displayLg: { fontSize: 40, lineHeight: 44, fontWeight: '800', letterSpacing: -1.2 },
+  display: { fontSize: 34, lineHeight: 38, fontWeight: '800', letterSpacing: -0.9 },
+  title: { fontSize: 24, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5 },
+  heading: { fontSize: 18, lineHeight: 23, fontWeight: '700', letterSpacing: -0.2 },
   body: { fontSize: 15, lineHeight: 22, fontWeight: '400' },
   label: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
   caption: { fontSize: 12, lineHeight: 16, fontWeight: '500' },
@@ -319,7 +390,7 @@ export const NUMERIC: TextStyle = { fontVariant: ['tabular-nums'] };
 export const HIT_SIZE = 44;
 
 /**
- * Elevation for cards that sit above the page. Offset plus blur — a shadow
+ * Elevation for cards that sit above the page. Offset plus blur - a shadow
  * without an offset is a halo, not depth.
  */
 export const elevation = {
@@ -340,17 +411,17 @@ export const elevation = {
   /**
    * Coloured light rather than shadow, for an element that is meant to read as
    * emitting. Used on the commit button and the live-availability pill, and
-   * nowhere else — a glow on every card is a blur on every card.
+   * nowhere else - a glow on every card is a blur on every card.
    */
   glow: {
-    shadowColor: palette.red500,
+    shadowColor: palette.v500,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.42,
     shadowRadius: 18,
     elevation: 10,
   },
   accentGlow: {
-    shadowColor: palette.violet500,
+    shadowColor: palette.l500,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.38,
     shadowRadius: 16,
@@ -365,7 +436,7 @@ export const elevation = {
  * durations of 90, 110, 160, 180 and 220ms, and springs at damping 10, 12 and
  * 14 against stiffness 160, 180, 220 and 320. Nobody chose four stiffnesses.
  * They accumulated, one screen at a time, and the difference between 160 and
- * 180 is not a decision a user can perceive — it is the same drift `spacing`
+ * 180 is not a decision a user can perceive - it is the same drift `spacing`
  * exists to stop, so this is the same answer.
  *
  * Named by the job, not by the number, because the number is what drifts.
@@ -375,7 +446,7 @@ export const motion = {
    * `fast` answers a finger that is already there: by the time a press-in
    * animation plays, the thumb has arrived and the only job left is to admit
    * it. `base` is the default for anything appearing or moving on its own.
-   * `slow` is for something large enough that its travel is informative —
+   * `slow` is for something large enough that its travel is informative -
    * a sheet, a screen, a summary bar rising into place.
    *
    * There is deliberately no step between `base` and `slow`. Two durations
@@ -388,7 +459,7 @@ export const motion = {
     /**
      * Ambient, self-running motion with no input waiting on it: the splash
      * mark drawing itself, a shimmer crossing a skeleton. Anything on this
-     * tier must be interruptible — it is the one tier long enough that a user
+     * tier must be interruptible - it is the one tier long enough that a user
      * can arrive mid-animation.
      */
     ambient: 1100,
@@ -397,7 +468,7 @@ export const motion = {
   /**
    * Three springs, each with a reason to exist.
    *
-   * `press` is the release overshoot on a tapped surface — stiff and tightly
+   * `press` is the release overshoot on a tapped surface - stiff and tightly
    * damped, so it reads as a physical rebound rather than a wobble.
    * `settle` is for something arriving at a resting place it chose: the seat
    * that grows and settles, a sheet reaching its detent.

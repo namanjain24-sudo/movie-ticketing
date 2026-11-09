@@ -59,7 +59,8 @@ export function Button({
   const [isPressed, setIsPressed] = useState(false);
 
   // `primarySolid`, not `primary`: this fill carries white text at 17px bold,
-  // which WCAG does not count as large, and the brand red is 3.50:1 behind it.
+  // which WCAG does not count as large, and `primary` is the bright end of the
+  // violet ramp - 3.30:1 under white in the dark theme, where it is `v400`.
   const background: Record<Variant, string> = {
     primary: colors.primarySolid,
     secondary: colors.surfaceMuted,

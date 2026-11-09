@@ -57,9 +57,9 @@ const COLUMN_BUFFER = 5;
 export function seatColors(status: SeatRenderStatus, colors: Colors) {
   switch (status) {
     // `primarySolid` for the fill, because the seat number sitting on it is
-    // ten pixels of white and the brand red is 3.50:1 behind it. The border
-    // stays the brand colour, which is what makes a chosen seat read as the
-    // app's own red from across the map.
+    // ten pixels of white and `primary` is only 3.30:1 behind it in the dark
+    // theme. The border stays the brand colour, which is what makes a chosen
+    // seat read as the app's own violet from across the map.
     case 'SELECTED':
       return { fill: colors.primarySolid, border: colors.primary, label: colors.onPrimary };
     case 'HELD_BY_YOU':
