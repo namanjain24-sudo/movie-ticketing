@@ -91,6 +91,21 @@ export const ACCESSIBILITY_LABELS: Record<AccessibilityFeature, string> = {
 };
 
 /**
+ * The same names as they read part-way through a sentence.
+ *
+ * A table rather than a `toLowerCase()` call, because the rule has an
+ * exception: two of these are descriptions and lose their capital, and Indian
+ * Sign Language is a proper noun that does not. Lowercasing by rule produced
+ * "and indian sign language" in a sentence meant for the people most likely
+ * to be reading it.
+ */
+export const ACCESSIBILITY_LABELS_IN_SENTENCE: Record<AccessibilityFeature, string> = {
+  AUDIO_DESCRIPTION: 'audio description',
+  CLOSED_CAPTIONS: 'closed captions',
+  INDIAN_SIGN_LANGUAGE: 'Indian Sign Language',
+};
+
+/**
  * The initials, for a chip on a showtime where there is room for two or three
  * characters and nothing else. Spelled out in every accessibility label, so a
  * screen reader never reads "AD".
@@ -172,6 +187,16 @@ export const showtimeSummarySchema = z.object({
    * case: nothing is claimed rather than nothing exists.
    */
   accessibility: z.array(accessibilityFeatureSchema).default([]),
+  /**
+   * The app needed on a personal phone to receive the above, or null when the
+   * features need nothing installed.
+   *
+   * Audio description here is streamed to a handset rather than played to the
+   * auditorium, so the name of the app that does it is part of the disclosure
+   * and not a footnote: without it somebody knows a screening is described
+   * and still has no way to hear the description.
+   */
+  accessibilityVia: z.string().nullable().default(null),
   /**
    * A listing grouped by cinema (no `movieId` filter) can hold showtimes for
    * several different films at once, so the film has to travel with each
@@ -349,6 +374,26 @@ export const seatMapSchema = z.object({
   currency: z.string(),
   salesCloseAt: z.string(),
   maxSeatsPerBooking: z.number().int(),
+  /**
+   * What this screening offers, repeated here on purpose.
+   *
+   * The chip in the listing was the only place it was ever said, so the
+   * disclosure disappeared at the moment somebody started actually booking —
+   * and the advisory is about the booking page, not the browse page. Defaulted
+   * so a seat map cached by an older build still parses.
+   */
+  accessibility: z.array(accessibilityFeatureSchema).default([]),
+  /**
+   * The app needed on a personal phone to receive the above, or null when the
+   * features need nothing installed.
+   *
+   * Audio description here is streamed to a handset rather than played to the
+   * auditorium, so the name of the app that does it is part of the disclosure
+   * and not a footnote: without it somebody knows a screening is described
+   * and still has no way to hear the description.
+   */
+  accessibilityVia: z.string().nullable().default(null),
+
   /**
    * The flat booking fee, sent so the seat map can name it.
    *

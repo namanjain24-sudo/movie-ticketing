@@ -22,6 +22,7 @@ import { findBestSeats } from '../../features/seatmap/best-seats';
 import { SeatCountSheet } from '../../features/seatmap/seat-count-sheet';
 import { SeatGrid, type SeatGridHandle } from '../../features/seatmap/seat-grid';
 import { AccessibleSeats } from '../../features/seatmap/accessible-seats';
+import { ScreeningAccess } from '../../features/seatmap/screening-access';
 import { StadiumBowl } from '../../features/seatmap/stadium-bowl';
 import { StandPicker, summariseStands } from '../../features/seatmap/stand-picker';
 import { VenueFacing } from '../../features/seatmap/venue-facing';
@@ -330,6 +331,10 @@ export default function SeatMapScreen() {
         ) : (
           <VenueFacing facing={map.event?.kind ?? 'FILM'} />
         )}
+        {/* Before the wheelchair row: both are accessibility, but this one
+            has an errand attached - the app installed, headphones found - and
+            neither can be sorted out in the foyer. */}
+        <ScreeningAccess features={map.accessibility ?? []} via={map.accessibilityVia ?? null} />
         {/* Above the band list, because "can I sit here at all" comes before
             "which band". Renders nothing in a room with no spaces. */}
         <AccessibleSeats

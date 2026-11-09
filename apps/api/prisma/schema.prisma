@@ -430,6 +430,23 @@ model Showtime {
   /// common case and means exactly that: nothing is claimed.
   accessibility AccessibilityFeature[]
 
+  /// The app somebody needs on their own phone to receive the above, where it
+  /// is not simply on the screen and in the room.
+  ///
+  /// Audio description in an Indian cinema is usually not played to the
+  /// auditorium - it is streamed to a personal handset, in sync with the
+  /// projector, by a separate application. The July 2026 advisory is explicit
+  /// that a ticketing platform has to name that application before anybody
+  /// books, and it is the practical half of the disclosure as well: a blind
+  /// person who learns only that a screening "has audio description" arrives
+  /// with no way to hear it.
+  ///
+  /// One name rather than one per feature. A venue runs one such arrangement
+  /// at a time, and splitting it would invite three rows of near-identical
+  /// strings for a distinction no cinema here actually makes. Null means the
+  /// features need nothing installed, which is the common case for captions.
+  accessibilityVia String?
+
   @@unique([screenId, startsAt])
   @@index([movieId, startsAt])
   @@index([eventId, startsAt])

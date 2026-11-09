@@ -935,6 +935,25 @@ function accessibilityFor(
   return features;
 }
 
+/**
+ * Which of those features arrive through an app on somebody's own phone.
+ *
+ * Audio description in an Indian multiplex is not played to the auditorium.
+ * PVR's accessible screenings run it through XL Cinema, a free app that
+ * listens to the room, finds its place in the film and plays the narration to
+ * the viewer's own headphones - so the person needs the app installed and
+ * headphones with them before they arrive, and a ticket that says only
+ * "audio description" has not actually told them how to hear it.
+ *
+ * Null for a captioned show, which is the honest answer: captions are on the
+ * screen and need nothing installed.
+ */
+function accessibilityViaFor(features: AccessibilityFeature[]): string | null {
+  return features.includes('AUDIO_DESCRIPTION') || features.includes('INDIAN_SIGN_LANGUAGE')
+    ? 'XL Cinema'
+    : null;
+}
+
 async function createShowtime(input: {
   movieId: string;
   screenId: string;
@@ -968,6 +987,7 @@ async function createShowtime(input: {
       format: input.format,
       language: input.language,
       accessibility: input.accessibility ?? [],
+      accessibilityVia: accessibilityViaFor(input.accessibility ?? []),
       tierPrices: {
         create: (Object.keys(prices) as CinemaTier[]).map((tier) => ({
           tier,

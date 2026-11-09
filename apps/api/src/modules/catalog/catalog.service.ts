@@ -220,6 +220,7 @@ export async function listShowtimes(params: {
       // Next to `language` on purpose: captions for the hard of hearing are
       // not subtitles for a translation, and the two get conflated.
       accessibility: true,
+      accessibilityVia: true,
       currency: true,
       salesCloseAt: true,
       tierPrices: { select: { priceMinor: true } },
@@ -260,6 +261,7 @@ export async function listShowtimes(params: {
       format: s.format as ShowFormat,
       language: s.language,
       accessibility: s.accessibility,
+      accessibilityVia: s.accessibilityVia,
       currency: s.currency,
       salesCloseAt: s.salesCloseAt.toISOString(),
       fromPriceMinor: Math.min(...s.tierPrices.map((t) => t.priceMinor)),
@@ -487,6 +489,8 @@ export async function getSeatMap(params: {
       format: true,
       currency: true,
       salesCloseAt: true,
+      accessibility: true,
+      accessibilityVia: true,
       movie: { select: { id: true, title: true, posterUrl: true } },
       event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
       tierPrices: {
@@ -556,6 +560,10 @@ export async function getSeatMap(params: {
     currency: showtime.currency,
     salesCloseAt: showtime.salesCloseAt.toISOString(),
     maxSeatsPerBooking: env.MAX_SEATS_PER_BOOKING,
+    // Said again here, because the chip in the listing was the only place it
+    // was ever said and the advisory is about the page somebody books on.
+    accessibility: showtime.accessibility,
+    accessibilityVia: showtime.accessibilityVia,
     // From the same place the charge itself comes from, so the figure the
     // seat map shows and the figure checkout charges cannot drift apart.
     bookingFeeMinor: bookingFeeMinor(),

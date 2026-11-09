@@ -28,6 +28,8 @@ function buildMap(seats: SeatMapSeat[], maxSeatsPerBooking = 3): SeatMap {
     currency: 'INR',
     salesCloseAt: '2026-09-13T14:00:00.000Z',
     maxSeatsPerBooking,
+    accessibility: [],
+    accessibilityVia: null,
     // The flat fee the seat bar now shows alongside the subtotal.
     bookingFeeMinor: 3_000,
     // A cinema band: one screen, no sides, so no bearing.
