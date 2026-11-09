@@ -75,6 +75,34 @@ export function ConcessionsBox({
           );
         })}
       </View>
+
+      {/* An entitlement almost nobody knows they have, said where it is worth
+          money: directly under a 500ml bottle this app is charging for.
+          
+          The Supreme Court's 2023 judgment let cinemas bar outside food and
+          required them, in the same breath, to provide free drinking water.
+          Stated as the fact it is, with no advice attached - the app is not
+          in a position to give any, and the fact is enough.
+          
+          Only while something can still be bought. Once the order is locked
+          this block is a receipt, and a receipt is the wrong place to tell
+          somebody what they could have had instead. */}
+      {!locked ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: spacing.sm,
+            marginTop: spacing.xs,
+          }}
+        >
+          <Ionicons name="water-outline" size={14} color={colors.accent} />
+          <Text variant="caption" tone="muted" style={{ flex: 1 }}>
+            Cinemas have to give you free drinking water if you ask. The Supreme Court required it
+            in 2023, in the same judgment that let them bar outside food.
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
