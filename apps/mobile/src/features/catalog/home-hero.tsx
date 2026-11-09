@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Text } from '../../components/ui';
 import { usePressScale } from '../../lib/use-press-scale';
@@ -28,11 +28,13 @@ export function HomeHero({
   city,
   count,
   onPressCity,
+  onDiscover,
   now = new Date(),
 }: {
   city?: string;
   count?: number;
   onPressCity: () => void;
+  onDiscover: () => void;
   /** Injectable so the greeting can be tested at a fixed hour. */
   now?: Date;
 }) {
@@ -65,13 +67,39 @@ export function HomeHero({
         )}
       </Text>
 
-      <Animated.View style={[press.style, { alignSelf: 'flex-start' }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+        <Animated.View style={press.style}>
+          <Pressable
+            onPress={onPressCity}
+            onPressIn={press.onPressIn}
+            onPressOut={press.onPressOut}
+            accessibilityRole="button"
+            accessibilityLabel={city ? `Change city, currently ${city}` : 'Choose your city'}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.xs,
+              minHeight: HIT_SIZE - 10,
+              paddingHorizontal: spacing.md,
+              borderRadius: radius.full,
+              backgroundColor: colors.primaryMuted,
+            }}
+          >
+            <Ionicons name="location" size={14} color={colors.primary} />
+            <Text variant="label" style={{ color: colors.primary }}>
+              {city ?? 'Pick a city'}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color={colors.primary} />
+          </Pressable>
+        </Animated.View>
+
+        {/* The way into the one-film-at-a-time feed. Beside the city rather
+            than in the tab bar: it is a way of reading this same catalogue,
+            not a fifth place to be. */}
         <Pressable
-          onPress={onPressCity}
-          onPressIn={press.onPressIn}
-          onPressOut={press.onPressOut}
+          onPress={onDiscover}
           accessibilityRole="button"
-          accessibilityLabel={city ? `Change city, currently ${city}` : 'Choose your city'}
+          accessibilityLabel="Browse films one at a time"
           style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -79,16 +107,16 @@ export function HomeHero({
             minHeight: HIT_SIZE - 10,
             paddingHorizontal: spacing.md,
             borderRadius: radius.full,
-            backgroundColor: colors.primaryMuted,
+            borderWidth: 1,
+            borderColor: colors.border,
           }}
         >
-          <Ionicons name="location" size={14} color={colors.primary} />
-          <Text variant="label" style={{ color: colors.primary }}>
-            {city ?? 'Pick a city'}
+          <Ionicons name="layers-outline" size={14} color={colors.textMuted} />
+          <Text variant="label" tone="muted">
+            Browse
           </Text>
-          <Ionicons name="chevron-down" size={14} color={colors.primary} />
         </Pressable>
-      </Animated.View>
+      </View>
     </Animated.View>
   );
 }

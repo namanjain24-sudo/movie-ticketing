@@ -205,6 +205,7 @@ export default function NowShowing() {
             city={city}
             count={movies.isPending ? undefined : all.length}
             onPressCity={() => setCityOpen(true)}
+            onDiscover={() => router.push('/discover')}
           />
         </View>
       ) : null}
