@@ -1,5 +1,6 @@
 import {
   endsNextDay,
+  formatMinutesUntil,
   formatRelativeDay,
   formatRuntime,
   minutesUntil,
@@ -127,5 +128,33 @@ describe('endsNextDay', () => {
     const start = new Date(2026, 9, 31, 23, 30);
     const end = new Date(2026, 10, 1, 1, 10);
     expect(endsNextDay(start.toISOString(), end.toISOString())).toBe(true);
+  });
+});
+
+describe('formatMinutesUntil', () => {
+  it('counts down in minutes under the hour', () => {
+    expect(formatMinutesUntil(8)).toBe('in 8m');
+    expect(formatMinutesUntil(59)).toBe('in 59m');
+  });
+
+  it('switches to hours and minutes at the hour, which reads as a plan', () => {
+    expect(formatMinutesUntil(60)).toBe('in 1h 0m');
+    expect(formatMinutesUntil(80)).toBe('in 1h 20m');
+    expect(formatMinutesUntil(185)).toBe('in 3h 5m');
+  });
+
+  it('says "now" rather than "in 0m"', () => {
+    expect(formatMinutesUntil(0)).toBe('now');
+  });
+
+  it('looks backwards for a show already under way', () => {
+    // The gate case: the trailers are running and the code still scans.
+    expect(formatMinutesUntil(-20)).toBe('started 20m ago');
+    expect(formatMinutesUntil(-150)).toBe('started 2h ago');
+  });
+
+  it('rounds, so a fractional minute never reaches the screen', () => {
+    expect(formatMinutesUntil(8.4)).toBe('in 8m');
+    expect(formatMinutesUntil(-0.2)).toBe('now');
   });
 });

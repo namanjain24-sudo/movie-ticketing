@@ -3,7 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Badge, Poster, Text } from '../../components/ui';
-import { formatTime } from '../../lib/format';
+import { formatMinutesUntil, formatTime } from '../../lib/format';
 import { formatDistance } from '../../lib/maps';
 import { usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
@@ -74,12 +74,7 @@ function SoonCard({ show, onPress }: { show: SoonShow; onPress: () => void }) {
   const urgent = minutesUntil <= URGENT_WITHIN_MINUTES;
   const distance = formatDistance(cinema.distanceKm);
 
-  // "in 8m" reads as a countdown; "in 1h 20m" reads as a plan. Both are true,
-  // and which one it is decides whether the row is urgent at all.
-  const countdown =
-    minutesUntil < 60
-      ? `in ${minutesUntil}m`
-      : `in ${Math.floor(minutesUntil / 60)}h ${minutesUntil % 60}m`;
+  const countdown = formatMinutesUntil(minutesUntil);
 
   return (
     <Animated.View style={press.style}>

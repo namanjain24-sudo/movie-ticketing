@@ -155,3 +155,80 @@ export async function forgetTicket(reference: string): Promise<void> {
   const index = (await readIndex()).filter((r) => r !== reference);
   await secureStorage.set(STORAGE_KEYS.savedTicketIndex, JSON.stringify(index));
 }
+
+/**
+ * How long after a show has started its ticket is still the live one.
+ *
+ * Nobody at a gate is reaching for the ticket they used last month, but people
+ * do arrive late: the trailers run a good quarter of an hour in an Indian
+ * multiplex, and an usher will scan a code well after the certificate has come
+ * and gone. So a start that has just passed is not history yet.
+ *
+ * The number only decides an order, and the two ways of being wrong are not
+ * the same size. Too generous and a finished ticket sits above the old ones
+ * for an extra half hour, which costs nobody anything. Too stingy and the
+ * ticket somebody is standing there trying to use drops into the past pile
+ * behind eleven others — in the one situation this whole vault exists for.
+ */
+export const GATE_GRACE_MINUTES = 45;
+
+export interface OrderedSavedTickets {
+  /** Soonest first: what somebody standing at a gate is reaching for. */
+  live: SavedTicket[];
+  /** Newest first. Kept rather than dropped, because a used ticket is a receipt. */
+  past: SavedTicket[];
+}
+
+/**
+ * Splits the vault into what is still usable and what is over.
+ *
+ * `listSavedTickets` returns them in the order they were written, which is the
+ * right order for deciding what to evict and the wrong one for a person. It
+ * puts the ticket most recently *saved* first — and opening a ticket saves it
+ * again, so reading an old one on the bus moves it to the top of the list and
+ * leaves tonight's show somewhere below. The vault holds twelve. A phone with
+ * no signal in a cinema foyer was showing an unsorted pile of them with
+ * nothing to say which one was for the queue its owner was standing in.
+ */
+export function orderSavedTickets(tickets: SavedTicket[], now: number): OrderedSavedTickets {
+  const cutoff = now - GATE_GRACE_MINUTES * 60_000;
+  const live: SavedTicket[] = [];
+  const past: SavedTicket[] = [];
+  const undated: SavedTicket[] = [];
+
+  for (const ticket of tickets) {
+    const startsAt = Date.parse(ticket.startsAt);
+    if (Number.isNaN(startsAt)) {
+      // A copy whose date will not parse is still a ticket, and filing it
+      // under history would hide the one thing this list exists to produce.
+      // It goes last among the live ones: visible, never on top.
+      undated.push(ticket);
+    } else if (startsAt >= cutoff) {
+      live.push(ticket);
+    } else {
+      past.push(ticket);
+    }
+  }
+
+  live.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  past.sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt));
+  return { live: [...live, ...undated], past };
+}
+
+/**
+ * When `orderSavedTickets` would next answer differently, or null if never.
+ *
+ * The only thing that moves a ticket between the two groups is its own start
+ * passing out of the grace window, so there is exactly one instant to wake
+ * for and it is the earliest of those still ahead. Null ends the chain: a
+ * vault of finished tickets must not hold a timer open for the session.
+ */
+export function nextSavedTicketChangeAfter(tickets: SavedTicket[], now: number): number | null {
+  let soonest: number | null = null;
+  for (const ticket of tickets) {
+    const leavesLive = Date.parse(ticket.startsAt) + GATE_GRACE_MINUTES * 60_000;
+    if (Number.isNaN(leavesLive) || leavesLive <= now) continue;
+    if (soonest === null || leavesLive < soonest) soonest = leavesLive;
+  }
+  return soonest;
+}

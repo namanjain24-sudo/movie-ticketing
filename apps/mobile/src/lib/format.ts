@@ -95,6 +95,30 @@ export function formatRelativeDay(iso: string, now: Date = new Date()): string {
 }
 
 /**
+ * A countdown in words: "in 8m", "in 1h 20m", "now", "started 20m ago".
+ *
+ * "in 8m" reads as a countdown and "in 1h 20m" reads as a plan. Both are true,
+ * and which one it is decides whether a row is worth hurrying for.
+ *
+ * It lives here rather than inside the one card that first needed it because a
+ * saved ticket held up at a gate asks exactly the same question, and two
+ * screens answering it in two different wordings is how an app starts to feel
+ * like several apps. The backwards case is the gate's: a show whose start has
+ * just passed is still the one being scanned.
+ */
+export function formatMinutesUntil(minutes: number): string {
+  const m = Math.round(minutes);
+  if (m < 0) {
+    const ago = -m;
+    return ago < 60 ? `started ${ago}m ago` : `started ${Math.floor(ago / 60)}h ago`;
+  }
+  // "in 0m" is a clock reading, not a sentence.
+  if (m === 0) return 'now';
+  if (m < 60) return `in ${m}m`;
+  return `in ${Math.floor(m / 60)}h ${m % 60}m`;
+}
+
+/**
  * Does this show finish on a later day than it started?
  *
  * Local dates, never UTC, and never by comparing the ISO strings. The seed's

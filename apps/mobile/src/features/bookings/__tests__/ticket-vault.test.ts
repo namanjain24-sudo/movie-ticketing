@@ -1,11 +1,15 @@
 import type { Booking } from '@app/shared';
 import { secureStorage } from '../../../lib/storage';
 import {
+  GATE_GRACE_MINUTES,
   forgetTicket,
   listSavedTickets,
+  nextSavedTicketChangeAfter,
+  orderSavedTickets,
   readSavedTicket,
   saveTicket,
   toSavedTicket,
+  type SavedTicket,
 } from '../ticket-vault';
 
 /** `mock`-prefixed so the factory below may close over it. */
@@ -209,5 +213,125 @@ describe('listing what this phone kept', () => {
     await forgetTicket('BK-DROP01');
 
     expect((await listSavedTickets()).map((t) => t.reference)).toEqual(['BK-KEPT01']);
+  });
+});
+
+describe('orderSavedTickets', () => {
+  const NOW = Date.parse('2026-11-10T18:00:00.000Z');
+  const minutes = (n: number) => n * 60_000;
+
+  function saved(reference: string, startsAt: string): SavedTicket {
+    return {
+      reference,
+      status: 'CONFIRMED',
+      qrPayload: `qr-${reference}`,
+      movieTitle: 'Jawan',
+      cinema: 'PVR Phoenix, Mumbai',
+      screen: 'Audi 3',
+      startsAt,
+      format: 'TWO_D',
+      language: 'Hindi',
+      seats: 'H10, H11',
+      totalMinor: 90000,
+      currency: 'INR',
+      savedAt: '2026-11-01T00:00:00.000Z',
+    };
+  }
+
+  const at = (offsetMinutes: number) => new Date(NOW + minutes(offsetMinutes)).toISOString();
+
+  it('puts the soonest show first, whatever order it was saved in', () => {
+    const { live } = orderSavedTickets(
+      [saved('BK-LATE', at(600)), saved('BK-NEXT', at(30)), saved('BK-MID', at(180))],
+      NOW,
+    );
+
+    expect(live.map((t) => t.reference)).toEqual(['BK-NEXT', 'BK-MID', 'BK-LATE']);
+  });
+
+  it('keeps a show that has only just started at the top', () => {
+    // Somebody arriving during the trailers still needs this one scanned.
+    const { live, past } = orderSavedTickets(
+      [saved('BK-TONIGHT', at(90)), saved('BK-STARTED', at(-20))],
+      NOW,
+    );
+
+    expect(live.map((t) => t.reference)).toEqual(['BK-STARTED', 'BK-TONIGHT']);
+    expect(past).toEqual([]);
+  });
+
+  it('files a show as past once the grace window has run out', () => {
+    const { live, past } = orderSavedTickets(
+      [saved('BK-OVER', at(-(GATE_GRACE_MINUTES + 1)))],
+      NOW,
+    );
+
+    expect(live).toEqual([]);
+    expect(past.map((t) => t.reference)).toEqual(['BK-OVER']);
+  });
+
+  it('treats the far edge of the grace window as still live', () => {
+    const { live } = orderSavedTickets([saved('BK-EDGE', at(-GATE_GRACE_MINUTES))], NOW);
+
+    expect(live.map((t) => t.reference)).toEqual(['BK-EDGE']);
+  });
+
+  it('orders the past pile newest first, so the last film watched is on top', () => {
+    const { past } = orderSavedTickets(
+      [saved('BK-OLD', at(-60 * 24 * 30)), saved('BK-RECENT', at(-60 * 24))],
+      NOW,
+    );
+
+    expect(past.map((t) => t.reference)).toEqual(['BK-RECENT', 'BK-OLD']);
+  });
+
+  it('keeps a ticket whose date will not parse, at the end of the live ones', () => {
+    const { live, past } = orderSavedTickets(
+      [saved('BK-BROKEN', 'not a date'), saved('BK-FINE', at(45))],
+      NOW,
+    );
+
+    // Never hidden in the past pile: an unreadable date is not evidence the
+    // show is over, and this list exists to produce a ticket.
+    expect(live.map((t) => t.reference)).toEqual(['BK-FINE', 'BK-BROKEN']);
+    expect(past).toEqual([]);
+  });
+
+  it('does not reorder or mutate what it was given', () => {
+    const tickets = [saved('BK-LATE', at(600)), saved('BK-NEXT', at(30))];
+
+    orderSavedTickets(tickets, NOW);
+
+    expect(tickets.map((t) => t.reference)).toEqual(['BK-LATE', 'BK-NEXT']);
+  });
+
+  it('has nothing to say about an empty vault', () => {
+    expect(orderSavedTickets([], NOW)).toEqual({ live: [], past: [] });
+  });
+
+  describe('nextSavedTicketChangeAfter', () => {
+    it('wakes when the earliest show leaves the grace window', () => {
+      expect(
+        nextSavedTicketChangeAfter([saved('BK-A', at(90)), saved('BK-B', at(30))], NOW),
+      ).toEqual(NOW + minutes(30 + GATE_GRACE_MINUTES));
+    });
+
+    it('skips a show whose window has already closed', () => {
+      expect(
+        nextSavedTicketChangeAfter([saved('BK-OVER', at(-500)), saved('BK-NEXT', at(10))], NOW),
+      ).toEqual(NOW + minutes(10 + GATE_GRACE_MINUTES));
+    });
+
+    it('answers null when every ticket is already past, so no timer is held', () => {
+      expect(nextSavedTicketChangeAfter([saved('BK-OVER', at(-500))], NOW)).toBeNull();
+    });
+
+    it('answers null for an unparseable date rather than waking on NaN', () => {
+      expect(nextSavedTicketChangeAfter([saved('BK-BROKEN', 'not a date')], NOW)).toBeNull();
+    });
+
+    it('answers null for an empty vault', () => {
+      expect(nextSavedTicketChangeAfter([], NOW)).toBeNull();
+    });
   });
 });
