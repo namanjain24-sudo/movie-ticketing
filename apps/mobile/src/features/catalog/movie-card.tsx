@@ -1,6 +1,5 @@
 import type { MovieSummary } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { View } from 'react-native';
 import { Poster, Text } from '../../components/ui';
 import { formatMonthDay, formatRuntime } from '../../lib/format';
@@ -53,38 +52,46 @@ export function MovieCard({
         <Poster
           uri={movie.posterUrl}
           title={movie.title}
-          rounded={radius.lg}
+          rounded={radius.xl}
           style={{ aspectRatio: POSTER_RATIO, ...elevation.card }}
           overlay={
             rated ? (
-              // Sat on the artwork rather than under it: the rating is the single
-              // most-scanned number on this screen, and putting it in the caption
-              // block below buries it behind the title.
-              <LinearGradient
-                colors={['rgba(16,16,21,0)', 'rgba(16,16,21,0.82)']}
+              // A compact pill rather than a full-width gradient across the
+              // bottom third. The rating is still the most-scanned number on
+              // this screen, but the gradient was paying for it by dimming
+              // artwork this catalogue cannot spare: its posters are 260 to
+              // 283 pixels wide, already upscaled on any phone, and darkening
+              // the bottom of one costs more than the number gains.
+              //
+              // `onImage*`, not literals, because a poster is never
+              // theme-tinted: these are the tokens that do not flip.
+              <View
                 style={{
+                  alignSelf: 'flex-start',
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: spacing.xs,
+                  margin: spacing.sm,
                   paddingHorizontal: spacing.sm,
-                  paddingTop: spacing.lg,
-                  paddingBottom: spacing.sm,
+                  paddingVertical: spacing['2xs'],
+                  borderRadius: radius.full,
+                  backgroundColor: colors.onImageScrim,
                 }}
               >
                 <Ionicons name="star" size={11} color={colors.warning} />
                 <Text variant="caption" numeric style={{ color: colors.onImage }}>
                   {movie.rating.average?.toFixed(1)}
                 </Text>
-                <Text variant="caption" numeric style={{ color: 'rgba(255,255,255,0.68)' }}>
+                <Text variant="caption" numeric style={{ color: colors.onImageMuted }}>
                   ({movie.rating.count})
                 </Text>
-              </LinearGradient>
+              </View>
             ) : null
           }
         />
 
         <View style={{ gap: spacing['2xs'] }}>
-          <Text variant="label" numberOfLines={1}>
+          <Text variant="heading" numberOfLines={1}>
             {movie.title}
           </Text>
           <Text variant="caption" tone="muted" numberOfLines={1}>

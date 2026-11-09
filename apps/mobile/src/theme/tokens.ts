@@ -313,6 +313,15 @@ export const gradients = {
   night: ['rgba(17,17,24,0)', 'rgba(17,17,24,0.94)'] as const,
   /** The auditorium screen's light, thrown up the seat map. */
   projector: ['rgba(184,255,60,0.30)', 'rgba(184,255,60,0)'] as const,
+  /**
+   * Over artwork, so text laid on a poster has a ground.
+   *
+   * Two components were carrying this as a literal `rgba(16,16,21, ...)`,
+   * which was the old neutral: after the palette moved, the scrim over a
+   * poster was a slightly different black from the page it sat on. Nobody
+   * would name the problem, and everybody would see it.
+   */
+  scrim: ['rgba(17,17,24,0.35)', 'rgba(17,17,24,0.88)'] as const,
   /** A won ticket. Used once, on the confirmation. */
   gold: [palette.gold300, palette.gold400] as const,
   /**

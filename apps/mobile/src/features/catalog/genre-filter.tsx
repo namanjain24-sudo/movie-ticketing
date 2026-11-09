@@ -63,16 +63,19 @@ export function GenreFilter({
         onPress();
       }}
       style={({ pressed }) => ({
-        paddingVertical: spacing.xs + 2,
-        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.lg,
         borderRadius: radius.full,
-        borderWidth: 1,
-        backgroundColor: selected ? colors.text : colors.surface,
-        borderColor: selected ? colors.text : colors.border,
+        // Chosen chips wear the brand. They used to fill with `colors.text`,
+        // which made the loudest control on the screen a black lozenge and
+        // left nothing on the page saying which product this is. Unchosen
+        // ones are a filled surface with no hairline, matching the search
+        // field above them rather than the cards below.
+        backgroundColor: selected ? colors.primarySolid : colors.surfaceMuted,
         opacity: pressed && !selected ? 0.7 : 1,
       })}
     >
-      <Text variant="caption" style={{ color: selected ? colors.background : colors.text }}>
+      <Text variant="label" style={{ color: selected ? colors.onPrimary : colors.text }}>
         {label}
       </Text>
     </Pressable>

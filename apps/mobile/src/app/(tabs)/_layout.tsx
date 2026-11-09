@@ -30,16 +30,37 @@ function TabIcon({
   size: number;
   focused: boolean;
 }) {
+  const { colors, radius } = useTheme();
   const scale = useSharedValue(focused ? 1 : 0.88);
 
   useEffect(() => {
     scale.value = withSpring(focused ? 1 : 0.88, motion.spring.settle);
   }, [focused, scale]);
 
+  // Declared after the effect that writes `scale`, which is the order React
+  // Compiler accepts for a shared value and the order the rest of the app
+  // uses. Reversing the two is reported as a write during render.
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <Animated.View style={style}>
+    <Animated.View
+      style={[
+        style,
+        {
+          width: 46,
+          height: 26,
+          borderRadius: radius.full,
+          alignItems: 'center',
+          justifyContent: 'center',
+          // A ground under the focused tab, not only a tint on its glyph.
+          // Tint alone asks somebody to compare two shades of a 24px icon to
+          // work out where they are; a filled pill answers it at a glance,
+          // and spends the brand on the one piece of chrome that is on every
+          // screen.
+          backgroundColor: focused ? colors.primaryMuted : 'transparent',
+        },
+      ]}
+    >
       <Ionicons name={name} color={color as string} size={size} />
     </Animated.View>
   );
@@ -80,6 +101,10 @@ export default function TabsLayout() {
           tabBarStyle: {
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
+            // Padding only, never an explicit height: React Navigation sizes
+            // this bar from the bottom safe area, and overriding the height
+            // is how a tab bar ends up under a home indicator.
+            paddingTop: 4,
           },
           sceneStyle: { backgroundColor: colors.background },
         }}

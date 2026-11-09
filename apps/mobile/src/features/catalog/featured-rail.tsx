@@ -87,7 +87,7 @@ export function FeaturedRail({
                 accessible={false}
               />
               <LinearGradient
-                colors={['rgba(16,16,21,0.35)', 'rgba(16,16,21,0.88)']}
+                colors={[...gradients.scrim]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
