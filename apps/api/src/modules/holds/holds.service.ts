@@ -94,6 +94,36 @@ export async function createHold(params: CreateHoldParams): Promise<HoldDto> {
         throw HttpError.tooManyHolds(env.MAX_SEATS_HELD_PER_USER);
       }
 
+      /**
+       * And a cap on this one screening, counting what has been paid for.
+       *
+       * The check above counts live holds only, which is right for what it
+       * is for: a lapsed hold has to free its budget at once. It leaves one
+       * route open, though - hold ten, pay, hold ten again. Every cycle the
+       * live-hold count is back to zero, so one account and one card can take
+       * a whole high-demand house a booking at a time, which is the
+       * bulk-buy-to-resell pattern this market wrote an anti-bot rule about.
+       *
+       * Inside the same advisory lock, so two concurrent requests from one
+       * account cannot both read the old total and both pass - the same
+       * reason the hold cap is in here.
+       */
+      const boughtHere = await tx.showSeat.count({
+        where: {
+          showtimeId,
+          state: 'CONFIRMED',
+          booking: { userId, status: 'CONFIRMED' },
+        },
+      });
+      const heldHere = await tx.hold.aggregate({
+        where: { userId, showtimeId, status: 'ACTIVE', expiresAt: { gt: now } },
+        _sum: { seatCount: true },
+      });
+      const takenHere = boughtHere + (heldHere._sum.seatCount ?? 0);
+      if (takenHere + showSeatIds.length > env.MAX_SEATS_PER_SHOWTIME_PER_USER) {
+        throw HttpError.tooManyForShowtime(env.MAX_SEATS_PER_SHOWTIME_PER_USER);
+      }
+
       // The critical section.
       //
       // `FOR UPDATE OF ss` locks only the inventory rows, not the joined seat

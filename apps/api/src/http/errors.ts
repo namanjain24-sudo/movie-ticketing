@@ -101,6 +101,20 @@ export class HttpError extends Error {
   }
 
   /**
+   * One account has taken as much of a single screening as it may.
+   *
+   * 409 rather than 429: nothing here is rate limiting and waiting changes
+   * nothing. The account has what it is allowed of this showing, for good.
+   */
+  static tooManyForShowtime(max: number) {
+    return new HttpError(
+      409,
+      ERROR_CODES.TOO_MANY_FOR_SHOWTIME,
+      `You already have ${max} seats for this screening, which is the most one account can take.`,
+    );
+  }
+
+  /**
    * One message for an unknown token, a spent one and an expired one. Which
    * of the three it is cannot help anyone holding a real link, and does help
    * someone probing with invented ones.

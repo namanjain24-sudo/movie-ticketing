@@ -10,9 +10,11 @@ import {
   expireHold,
   idempotencyKey,
   resetDb,
+  waitFor,
   type TestShowtime,
   type TestUser,
 } from '../../test/helpers';
+import { mockGatewayControls, resetMockGateway } from '../payments/gateway';
 
 const app = createApp();
 
@@ -350,5 +352,108 @@ describe('holds', () => {
       // Bob's budget is his own.
       await keep(bob, seats.slice(20, 30)).expect(201);
     });
+  });
+});
+
+/**
+ * The cap on one screening, which is the one a buyer cannot walk around by
+ * paying and coming back.
+ *
+ * `MAX_SEATS_HELD_PER_USER` counts live holds only, deliberately, so a lapsed
+ * hold frees its budget at once. Every test here is shaped so that cap cannot
+ * be the one that fires: the seats are already paid for, so nothing is on
+ * hold when the refusal happens.
+ */
+describe('one account, one screening', () => {
+  let big: TestShowtime;
+  let other: TestShowtime;
+  let alice: TestUser;
+  let bob: TestUser;
+
+  beforeEach(async () => {
+    await resetDb();
+    resetMockGateway();
+    mockGatewayControls.forceOutcome = 'SUCCESS';
+    // Far enough ahead to stay cancellable, and big enough to exceed the cap.
+    big = await createShowtime({ seatCount: 40, priceMinor: 20_000, startsInMinutes: 600 });
+    other = await createShowtime({ seatCount: 10, priceMinor: 20_000, startsInMinutes: 600 });
+    alice = await createUser('alice-cap');
+    bob = await createUser('bob-cap');
+  });
+
+  const take = (user: TestUser, showtime: TestShowtime, seatIds: string[]) =>
+    request(app)
+      .post(`/v1/showtimes/${showtime.showtimeId}/holds`)
+      .set(user.auth)
+      .set('Idempotency-Key', idempotencyKey('cap'))
+      .send({ showSeatIds: seatIds });
+
+  /** Holds and pays for a slice of seats, and waits for it to confirm. */
+  async function buy(user: TestUser, showtime: TestShowtime, seatIds: string[]) {
+    const held = await take(user, showtime, seatIds).expect(201);
+    const paid = await request(app)
+      .post('/v1/checkout')
+      .set(user.auth)
+      .set('Idempotency-Key', idempotencyKey('cap-pay'))
+      .send({ holdId: held.body.id, method: 'CARD' })
+      .expect(201);
+    await waitFor(async () => {
+      const booking = await prisma.booking.findUnique({ where: { id: paid.body.bookingId } });
+      return booking?.status === 'CONFIRMED';
+    });
+    return paid.body.bookingId as string;
+  }
+
+  it('counts seats already paid for, which is the whole point', async () => {
+    // Two full bookings reach the cap of twenty. Nothing is on hold by now,
+    // so the live-hold cap cannot be what refuses the third request.
+    await buy(alice, big, big.showSeatIds.slice(0, 10));
+    await buy(alice, big, big.showSeatIds.slice(10, 20));
+
+    const res = await take(alice, big, big.showSeatIds.slice(20, 21)).expect(409);
+    expect(res.body.error.code).toBe(ERROR_CODES.TOO_MANY_FOR_SHOWTIME);
+  });
+
+  it('lets an account reach the cap exactly', async () => {
+    await buy(alice, big, big.showSeatIds.slice(0, 10));
+    // The twentieth seat is allowed; it is the twenty-first that is not.
+    await take(alice, big, big.showSeatIds.slice(10, 20)).expect(201);
+  });
+
+  it('counts what is on hold as well as what is bought', async () => {
+    await buy(alice, big, big.showSeatIds.slice(0, 10));
+    await take(alice, big, big.showSeatIds.slice(10, 20)).expect(201);
+
+    // Ten bought plus ten held is the cap. Live holds are only ten, so the
+    // hold cap still has room and this refusal is the per-screening one.
+    const res = await take(alice, big, big.showSeatIds.slice(20, 21)).expect(409);
+    expect(res.body.error.code).toBe(ERROR_CODES.TOO_MANY_FOR_SHOWTIME);
+  });
+
+  it('is per screening, not per account', async () => {
+    await buy(alice, big, big.showSeatIds.slice(0, 10));
+    await buy(alice, big, big.showSeatIds.slice(10, 20));
+
+    // Twenty taken of one showing says nothing about another.
+    await take(alice, other, other.showSeatIds.slice(0, 2)).expect(201);
+  });
+
+  it('does not count one account against another', async () => {
+    await buy(alice, big, big.showSeatIds.slice(0, 10));
+    await buy(alice, big, big.showSeatIds.slice(10, 20));
+
+    await take(bob, big, big.showSeatIds.slice(20, 25)).expect(201);
+  });
+
+  it('gives the budget back when a booking is cancelled', async () => {
+    const first = await buy(alice, big, big.showSeatIds.slice(0, 10));
+    await buy(alice, big, big.showSeatIds.slice(10, 20));
+    await take(alice, big, big.showSeatIds.slice(20, 21)).expect(409);
+
+    await request(app).post(`/v1/bookings/${first}/cancel`).set(alice.auth).expect(200);
+
+    // Those ten are no longer this account's, so there is room again. A cap
+    // that counted a refunded booking forever would punish changing plans.
+    await take(alice, big, big.showSeatIds.slice(20, 30)).expect(201);
   });
 });

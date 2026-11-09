@@ -33,6 +33,21 @@ const envSchema = z.object({
   HOLD_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   /// Upper bound on seats in one booking, matching the seat-map selection cap.
   MAX_SEATS_PER_BOOKING: z.coerce.number().int().positive().max(20).default(10),
+  /// Upper bound on seats one account may ever take of a single screening,
+  /// counting what it has bought as well as what it currently holds.
+  ///
+  /// `MAX_SEATS_HELD_PER_USER` below stops an auditorium being held hostage,
+  /// and deliberately counts only live holds so a lapsed one frees the budget
+  /// at once. That leaves one route open: hold ten, pay, hold ten again. Each
+  /// cycle the live-hold count is back to zero, so a script with one account
+  /// and a card can take a whole high-demand house a booking at a time - the
+  /// bulk-buy-to-resell pattern that produced a police summons and an anti-bot
+  /// rule in this market after one concert sale in 2024.
+  ///
+  /// Twenty is two full bookings, which is already more than a family needs
+  /// for one screening, and a tout who wants more now needs a fresh account
+  /// and a fresh card per twenty seats rather than per twenty at a time.
+  MAX_SEATS_PER_SHOWTIME_PER_USER: z.coerce.number().int().positive().default(20),
   /// Upper bound on seats one account may have on hold at once, across every
   /// showtime.
   ///
