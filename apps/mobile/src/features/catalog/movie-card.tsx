@@ -28,6 +28,16 @@ export function MovieCard({
 
   const rated = movie.rating.average !== null && movie.rating.count > 0;
 
+  /**
+   * A narrow card cannot carry an 18pt title.
+   *
+   * The grid is three columns now, which is about 110pt a card, and the rails
+   * are narrower still. "Drishyam: The Conclusion" at `heading` in 110pt is
+   * one truncated word. The threshold is where two or three words of a real
+   * film name stop fitting, not a round number.
+   */
+  const titleVariant = width !== undefined && width < 150 ? 'label' : 'heading';
+
   return (
     // SaveHeart is a sibling here, not a descendant of the card's Pressable:
     // on web a Pressable with accessibilityRole="button" renders as a real
@@ -91,7 +101,7 @@ export function MovieCard({
         />
 
         <View style={{ gap: spacing['2xs'] }}>
-          <Text variant="heading" numberOfLines={1}>
+          <Text variant={titleVariant} numberOfLines={2}>
             {movie.title}
           </Text>
           <Text variant="caption" tone="muted" numberOfLines={1}>

@@ -50,7 +50,21 @@ import { useTickAt } from '../../lib/use-tick-at';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
-const COLUMNS = 2;
+/**
+ * Three, not two, because of what the catalogue's artwork actually is.
+ *
+ * Every poster is a Wikipedia fair-use file 260 to 283 pixels wide. At two
+ * columns a card is about 172pt, which a 3x phone renders at 518px: the app
+ * was asking a 260px file to fill twice its own width, on the screen people
+ * spend the most time on. Measured across four common sizes, two columns is a
+ * 1.4x to 2.2x upscale and three is 0.89x to 1.41x - at the low end the file
+ * is being downsampled rather than stretched.
+ *
+ * So the grid is denser and the posters are sharp, which is the trade worth
+ * making while the artwork is what it is. With 780px files this could go back
+ * to two.
+ */
+const COLUMNS = 3;
 /** How many films head the carousel before the grid takes over. */
 const FEATURED_COUNT = 3;
 
