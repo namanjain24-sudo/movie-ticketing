@@ -266,7 +266,20 @@ export const bookingSchema = z.object({
       })
       .nullable()
       .default(null),
-    cinema: z.object({ id: z.string(), name: z.string(), city: z.string(), address: z.string() }),
+    cinema: z.object({
+      id: z.string(),
+      name: z.string(),
+      city: z.string(),
+      address: z.string(),
+      /**
+       * Where it is, so the ticket can work out when to leave rather than
+       * guessing a lead time that is wrong for everybody: two hours is far
+       * too much notice for a cinema down the road and not enough for one
+       * across a city in traffic.
+       */
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180),
+    }),
     screen: z.object({ id: z.string(), name: z.string() }),
   }),
   /** Payload encoded into the ticket QR. Verifiable offline against the API. */

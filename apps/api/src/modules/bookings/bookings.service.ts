@@ -96,7 +96,16 @@ const bookingSelect = {
         select: {
           id: true,
           name: true,
-          cinema: { select: { id: true, name: true, city: true, address: true } },
+          cinema: {
+            select: {
+              id: true,
+              name: true,
+              city: true,
+              address: true,
+              latitude: true,
+              longitude: true,
+            },
+          },
         },
       },
     },

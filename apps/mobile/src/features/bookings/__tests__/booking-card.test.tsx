@@ -47,7 +47,15 @@ const JAWAN: Booking = {
     language: 'Hindi',
     event: null,
     movie: { id: 'mv_1', title: 'Jawan', posterUrl: '', certification: 'UA' },
-    cinema: { id: 'cin_1', name: 'PVR ICON', city: 'Mumbai', address: 'Phoenix Palladium' },
+    cinema: {
+      id: 'cin_1',
+      name: 'PVR ICON',
+      city: 'Mumbai',
+      address: 'Phoenix Palladium',
+      // Phoenix Palladium, Lower Parel, which is where this fixture says it is.
+      latitude: 18.9949,
+      longitude: 72.8253,
+    },
     screen: { id: 'scr_1', name: 'Audi 2' },
   },
   qrPayload: 'signed-payload',

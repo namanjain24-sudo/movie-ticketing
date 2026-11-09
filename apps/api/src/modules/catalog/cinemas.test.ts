@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../../app';
 import { prisma } from '../../db';
 import { createShowtime, resetDb } from '../../test/helpers';
-import { distanceKm } from './catalog.service';
+import { distanceKm } from '@app/shared';
 
 const app = createApp();
 

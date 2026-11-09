@@ -2,7 +2,13 @@ import type { Booking, MovieSummary } from '@app/shared';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { recordNotificationHistory } from './history';
-import { holdNudgeTime, releaseCheckTime, showtimeReminderTime } from './scheduling';
+import { formatDistance } from '../../lib/maps';
+import {
+  holdNudgeTime,
+  leaveReminderTime,
+  releaseCheckTime,
+  showtimeReminderTime,
+} from './scheduling';
 import { subjectTitle } from '../catalog/subject';
 
 /**
@@ -53,6 +59,7 @@ export async function requestNotificationPermissionIfUnasked(): Promise<void> {
 
 const showtimeReminderId = (bookingId: string) => `showtime-reminder-${bookingId}`;
 const holdNudgeId = (holdId: string) => `hold-nudge-${holdId}`;
+const leaveReminderId = (bookingId: string) => `leave-reminder-${bookingId}`;
 
 export async function scheduleShowtimeReminder(booking: Booking) {
   const fireAt = showtimeReminderTime(booking.showtime.startsAt);
@@ -72,6 +79,51 @@ export async function scheduleShowtimeReminder(booking: Booking) {
       body,
     });
   }, undefined);
+}
+
+/**
+ * The second reminder: not "this starts soon" but "go now".
+ *
+ * Separate from `scheduleShowtimeReminder` rather than replacing it, because
+ * they answer different questions and only one of them can always be
+ * answered. The flat two-hour notice works without knowing where anybody is;
+ * this one needs a position, which is read and never asked for, so most
+ * accounts will only ever get the first.
+ *
+ * `distance` null means no position, and `leaveReminderTime` returns null for
+ * it, so nothing is scheduled and nothing is claimed.
+ */
+export async function scheduleLeaveReminder(booking: Booking, distance: number | null) {
+  const fireAt = leaveReminderTime(booking.showtime.startsAt, distance);
+  if (!fireAt) return;
+  const title = `Time to leave for ${subjectTitle(booking.showtime)}`;
+  // The distance is the server's own figure and the only number here. No ETA:
+  // the allowance behind the timing is one number for city traffic, not a
+  // route, and quoting it would dress a guess up as a calculation.
+  const away = formatDistance(distance);
+  const body = away
+    ? `${booking.showtime.cinema.name} is ${away} away.`
+    : `Head out for ${booking.showtime.cinema.name}.`;
+  await attempt(async () => {
+    await Notifications.scheduleNotificationAsync({
+      identifier: leaveReminderId(booking.id),
+      content: { title, body },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
+    });
+    await recordNotificationHistory({
+      id: leaveReminderId(booking.id),
+      kind: 'showtime-reminder',
+      title,
+      body,
+    });
+  }, undefined);
+}
+
+export async function cancelLeaveReminder(bookingId: string) {
+  await attempt(
+    () => Notifications.cancelScheduledNotificationAsync(leaveReminderId(bookingId)),
+    undefined,
+  );
 }
 
 /** Cancelling an identifier that was never scheduled is a harmless no-op. */

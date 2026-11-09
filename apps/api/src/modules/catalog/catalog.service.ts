@@ -10,7 +10,7 @@ import type {
   ShowFormat,
   SeatTier,
 } from '@app/shared';
-import { SEAT_TIER_LABELS, type VenueKind } from '@app/shared';
+import { SEAT_TIER_LABELS, distanceKm, type VenueKind } from '@app/shared';
 import { prisma } from '../../db';
 import { env } from '../../env';
 import { HttpError } from '../../http/errors';
@@ -318,30 +318,6 @@ function dayWindow(date?: string): { start: Date; end: Date } {
 // ---------------------------------------------------------------------------
 // Venue directory
 // ---------------------------------------------------------------------------
-
-/** Mean Earth radius in kilometres, the figure the haversine formula wants. */
-const EARTH_RADIUS_KM = 6371;
-
-const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
-
-/**
- * Great-circle distance in kilometres.
- *
- * Haversine rather than the flat-Earth approximation: the approximation is
- * fine within a city and wrong by tens of kilometres once the list spans
- * Mumbai to Kolkata, which this one does.
- */
-export function distanceKm(
-  from: { lat: number; lng: number },
-  to: { lat: number; lng: number },
-): number {
-  const dLat = toRadians(to.lat - from.lat);
-  const dLng = toRadians(to.lng - from.lng);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(from.lat)) * Math.cos(toRadians(to.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(a)));
-}
 
 /**
  * The venue directory: every cinema, what is on there, and how far away it is.

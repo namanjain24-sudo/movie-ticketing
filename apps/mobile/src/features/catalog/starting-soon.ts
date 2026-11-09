@@ -1,4 +1,9 @@
-import type { AvailabilityBand, CinemaShowtimes, ShowtimeSummary } from '@app/shared';
+import {
+  travelAllowanceMinutes,
+  type AvailabilityBand,
+  type CinemaShowtimes,
+  type ShowtimeSummary,
+} from '@app/shared';
 
 /**
  * What you can still get to tonight.
@@ -28,33 +33,10 @@ export type SoonShow = {
   minutesUntil: number;
 };
 
-/** How long you are assumed to need, per kilometre, to get across a city. */
-const MINUTES_PER_KM = 3;
-
-/** Parking, the queue, finding the screen. */
-const ARRIVAL_BUFFER_MINUTES = 10;
-
 /** How far ahead counts as "soon". Three hours is one evening's worth. */
 export const SOON_WINDOW_MINUTES = 180;
 
 const UNSELLABLE: AvailabilityBand = 'SOLD_OUT';
-
-/**
- * The earliest you would have to leave, in minutes before the show.
- *
- * A show twenty minutes away and fifteen kilometres out is not a thing you
- * can go to, and offering it is worse than offering nothing: it reads as the
- * app not knowing where you are. `MINUTES_PER_KM` is a crude single number
- * for city traffic rather than a routing engine, which is why nothing in the
- * UI quotes it at anybody. It decides what to show, and says nothing.
- *
- * Null distance means the caller sent no position, so there is no travel
- * claim to make and the filter stands down entirely.
- */
-function travelAllowanceMinutes(distanceKm: number | null): number {
-  if (distanceKm === null) return 0;
-  return Math.round(distanceKm * MINUTES_PER_KM) + ARRIVAL_BUFFER_MINUTES;
-}
 
 function eligible(
   slot: ShowtimeSummary,

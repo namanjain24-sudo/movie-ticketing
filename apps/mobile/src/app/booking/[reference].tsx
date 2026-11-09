@@ -2,12 +2,13 @@ import {
   EVENT_KIND_SINGULAR,
   POINT_VALUE_MINOR,
   SHOW_FORMAT_LABELS,
+  distanceKm,
   formatMoney,
 } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Alert, Platform, Pressable, ScrollView, Share, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
@@ -28,12 +29,18 @@ import {
   type SavedTicket,
 } from '../../features/bookings/ticket-vault';
 import {
+  cancelLeaveReminder,
   cancelShowtimeReminder,
   requestNotificationPermissionIfUnasked,
+  scheduleLeaveReminder,
   scheduleShowtimeReminder,
 } from '../../features/notifications/notifications';
+import { leaveByAt } from '../../features/notifications/scheduling';
+import { useTickAt } from '../../lib/use-tick-at';
 import { endsNextDay, formatMonthDay, formatTime } from '../../lib/format';
+import { formatDistance } from '../../lib/maps';
 import { notify } from '../../lib/notify';
+import { useLastKnownLocation } from '../../features/cinemas/use-location';
 import { queryKeys } from '../../lib/query-client';
 import { shareLink } from '../../lib/share-link';
 import { successFeedback, tapFeedback } from '../../lib/haptics';
@@ -69,7 +76,10 @@ export default function BookingTicket() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bookings });
       void booking.refetch();
       void quote.refetch();
-      if (bookingId) void cancelShowtimeReminder(bookingId);
+      if (bookingId) {
+        void cancelShowtimeReminder(bookingId);
+        void cancelLeaveReminder(bookingId);
+      }
       notify(
         'Booking cancelled',
         `${formatMoney(result.refundMinor, result.currency)} goes back to your original payment method. ` +
@@ -141,13 +151,48 @@ export default function BookingTicket() {
   // Re-runs on every refetch, not just the first confirmation — harmless,
   // since both calls are idempotent (same notification identifier, and the
   // OS itself remembers whether permission was already asked for).
+  /**
+   * Where the cinema is from here, when that is knowable.
+   *
+   * `useLastKnownLocation` holds whatever the Cinemas tab was granted and
+   * asks for nothing, so this is null for most accounts - and null is a
+   * perfectly good answer: the flat reminder still fires and nothing about
+   * travel is claimed.
+   */
+  const here = useLastKnownLocation();
+  const cinema = booking.data?.showtime.cinema;
+  const distance =
+    here && cinema ? distanceKm(here, { lat: cinema.latitude, lng: cinema.longitude }) : null;
+  /**
+   * Held as a number, not a `Date`.
+   *
+   * A fresh `Date` every render would change `nextLeaveChange`'s identity
+   * every render, which would have `useTickAt` tear down and rebuild its
+   * timer every render - the one thing that hook exists to avoid.
+   */
+  const leaveByMs = booking.data
+    ? (leaveByAt(booking.data.showtime.startsAt, distance)?.getTime() ?? null)
+    : null;
+
+  // The line stops being true at exactly one instant, so the screen wakes at
+  // that instant and at no other. `Date.now()` in render is both impure and
+  // wrong: it would only update whenever something else happened to re-render.
+  const nextLeaveChange = useCallback(
+    (at: number) => (leaveByMs !== null && leaveByMs > at ? leaveByMs : null),
+    [leaveByMs],
+  );
+  const now = useTickAt(nextLeaveChange);
+  const leaveBy = leaveByMs !== null && leaveByMs > now ? new Date(leaveByMs) : null;
+
   useEffect(() => {
     const data = booking.data;
     if (data?.status !== 'CONFIRMED') return;
     void requestNotificationPermissionIfUnasked().then(() => {
       void scheduleShowtimeReminder(data);
+      // The second one only lands when there is a position to measure from.
+      void scheduleLeaveReminder(data, distance);
     });
-  }, [booking.data]);
+  }, [booking.data, distance]);
 
   /**
    * Keep an offline copy of a confirmed ticket, and drop it again the moment
@@ -317,6 +362,21 @@ export default function BookingTicket() {
               </Text>
             ) : null}
             <Field label="Cinema" value={`${showtime.cinema.name}, ${showtime.cinema.city}`} />
+
+            {/* The most actionable line on a ticket before the show, and the
+                one the app could always have worked out and never did. Only
+                when there is a position to measure from, and only while it is
+                still ahead: a ticket telling somebody to leave at a time that
+                has passed is telling them they are late, which they can see
+                out of the window. */}
+            {leaveBy ? (
+              <Field
+                label="Leave by"
+                value={`${formatTime(leaveBy.toISOString())}${
+                  formatDistance(distance) ? ` · ${formatDistance(distance)} away` : ''
+                }`}
+              />
+            ) : null}
           </View>
 
           <Perforation />

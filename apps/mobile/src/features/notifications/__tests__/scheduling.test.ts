@@ -1,4 +1,10 @@
-import { holdNudgeTime, releaseCheckTime, showtimeReminderTime } from '../scheduling';
+import {
+  holdNudgeTime,
+  leaveByAt,
+  leaveReminderTime,
+  releaseCheckTime,
+  showtimeReminderTime,
+} from '../scheduling';
 
 const NOW = new Date('2026-09-13T12:00:00.000Z');
 
@@ -67,5 +73,59 @@ describe('releaseCheckTime', () => {
 
   it('returns null for a release date at this exact instant', () => {
     expect(releaseCheckTime(NOW.toISOString(), NOW)).toBeNull();
+  });
+});
+
+describe('leaveByAt', () => {
+  const STARTS = '2026-11-09T19:00:00.000Z';
+
+  it('allows three minutes a kilometre plus ten to park', () => {
+    // 5km -> 15 minutes of traffic + 10 = 25 before the show.
+    expect(leaveByAt(STARTS, 5)?.toISOString()).toBe('2026-11-09T18:35:00.000Z');
+  });
+
+  it('gives a cinema across the city much more notice than one nearby', () => {
+    const near = leaveByAt(STARTS, 1);
+    const far = leaveByAt(STARTS, 20);
+    expect(near).not.toBeNull();
+    expect(far).not.toBeNull();
+    // The whole point: the flat two-hour reminder treated these the same.
+    expect(near!.getTime() - far!.getTime()).toBe(57 * 60_000);
+  });
+
+  it('still allows the buffer for a cinema at the same coordinates', () => {
+    expect(leaveByAt(STARTS, 0)?.toISOString()).toBe('2026-11-09T18:50:00.000Z');
+  });
+
+  it('says nothing when there is no position to measure from', () => {
+    // Location is read, never asked for, so this is the common case.
+    expect(leaveByAt(STARTS, null)).toBeNull();
+  });
+
+  it('says nothing for a date the server could not have sent', () => {
+    expect(leaveByAt('not-a-date', 5)).toBeNull();
+  });
+});
+
+describe('leaveReminderTime', () => {
+  const STARTS = '2026-11-09T19:00:00.000Z';
+
+  it('is the leave time while it is still ahead', () => {
+    const now = new Date('2026-11-09T17:00:00.000Z');
+    expect(leaveReminderTime(STARTS, 5, now)?.toISOString()).toBe('2026-11-09T18:35:00.000Z');
+  });
+
+  it('is null once that moment has passed, rather than firing late', () => {
+    const now = new Date('2026-11-09T18:40:00.000Z');
+    expect(leaveReminderTime(STARTS, 5, now)).toBeNull();
+  });
+
+  it('is null on the exact instant, matching the other schedulers', () => {
+    const now = new Date('2026-11-09T18:35:00.000Z');
+    expect(leaveReminderTime(STARTS, 5, now)).toBeNull();
+  });
+
+  it('is null with no distance, so no travel reminder is ever invented', () => {
+    expect(leaveReminderTime(STARTS, null, new Date('2026-11-09T12:00:00.000Z'))).toBeNull();
   });
 });
