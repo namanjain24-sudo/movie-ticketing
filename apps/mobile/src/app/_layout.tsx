@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { warmUpServer } from '../api/client';
@@ -12,6 +13,10 @@ import { ErrorBoundary } from '../components/error-boundary';
 import { AuthProvider, useAuth } from '../features/auth/auth-provider';
 import { installNotificationHandler } from '../features/notifications/notifications';
 import { OnboardingProvider, useOnboarding } from '../features/onboarding/onboarding-provider';
+import {
+  restoreCatalogueSnapshot,
+  saveCatalogueSnapshot,
+} from '../features/catalog/catalogue-snapshot';
 import { queryClient } from '../lib/query-client';
 import { ThemeProvider, useTheme } from '../theme';
 import { fontAssets } from '../theme/fonts';
@@ -34,7 +39,48 @@ function RootNavigator() {
   // product looked until the fonts existed - worth shipping, and much better
   // than a splash screen that never leaves.
   const [fontsLoaded, fontsError] = useFonts(fontAssets);
-  const ready = isReady && themeReady && onboarding.ready && (fontsLoaded || !!fontsError);
+
+  /**
+   * Last session's catalogue, read off disk before the first screen draws.
+   *
+   * Gated like the fonts and for the same reason: it is worth the few
+   * milliseconds to open *with* a film list instead of opening to a skeleton
+   * and filling in. It matters most in the two cases this product actually
+   * hits - no signal, and a free-plan server that takes the better part of a
+   * minute to wake - where the alternative is a blank screen.
+   *
+   * `snapshotSettled`, not `snapshotRestored`: a missing or unreadable file is
+   * a perfectly normal first launch, and the app must open either way.
+   */
+  const [snapshotSettled, setSnapshotSettled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void restoreCatalogueSnapshot(queryClient).finally(() => {
+      if (!cancelled) setSnapshotSettled(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * Written when the app goes away, which is the moment the cache is most
+   * worth keeping and the one moment nothing is waiting on the main thread.
+   * Saving on every query would spend a file write on data that is about to
+   * change again.
+   */
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'background' || next === 'inactive') {
+        void saveCatalogueSnapshot(queryClient);
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  const ready =
+    isReady && themeReady && onboarding.ready && (fontsLoaded || !!fontsError) && snapshotSettled;
   const [showAppSplash, setShowAppSplash] = useState(true);
 
   useEffect(() => {
