@@ -9,6 +9,7 @@ import { dbNow, withTxRetry } from '../../lib/tx';
 import { logger } from '../../logger';
 import { addOnsTotal, priceAddOns, type PricedAddOn } from '../concessions/concessions.service';
 import { bookingFeeMinor, lockActiveHold } from '../holds/holds.service';
+import { issueForBooking } from '../rewards/rewards.service';
 import {
   awardPoints,
   evaluateRedemption,
@@ -448,6 +449,14 @@ export async function confirmBooking(providerRef: string): Promise<void> {
         userId: payment.booking.userId,
         bookingId: payment.booking.id,
         totalMinor: payment.booking.totalMinor,
+      });
+      // In the same transaction as the confirmation, so a booking that is
+      // CONFIRMED always has its card and a rolled-back capture never leaves
+      // one behind. `issueForBooking` upserts on the booking id, so a webhook
+      // delivered twice does not mint a second card.
+      await issueForBooking(tx, {
+        userId: payment.booking.userId,
+        bookingId: payment.booking.id,
       });
 
       return {

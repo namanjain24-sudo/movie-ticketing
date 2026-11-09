@@ -31,6 +31,8 @@ model User {
   loyaltyLedger   LoyaltyLedger[]
   favoriteCinemas CinemaFavorite[]
 
+  scratchCards ScratchCard[]
+
   @@index([email])
 }
 
@@ -585,6 +587,8 @@ model Booking {
   loyaltyLedger LoyaltyLedger[]
   splitShares   BookingSplitShare[]
 
+  scratchCard ScratchCard?
+
   @@index([userId, status])
   @@index([showtimeId, status])
   @@index([status, createdAt])
@@ -637,6 +641,11 @@ enum LoyaltyReason {
   /// A REDEEMED entry's points handed back because the booking that spent
   /// them never completed (hold expired before capture, or was cancelled).
   REVERSED
+  /// Won on a scratch card. Spendable like anything else in the ledger, since
+  /// `balanceOf` sums every row - but deliberately outside the `EARNED` set
+  /// that `lifetimeEarnedOf` ranks tiers on. A tier is a record of what
+  /// somebody spent, and luck is not spending.
+  SCRATCHED
 }
 
 /// A ledger, not a mutable counter — the same reasoning `promos.service.ts`
@@ -719,4 +728,33 @@ model WebhookEvent {
   error       String?
 
   @@index([processedAt])
+}
+
+/// A reward attached to a confirmed booking, with its prize already decided.
+///
+/// `points` is written at issuance, before anybody has touched it, and the
+/// scratch only reveals what is already here. That is the whole reason this is
+/// a row rather than a number the client rolls: the animation cannot decide
+/// the prize, a replayed request cannot improve it, and what the user is shown
+/// is what the ledger will say.
+model ScratchCard {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One card per confirmed booking. Unique so a retried confirmation cannot
+  /// mint a second card for the same booking.
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  /// The prize, decided server-side at issuance. Always positive.
+  points Int
+
+  /// Null until revealed. Set in the same transaction as the ledger row, so a
+  /// card can never be scratched without being paid, or paid twice.
+  scratchedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, scratchedAt])
 }

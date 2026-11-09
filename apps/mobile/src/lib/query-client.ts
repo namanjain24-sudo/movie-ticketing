@@ -50,6 +50,7 @@ export const queryKeys = {
   favoriteCinemas: ['favorite-cinemas'] as const,
   promoOffers: ['promo-offers'] as const,
   loyaltyBalance: ['loyalty-balance'] as const,
+  rewards: ['rewards'] as const,
   concessions: ['concessions'] as const,
   bookings: ['bookings'] as const,
   activeHolds: ['active-holds'] as const,
