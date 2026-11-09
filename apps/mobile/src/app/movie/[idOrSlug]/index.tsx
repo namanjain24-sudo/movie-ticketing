@@ -22,6 +22,7 @@ import { DateStrip } from '../../../features/catalog/date-strip';
 import {
   cheapestAt,
   cheapestInList,
+  cheapestIsWorthMarking,
   orderCinemas,
   type ShowtimeOrder,
 } from '../../../features/catalog/ordering';
@@ -199,6 +200,9 @@ export default function MovieDetail() {
    * have hidden is a badge pointing at nothing.
    */
   const lowestMinor = cheapestInList(visible);
+  // Only when it tells somebody something: if every venue opens at the
+  // same price, a badge on each one is a badge on none.
+  const markCheapest = cheapestIsWorthMarking(visible);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -551,7 +555,7 @@ export default function MovieDetail() {
                                 venue is findable while reading the list by
                                 distance - which is how most people read it.
                                 Only with something to be cheaper than. */}
-                            {visible.length > 1 &&
+                            {markCheapest &&
                             lowestMinor !== null &&
                             cheapestAt({ cinema, showtimes: slots }) === lowestMinor ? (
                               <Badge label="Cheapest" tone="success" />

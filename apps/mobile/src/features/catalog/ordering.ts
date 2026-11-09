@@ -48,6 +48,26 @@ export function cheapestInList<T extends ShowtimeSummary>(cinemas: Entry<T>[]): 
   return lowest;
 }
 
+/**
+ * Whether marking the cheapest venue actually narrows anything.
+ *
+ * Seen on a device: three cinemas all opening at 220 rupees, and all three
+ * wearing a "Cheapest" badge. Every one of them was telling the truth and the
+ * badge was worth nothing - a label on every row is a label on none.
+ *
+ * So it is only worth drawing when at least one venue is dearer than the
+ * cheapest. One cinema in the list is the same case: it cannot be cheaper
+ * than itself.
+ */
+export function cheapestIsWorthMarking<T extends ShowtimeSummary>(cinemas: Entry<T>[]): boolean {
+  const lowest = cheapestInList(cinemas);
+  if (lowest === null) return false;
+  return cinemas.some((entry) => {
+    const here = cheapestAt(entry);
+    return here !== null && here > lowest;
+  });
+}
+
 /** The first showtime at one cinema, as a timestamp. Infinity when it has none. */
 function earliestAt<T extends ShowtimeSummary>(entry: Entry<T>): number {
   let soonest = Number.POSITIVE_INFINITY;

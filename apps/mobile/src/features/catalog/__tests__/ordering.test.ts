@@ -1,4 +1,4 @@
-import { cheapestAt, cheapestInList, orderCinemas } from '../ordering';
+import { cheapestAt, cheapestInList, cheapestIsWorthMarking, orderCinemas } from '../ordering';
 
 type Slot = { id: string; startsAt: string; fromPriceMinor: number };
 
@@ -107,5 +107,46 @@ describe('orderCinemas', () => {
       venue('broken', 2, slot('b', 'not-a-date', 20_000)),
     ];
     expect(names(orderCinemas(broken, 'earliest'))).toEqual(['fine', 'broken']);
+  });
+});
+
+describe('cheapestIsWorthMarking', () => {
+  it('is worth marking when one venue is dearer', () => {
+    expect(
+      cheapestIsWorthMarking([
+        venue('cheap', 1, slot('a', AT(18), 22_000)),
+        venue('dear', 2, slot('b', AT(18), 30_000)),
+      ]),
+    ).toBe(true);
+  });
+
+  it('is not worth marking when every venue opens at the same price', () => {
+    // Found on a device: three cinemas all at ₹220, all three badged
+    // "Cheapest". Every one was telling the truth and the badge said nothing.
+    expect(
+      cheapestIsWorthMarking([
+        venue('a', 1, slot('a', AT(18), 22_000)),
+        venue('b', 2, slot('b', AT(20), 22_000)),
+        venue('c', 3, slot('c', AT(21), 22_000)),
+      ]),
+    ).toBe(false);
+  });
+
+  it('is not worth marking with a single venue, which cannot undercut itself', () => {
+    expect(cheapestIsWorthMarking([venue('only', 1, slot('a', AT(18), 22_000))])).toBe(false);
+  });
+
+  it('is not worth marking when there is nothing to compare', () => {
+    expect(cheapestIsWorthMarking([])).toBe(false);
+    expect(cheapestIsWorthMarking([venue('empty', 1)])).toBe(false);
+  });
+
+  it('ignores a venue left empty by a filter rather than calling it dearer', () => {
+    expect(
+      cheapestIsWorthMarking([
+        venue('has', 1, slot('a', AT(18), 22_000)),
+        venue('filtered-empty', 2),
+      ]),
+    ).toBe(false);
   });
 });
