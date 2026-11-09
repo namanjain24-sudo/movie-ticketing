@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { updateProfileSchema } from '@app/shared';
+import { deleteAccountSchema, updateProfileSchema } from '@app/shared';
 import { pathParam, validateBody } from '../../http/validate';
 import { authenticate, requireUserId } from '../../middleware/authenticate';
 import * as authService from '../auth/auth.service';
@@ -16,6 +16,18 @@ usersRouter.get('/me', async (req, res) => {
 
 usersRouter.patch('/me', validateBody(updateProfileSchema), async (req, res) => {
   res.json(await authService.updateProfile(requireUserId(req), req.body));
+});
+
+/**
+ * Closes the account for good.
+ *
+ * POST rather than DELETE on `/me` because it carries a body: the password,
+ * which is asked for since this cannot be undone. 204, because there is
+ * nothing left to describe.
+ */
+usersRouter.post('/me/delete', validateBody(deleteAccountSchema), async (req, res) => {
+  await authService.deleteAccount(requireUserId(req), req.body.password);
+  res.status(204).send();
 });
 
 usersRouter.get('/me/watchlist', async (req, res) => {

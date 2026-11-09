@@ -9,6 +9,7 @@ import { bookingApi } from '../../api/booking';
 import { loyaltyApi } from '../../api/loyalty';
 import { ErrorState } from '../../components/query-state';
 import { AppBar, Button, Skeleton, Text, TextField } from '../../components/ui';
+import { DeleteAccountSheet } from '../../features/auth/delete-account-sheet';
 import { RewardsSection } from '../../features/bookings/scratch-card';
 import { PlansSection } from '../../features/catalog/plans-section';
 import { bookingStreak } from '../../features/bookings/streak';
@@ -33,6 +34,7 @@ export default function Profile() {
   const setUser = useAuthStore((s) => s.setUser);
 
   const [editing, setEditing] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [name, setName] = useState<string | null>(null);
 
   const {
@@ -256,6 +258,30 @@ export default function Profile() {
             queryClient.clear();
             // Back to browsing, which no longer needs an account. Signing out
             // is not a request to be shown the door.
+            router.replace('/(tabs)');
+          }}
+        />
+
+        {/* Quieter than signing out and further down, because it is the rarer
+            thing and the irreversible one. In the app all the same: both
+            stores require a path to delete an account from inside it, and a
+            link to a web form does not count. */}
+        <Button
+          label="Delete account"
+          variant="ghost"
+          destructive
+          onPress={() => setDeleteOpen(true)}
+        />
+
+        <DeleteAccountSheet
+          visible={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          onDeleted={async () => {
+            setDeleteOpen(false);
+            // The tokens are already useless to the server; this clears them
+            // from the device and drops every cached answer with a name in it.
+            await signOut();
+            queryClient.clear();
             router.replace('/(tabs)');
           }}
         />

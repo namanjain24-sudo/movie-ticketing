@@ -117,9 +117,24 @@ export async function logout(token: string): Promise<void> {
   }
 }
 
+/**
+ * The profile, or nothing for a closed account.
+ *
+ * `authenticate` verifies the token and never touches the database, which is
+ * deliberate: it runs on the seat map and every hold. So an access token
+ * issued before a deletion stays cryptographically valid until it expires,
+ * and this is where that is caught - the one authenticated read the app makes
+ * on every launch. The app signs itself out on a 404 here, which closes the
+ * window for the person who actually deleted their account.
+ *
+ * A token copied elsewhere before the deletion still works for the rest of
+ * its fifteen minutes. Closing that would mean a database read on every
+ * authenticated request, which is a real cost on the booking path for a case
+ * that requires already holding somebody's token.
+ */
 export async function getProfile(userId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) throw HttpError.notFound('Account not found');
+  if (!user || user.deletedAt) throw HttpError.notFound('Account not found');
   return toPublicUser(user);
 }
 
@@ -134,6 +149,74 @@ export async function updateProfile(
 // ---------------------------------------------------------------------------
 // Password reset
 // ---------------------------------------------------------------------------
+
+/**
+ * Closes an account for good.
+ *
+ * Required three times over: the DPDP Act gives a right to erasure, and both
+ * app stores refuse an update from an app that lets people sign up and not
+ * leave. Google's wording is the useful one - deactivating or freezing an
+ * account does not count.
+ *
+ * The identity is scrubbed and the row survives, which is not a dodge. Every
+ * relation on `User` cascades, so deleting the row would take the bookings,
+ * the payments and the loyalty ledger with it: the cinema's own accounts, and
+ * records a business is separately obliged to keep. Section 8(7) of the same
+ * Act preserves exactly that retention, and the seat inventory would be left
+ * pointing at nothing. So what goes is what identifies a person, and what
+ * stays is money, detached from them.
+ *
+ * The password is asked for because this cannot be undone and a borrowed
+ * phone should not be able to do it.
+ */
+export async function deleteAccount(userId: string, password: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw HttpError.notFound('That account does not exist');
+
+  const ok = await verifyPassword(password, user.passwordHash);
+  if (!ok) throw HttpError.unauthorized('That password is not right');
+
+  // A hash of something nobody will ever type, so the row can never be signed
+  // in to again. Not an empty string: a blank hash is a bug waiting to be a
+  // login.
+  const unusable = await hashPassword(randomBytes(32).toString('hex'));
+
+  await prisma.$transaction(async (tx) => {
+    // Sessions first. Anything else deleted while a live refresh token
+    // existed would leave somebody signed in to a scrubbed account.
+    await tx.refreshToken.deleteMany({ where: { userId } });
+    await tx.passwordResetToken.deleteMany({ where: { userId } });
+
+    // Personal and nobody else's record of anything.
+    await tx.watchlistItem.deleteMany({ where: { userId } });
+    await tx.cinemaFavorite.deleteMany({ where: { userId } });
+    await tx.review.deleteMany({ where: { userId } });
+    await tx.planVote.deleteMany({ where: { userId } });
+    await tx.planMember.deleteMany({ where: { userId } });
+
+    /**
+     * Holds are released rather than deleted, so the seats go back to the
+     * room instead of staying held by somebody who no longer exists.
+     */
+    await tx.hold.updateMany({
+      where: { userId, status: 'ACTIVE' },
+      data: { status: 'RELEASED' },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        // Unique, obviously not a real address, and reserved by RFC 6761 so
+        // it can never be delivered to or re-registered.
+        email: `deleted-${userId}@deleted.invalid`,
+        name: 'Deleted account',
+        passwordHash: unusable,
+        avatarUrl: null,
+        deletedAt: new Date(),
+      },
+    });
+  });
+}
 
 /**
  * Starts a reset, and tells the caller nothing.

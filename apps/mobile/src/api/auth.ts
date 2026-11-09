@@ -21,6 +21,12 @@ export const authApi = {
   logout: (refreshToken: string) =>
     api.post<void>('/v1/auth/logout', { refreshToken }, { public: true }),
 
+  /**
+   * Closes the account for good. Not reversible, and not a deactivation:
+   * both app stores say freezing an account does not count as deleting it.
+   */
+  deleteAccount: (password: string) => api.post<void>('/v1/users/me/delete', { password }),
+
   /** Always resolves, whether or not that address has an account. */
   forgotPassword: (input: ForgotPasswordInput) =>
     api.post<{ message: string }>('/v1/auth/forgot-password', input, { public: true }),

@@ -125,3 +125,14 @@ export const refreshTokenClaimsSchema = z.object({
   /** Rotation id — lets the server revoke a single refresh token. */
   jti: z.string(),
 });
+
+/**
+ * Closing an account for good.
+ *
+ * The password is asked for because this cannot be undone, and a phone left
+ * unlocked on a table should not be enough to do it.
+ */
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Enter your password to confirm'),
+});
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
