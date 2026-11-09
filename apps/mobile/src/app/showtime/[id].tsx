@@ -462,12 +462,29 @@ export default function SeatMapScreen() {
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
+                {/* The all-in figure is the large one, and the breakdown is
+                    the small one under it.
+                    
+                    This said the seat subtotal in large type and "plus
+                    booking fee" under it with no number, which is exactly the
+                    complaint people make about every app in this category: a
+                    fee that only becomes a figure on the order summary, after
+                    the seats are chosen. The fee is flat and the server now
+                    sends it, so there is no reason to make anybody wait a
+                    screen to find out what they are paying. */}
                 <Text variant="heading" numeric>
-                  {formatMoney(selection.subtotalMinor, map.currency)}
+                  {formatMoney(selection.subtotalMinor + map.bookingFeeMinor, map.currency)}
                 </Text>
-                <Text variant="caption" tone="muted">
-                  plus booking fee
-                </Text>
+                {map.bookingFeeMinor > 0 ? (
+                  <Text variant="caption" tone="muted" numeric>
+                    {formatMoney(selection.subtotalMinor, map.currency)} +{' '}
+                    {formatMoney(map.bookingFeeMinor, map.currency)} fee
+                  </Text>
+                ) : (
+                  <Text variant="caption" tone="muted">
+                    no booking fee
+                  </Text>
+                )}
               </View>
             </View>
 

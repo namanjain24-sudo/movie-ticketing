@@ -304,6 +304,18 @@ export const seatMapSchema = z.object({
   currency: z.string(),
   salesCloseAt: z.string(),
   maxSeatsPerBooking: z.number().int(),
+  /**
+   * The flat booking fee, sent so the seat map can name it.
+   *
+   * It is the server's own `BOOKING_FEE_MINOR` and it sits here for the same
+   * reason `maxSeatsPerBooking` does: it is a rule the client has to show
+   * before anybody commits, and the client cannot know it otherwise. The seat
+   * bar used to read "plus booking fee" with no number, which is the single
+   * most complained-about thing about ticketing apps in this market - a fee
+   * that only becomes a figure on the order summary, after the seats are
+   * chosen.
+   */
+  bookingFeeMinor: z.number().int().nonnegative(),
   tiers: z.array(
     z.object({
       tier: seatTierSchema,

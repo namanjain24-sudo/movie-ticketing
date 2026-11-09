@@ -11,6 +11,7 @@ import type {
   SeatTier,
 } from '@app/shared';
 import { SEAT_TIER_LABELS, distanceKm, type VenueKind } from '@app/shared';
+import { bookingFeeMinor } from '../holds/holds.service';
 import { prisma } from '../../db';
 import { env } from '../../env';
 import { HttpError } from '../../http/errors';
@@ -551,6 +552,9 @@ export async function getSeatMap(params: {
     currency: showtime.currency,
     salesCloseAt: showtime.salesCloseAt.toISOString(),
     maxSeatsPerBooking: env.MAX_SEATS_PER_BOOKING,
+    // From the same place the charge itself comes from, so the figure the
+    // seat map shows and the figure checkout charges cannot drift apart.
+    bookingFeeMinor: bookingFeeMinor(),
     tiers: showtime.tierPrices.map((t) => ({
       tier: t.tier as SeatTier,
       priceMinor: t.priceMinor,
