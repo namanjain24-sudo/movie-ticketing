@@ -159,11 +159,54 @@ export async function listShowtimes(params: {
 }): Promise<CinemaShowtimes[]> {
   const { start, end } = dayWindow(params.date);
 
+  /**
+   * The city is resolved to screen ids first, rather than filtered through
+   * the relation.
+   *
+   * `screen: { cinema: { city } }` is the obvious way to write it and it is
+   * what this did. Prisma turns it into a nested `IN (SELECT ... IN (SELECT
+   * ...))`, and on the deployed free-tier database that subquery and a
+   * one-day `startsAt` range together produce a plan that takes
+   * twenty-four seconds. Measured against production, three runs each:
+   *
+   *     movieId + date   1.2s   indexed column, same one-day window
+   *     city    (alone)  1.5s   relation filter, seven-day window
+   *     city    + date    24s   relation filter, one-day window
+   *
+   * Narrowing the window is not what costs the time: `movieId` with the same
+   * window is fast, because `@@index([movieId, startsAt])` serves it
+   * directly. What costs the time is asking for a correlated subquery and a
+   * selective range at once on a planner with poor statistics and a tenth of
+   * a CPU to think with.
+   *
+   * Two queries instead of one. The first is over 29 cinemas and 74 screens
+   * and costs nothing; the second then filters on `screenId`, which is the
+   * leading column of `@@unique([screenId, startsAt])` - so it reaches the
+   * same kind of index as the `movieId` path that was always fast, instead of
+   * hoping the planner finds it.
+   *
+   * It does not reproduce locally, where every variant answers in under
+   * 90ms. That is the point: this shape does not depend on the planner
+   * guessing well, so it cannot regress the way the other one did.
+   */
+  const screenIds = params.city
+    ? (
+        await prisma.screen.findMany({
+          where: { cinema: { city: params.city } },
+          select: { id: true },
+        })
+      ).map((row) => row.id)
+    : null;
+
+  // A city with no screens has no showtimes, and `in: []` would ask the
+  // database to prove it.
+  if (screenIds !== null && screenIds.length === 0) return [];
+
   const showtimes = await prisma.showtime.findMany({
     where: {
       ...(params.movieId ? { movieId: params.movieId } : {}),
       ...(params.eventId ? { eventId: params.eventId } : {}),
-      ...(params.city ? { screen: { cinema: { city: params.city } } } : {}),
+      ...(screenIds ? { screenId: { in: screenIds } } : {}),
       startsAt: { gte: start, lt: end },
     },
     orderBy: { startsAt: 'asc' },
