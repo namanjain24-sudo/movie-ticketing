@@ -648,14 +648,34 @@ function Row({
   strong?: boolean;
   positive?: boolean;
 }) {
-  const { colors } = useTheme();
+  const { colors, spacing } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        // A sum is separated from the things it sums. There was a hairline
+        // above Subtotal and none above Total, so the number somebody checks
+        // before paying sat flush with the line items that produced it.
+        ...(strong
+          ? {
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              marginTop: spacing.sm,
+              paddingTop: spacing.md,
+            }
+          : {}),
+      }}
+    >
       <Text variant={strong ? 'label' : 'body'} tone={strong ? 'default' : 'muted'}>
         {label}
       </Text>
+      {/* `heading`, not `label`. The total was 14pt against 15pt line items:
+          bolder than them and smaller, which is not a hierarchy. It is the
+          one number on this screen worth checking twice. */}
       <Text
-        variant={strong ? 'label' : 'body'}
+        variant={strong ? 'heading' : 'body'}
         numeric
         style={positive ? { color: colors.success } : undefined}
       >
