@@ -2,7 +2,7 @@ import type { MovieSummary } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -28,6 +28,12 @@ import {
 } from '../../features/catalog/genre-filter';
 import { MovieCard } from '../../features/catalog/movie-card';
 import { SectionHeader } from '../../features/catalog/section-header';
+import { StartingSoonRail } from '../../features/catalog/starting-soon-rail';
+import {
+  nextStartingSoonChangeAfter,
+  startingSoon,
+  type SoonShow,
+} from '../../features/catalog/starting-soon';
 import { useRecentlyViewed } from '../../features/catalog/use-recently-viewed';
 import { promosApi } from '../../api/promos';
 import { OffersRail } from '../../features/promos/offers-rail';
@@ -36,7 +42,10 @@ import { SponsorSlot } from '../../features/sponsors/sponsor-slot';
 import { useRecentSearches } from '../../features/search/use-recent-searches';
 import { queryKeys } from '../../lib/query-client';
 import { STORAGE_KEYS } from '../../lib/storage';
+import { useLastKnownLocation } from '../../features/cinemas/use-location';
+import { toDateKey } from '../../lib/format';
 import { useDebouncedValue } from '../../lib/use-debounced-value';
+import { useTickAt } from '../../lib/use-tick-at';
 import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
@@ -133,6 +142,57 @@ export default function NowShowing() {
   const featured =
     !searching && !narrowed && shown.length > FEATURED_COUNT ? shown.slice(0, FEATURED_COUNT) : [];
 
+  /**
+   * What is still catchable tonight.
+   *
+   * Scoped to the chosen city and to today, which is both what the question
+   * means and what keeps the request small: a day in one city is about 14KB,
+   * where the same call unscoped is 330KB of other people's evenings.
+   *
+   * Only with a city. Without one the API answers for every city it has, and
+   * a rail promising a show you could get to would be offering one in a
+   * different state.
+   *
+   * The position is read, never asked for. `useLastKnownLocation` holds what
+   * the Cinemas tab was granted, and a rail on the home screen has not earned
+   * a permission prompt - so when there is no position the server sends no
+   * distances and the selector drops its travel filter rather than inventing
+   * a journey.
+   */
+  const coords = useLastKnownLocation();
+  const soonQuery = useMemo(
+    () => ({
+      city,
+      date: toDateKey(new Date()),
+      ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
+    }),
+    [city, coords],
+  );
+  const soonShowtimes = useQuery({
+    queryKey: queryKeys.showtimes(soonQuery),
+    queryFn: () => catalogApi.showtimes(soonQuery),
+    enabled: Boolean(city) && !searching && !narrowed,
+    staleTime: 2 * 60_000,
+  });
+
+  // Memoised for its identity, not for its cost. `?? []` builds a new array
+  // every render, which would change `nextSoonChange` every render, which
+  // would have `useTickAt` tear down and rebuild its timer every render -
+  // the one thing that hook exists to avoid.
+  const soonCinemas = useMemo(() => soonShowtimes.data ?? [], [soonShowtimes.data]);
+  // The response is right and only the clock moves, so the rail re-derives
+  // itself on a timer that wakes when a row joins or leaves it, and never in
+  // between. Refetching to learn the time would cost 14KB to find out what
+  // `Date.now()` already knows.
+  const nextSoonChange = useCallback(
+    (now: number) => nextStartingSoonChangeAfter(soonCinemas, now),
+    [soonCinemas],
+  );
+  const soonNow = useTickAt(nextSoonChange);
+  const soon = useMemo(() => startingSoon(soonCinemas, soonNow), [soonCinemas, soonNow]);
+
+  const openShow = (show: SoonShow) => router.push(`/showtime/${show.showtime.id}`);
+
   const header = (
     <View style={{ gap: spacing.xl, paddingBottom: spacing.lg }}>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
@@ -188,6 +248,8 @@ export default function NowShowing() {
       ) : null}
 
       {featured.length > 0 ? <FeaturedRail movies={featured} onSelect={open} /> : null}
+
+      {!searching && !narrowed ? <StartingSoonRail shows={soon} onSelect={openShow} /> : null}
 
       {!searching && !narrowed && offers.data && offers.data.length > 0 ? (
         <OffersRail offers={offers.data} />
