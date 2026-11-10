@@ -41,7 +41,12 @@ export function HomeHero({
   const { colors, radius, spacing } = useTheme();
   const press = usePressScale();
 
-  const place = city ?? 'your city';
+  /**
+   * No city chosen means the catalogue is not filtered at all, so the count
+   * above is every film on anywhere - and "your city" claimed a local number
+   * that was never local, directly above a chip reading "All cities".
+   */
+  const place = city ?? 'all cities';
 
   return (
     <Animated.View

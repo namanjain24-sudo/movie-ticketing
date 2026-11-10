@@ -175,12 +175,12 @@ export function EmptyState({
         // Its own centring box: a button that is not full width sizes to its
         // label and would otherwise sit on the left edge of the column.
         <View style={{ marginTop: spacing.sm, alignSelf: 'center' }}>
-          <Button
-            label={action.label}
-            variant="secondary"
-            fullWidth={false}
-            onPress={action.onPress}
-          />
+          {/* Primary, because on an empty screen there is nothing for it to
+              be secondary to. Every caller's action is the one thing to do
+              here - sign in, browse films, clear the filters, go home - and
+              all of them were drawn in the quietest style the app has, on
+              screens with no other content to compete with. */}
+          <Button label={action.label} fullWidth={false} onPress={action.onPress} />
         </View>
       ) : null}
     </View>

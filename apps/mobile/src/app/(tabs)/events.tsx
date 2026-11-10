@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { EVENT_KIND_LABELS, type EventKind } from '@app/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -85,9 +86,16 @@ export default function Events() {
           backgroundColor: colors.surface,
         }}
       >
+        {/* The magnifier the cinema search has had all along. Without it this
+            was the only search box in the app that did not look like one. */}
+        <Ionicons name="search" size={18} color={colors.textMuted} />
         <TextInput
           accessibilityLabel="Search events"
-          placeholder="Search a team, an artist, a workshop"
+          // Three examples did not fit the field on a narrow phone, and an
+          // Android TextInput cuts a placeholder rather than eliding it, so
+          // it read "Search a team, an artist, a" with nothing to say it had
+          // been cut. Two examples fit; the third was never the useful one.
+          placeholder="Search a team or an artist"
           placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
