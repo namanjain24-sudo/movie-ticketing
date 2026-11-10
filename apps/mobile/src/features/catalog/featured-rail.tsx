@@ -19,7 +19,19 @@ import { gradients } from '../../theme/tokens';
 
 const { width: SCREEN } = Dimensions.get('window');
 const GUTTER = 16;
-const GAP = 12;
+/**
+ * The gap between cards is the gutter, and that is not a coincidence.
+ *
+ * A card is the screen less a gutter each side, so when one is snapped its
+ * right edge sits a gutter from the screen edge. The next card begins a gap
+ * after that, which means anything less than a gutter leaves a slice of it
+ * showing. At twelve that slice was four points: too thin to read as "there
+ * is more this way", wide enough to read as a dark sliver that should not be
+ * there. Matching the gutter puts the next card exactly at the edge, so the
+ * carousel pages cleanly and the dots below say what the sliver was failing
+ * to.
+ */
+const GAP = GUTTER;
 const CARD_WIDTH = SCREEN - GUTTER * 2;
 const POSTER_WIDTH = 116;
 

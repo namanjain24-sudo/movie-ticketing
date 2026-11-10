@@ -286,12 +286,23 @@ export default function Cinemas() {
           keyExtractor={(cinema) => cinema.id}
           ListHeaderComponent={header}
           renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}>
+            <Animated.View
+              entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}
+              style={{ marginHorizontal: spacing.lg }}
+            >
               <CinemaCard cinema={item} onPress={() => router.push(`/cinema/${item.slug}`)} />
             </Animated.View>
           )}
+          // The gutter lives on the rows, not on the list.
+          //
+          // With it on the list, everything inside the header was inset
+          // twice: the search field and the chips sat a gutter further in
+          // than the cards below them, which is a ragged left edge down the
+          // whole screen. It also stopped the chip rails from reaching the
+          // screen edge, so a row built to scroll was clipped a gutter
+          // short of where it should run out. Home has always done it this
+          // way; these two had not.
           contentContainerStyle={{
-            paddingHorizontal: spacing.lg,
             paddingBottom: spacing['3xl'],
             gap: spacing.md,
           }}
