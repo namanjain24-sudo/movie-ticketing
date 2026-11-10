@@ -139,10 +139,16 @@ async function seatsOf(screenId: string) {
   return seats;
 }
 
+/** Advertising and trailers before the film, in minutes. Matches the seed. */
+const ADS_MINUTES = 20;
+
 async function createFromPattern(pattern: Pattern, offset: number, movieId: string) {
   const startsAt = dayStart(offset);
   startsAt.setMinutes(pattern.minutesIntoDay);
-  const endsAt = new Date(startsAt.getTime() + (pattern.durationMins + 20) * 60_000);
+  // Same twenty minutes of advertising the seed runs, named rather than
+  // written twice, so a showtime added here discloses its film start exactly
+  // as one from the seed does.
+  const endsAt = new Date(startsAt.getTime() + (ADS_MINUTES + pattern.durationMins) * 60_000);
   // Booking stays open until ten minutes after the show starts, as in the seed.
   const salesCloseAt = new Date(startsAt.getTime() + 10 * 60_000);
 
@@ -155,6 +161,7 @@ async function createFromPattern(pattern: Pattern, offset: number, movieId: stri
       salesCloseAt,
       format: pattern.format,
       language: pattern.language,
+      adsMinutes: ADS_MINUTES,
       tierPrices: { create: pattern.prices },
     },
     select: { id: true },

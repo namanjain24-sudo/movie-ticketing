@@ -41,6 +41,7 @@ const JAWAN: Booking = {
   showtime: {
     id: 'st_1',
     startsAt: '2026-02-01T14:30:00.000Z',
+    adsMinutes: 20,
     // Two hours later; the card does not read it, the type requires it.
     endsAt: new Date(
       new Date('2026-02-01T14:30:00.000Z').getTime() + 2 * 60 * 60 * 1000,

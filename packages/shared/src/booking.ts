@@ -239,6 +239,18 @@ export const bookingSchema = z.object({
      * catalogue finishes on the following day.
      */
     endsAt: z.string(),
+    /**
+     * Advertising and trailers before the film, in minutes.
+     *
+     * This is the one payload a consumer commission has actually ruled on.
+     * A Bengaluru bench, fining PVR and INOX over twenty-five minutes of
+     * commercials, directed that tickets carry the start of the *film* rather
+     * than the start of the advertising - so the stub needs the figure, not
+     * only the screen somebody booked from.
+     *
+     * Defaulted, so a ticket cached by an older build still parses.
+     */
+    adsMinutes: z.number().int().nonnegative().default(0),
     format: showFormatSchema,
     language: z.string(),
     /**

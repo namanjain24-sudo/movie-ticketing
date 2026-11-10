@@ -186,6 +186,15 @@ export const showtimeSummarySchema = z.object({
    * What this screening offers, for the MIB disclosure. Empty is the common
    * case: nothing is claimed rather than nothing exists.
    */
+  /**
+   * Advertising and trailers between this start and the first frame, in
+   * minutes. Zero means the film starts when the ticket says it does.
+   *
+   * Sent rather than assumed, because it is the difference between the time
+   * printed on a ticket and the time somebody actually needs to be in the
+   * room, and only the catalogue knows it.
+   */
+  adsMinutes: z.number().int().nonnegative().default(0),
   accessibility: z.array(accessibilityFeatureSchema).default([]),
   /**
    * The app needed on a personal phone to receive the above, or null when the
@@ -382,6 +391,15 @@ export const seatMapSchema = z.object({
    * and the advisory is about the booking page, not the browse page. Defaulted
    * so a seat map cached by an older build still parses.
    */
+  /**
+   * Advertising and trailers between this start and the first frame, in
+   * minutes. Zero means the film starts when the ticket says it does.
+   *
+   * Sent rather than assumed, because it is the difference between the time
+   * printed on a ticket and the time somebody actually needs to be in the
+   * room, and only the catalogue knows it.
+   */
+  adsMinutes: z.number().int().nonnegative().default(0),
   accessibility: z.array(accessibilityFeatureSchema).default([]),
   /**
    * The app needed on a personal phone to receive the above, or null when the

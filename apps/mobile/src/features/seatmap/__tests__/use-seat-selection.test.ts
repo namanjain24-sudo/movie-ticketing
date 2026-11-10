@@ -30,6 +30,7 @@ function buildMap(seats: SeatMapSeat[], maxSeatsPerBooking = 3): SeatMap {
     maxSeatsPerBooking,
     accessibility: [],
     accessibilityVia: null,
+    adsMinutes: 20,
     // The flat fee the seat bar now shows alongside the subtotal.
     bookingFeeMinor: 3_000,
     // A cinema band: one screen, no sides, so no bearing.

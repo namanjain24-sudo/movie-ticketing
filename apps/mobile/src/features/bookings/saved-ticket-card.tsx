@@ -5,6 +5,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Button, Text } from '../../components/ui';
 import { formatMonthDay, formatTime } from '../../lib/format';
+import { filmStartsAt } from '../catalog/film-start';
 import { useTheme } from '../../theme';
 import { scannerBackground, scannerInk } from '../../theme/tokens';
 import { Field, Perforation } from './ticket-parts';
@@ -39,6 +40,9 @@ function since(iso: string): string {
 export function SavedTicketCard({ ticket, onRetry }: { ticket: SavedTicket; onRetry: () => void }) {
   const { colors, radius, spacing, elevation } = useTheme();
   const insets = useSafeAreaInsets();
+
+  // Null on a copy written before the field existed, and null for an event.
+  const filmStart = filmStartsAt(ticket.startsAt, ticket.adsMinutes ?? 0);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -97,6 +101,15 @@ export function SavedTicketCard({ ticket, onRetry }: { ticket: SavedTicket; onRe
               <Field label="Time" value={formatTime(ticket.startsAt)} />
               <Field label="Screen" value={ticket.screen} />
             </View>
+
+            {/* The same disclosure the live ticket carries. An offline copy
+                that dropped it would be the version somebody actually reads
+                in a foyer. */}
+            {filmStart ? (
+              <Text variant="caption" tone="muted">
+                {`Film starts ${formatTime(filmStart)} · about ${ticket.adsMinutes} min of ads and trailers first`}
+              </Text>
+            ) : null}
 
             <Field label="Seats" value={ticket.seats} />
             <Field label="Cinema" value={ticket.cinema} />

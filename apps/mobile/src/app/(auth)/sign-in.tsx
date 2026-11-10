@@ -50,14 +50,18 @@ export default function SignIn() {
       title="Welcome back"
       subtitle="Sign in to pick up where you left off."
       footer={
-        <View style={{ flexDirection: 'row', gap: spacing.xs, justifyContent: 'center' }}>
-          <Text tone="muted">New here?</Text>
+        // One paragraph rather than a row of two boxes. As a flex row the
+        // link was measured narrower than the bold text it holds and Android
+        // clipped it to "Create an" with nothing to show it had been
+        // cut; as part of a sentence it simply wraps onto the next line.
+        <Text tone="muted" align="center">
+          New here?{' '}
           <Link href={{ pathname: '/(auth)/sign-up', params: next ? { next } : {} }}>
             <Text tone="primary" variant="label">
               Create an account
             </Text>
           </Link>
-        </View>
+        </Text>
       }
     >
       <View style={{ gap: spacing.lg }}>

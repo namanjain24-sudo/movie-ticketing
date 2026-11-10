@@ -948,6 +948,17 @@ function accessibilityFor(
  * Null for a captioned show, which is the honest answer: captions are on the
  * screen and need nothing installed.
  */
+/**
+ * Advertising and trailers between the printed start and the film, in minutes.
+ *
+ * Twenty is what the chains here actually run and what this catalogue has
+ * always assumed - it was the bare `+ 20` inside the `endsAt` calculation
+ * before it had a name. The consumer commissions that have ruled on this were
+ * handed twenty-two and twenty-five minute delays, so it is not a cautious
+ * figure.
+ */
+const ADS_MINUTES = 20;
+
 function accessibilityViaFor(features: AccessibilityFeature[]): string | null {
   return features.includes('AUDIO_DESCRIPTION') || features.includes('INDIAN_SIGN_LANGUAGE')
     ? 'XL Cinema'
@@ -970,7 +981,10 @@ async function createShowtime(input: {
   startsAt.setDate(startsAt.getDate() + input.day);
   startsAt.setHours(hours, minutes, 0, 0);
 
-  const endsAt = new Date(startsAt.getTime() + (input.durationMins + 20) * 60_000);
+  // The twenty minutes that used to be written into `endsAt` as a bare
+  // literal, now named and stored, so the time the room empties and the time
+  // the film starts are both worked out from the same number.
+  const endsAt = new Date(startsAt.getTime() + (ADS_MINUTES + input.durationMins) * 60_000);
   // Booking stays open until ten minutes after the show starts, the way most
   // chains run it.
   const salesCloseAt = new Date(startsAt.getTime() + 10 * 60_000);
@@ -988,6 +1002,7 @@ async function createShowtime(input: {
       language: input.language,
       accessibility: input.accessibility ?? [],
       accessibilityVia: accessibilityViaFor(input.accessibility ?? []),
+      adsMinutes: ADS_MINUTES,
       tierPrices: {
         create: (Object.keys(prices) as CinemaTier[]).map((tier) => ({
           tier,

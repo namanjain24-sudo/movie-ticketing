@@ -27,6 +27,12 @@ export interface SavedTicket {
   cinema: string;
   screen: string;
   startsAt: string;
+  /**
+   * Advertising before the film, in minutes. Optional because a copy saved by
+   * an older build will not have it, and a ticket already in the vault is the
+   * one thing here that must never fail to open.
+   */
+  adsMinutes?: number;
   format: Booking['showtime']['format'];
   language: string;
   /**
@@ -75,6 +81,7 @@ export function toSavedTicket(booking: Booking): SavedTicket {
     cinema: `${showtime.cinema.name}, ${showtime.cinema.city}`,
     screen: showtime.screen.name,
     startsAt: showtime.startsAt,
+    adsMinutes: showtime.adsMinutes,
     format: showtime.format,
     language: showtime.language,
     ...(showtime.event ? { eventKind: showtime.event.kind } : {}),

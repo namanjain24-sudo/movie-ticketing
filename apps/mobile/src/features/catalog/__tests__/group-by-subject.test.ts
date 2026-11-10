@@ -14,6 +14,7 @@ const base = {
   // claiming the screening has nothing.
   accessibility: [],
   accessibilityVia: null,
+  adsMinutes: 20,
 } satisfies Omit<ShowtimeSummary, 'id' | 'movie' | 'event'>;
 
 function film(id: string, movieId: string, title: string): ShowtimeSummary {

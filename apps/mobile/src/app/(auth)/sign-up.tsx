@@ -48,14 +48,18 @@ export default function SignUp() {
       title="Create account"
       subtitle="It takes about thirty seconds."
       footer={
-        <View style={{ flexDirection: 'row', gap: spacing.xs, justifyContent: 'center' }}>
-          <Text tone="muted">Already have an account?</Text>
+        // One paragraph rather than a row of two boxes, matching sign-in.
+        // There the link was measured narrower than the bold text it holds
+        // and Android clipped it; this line is shorter and was not caught
+        // doing it, which is luck rather than a difference worth keeping.
+        <Text tone="muted" align="center">
+          Already have an account?{' '}
           <Link href={{ pathname: '/(auth)/sign-in', params: next ? { next } : {} }}>
             <Text tone="primary" variant="label">
               Sign in
             </Text>
           </Link>
-        </View>
+        </Text>
       }
     >
       <View style={{ gap: spacing.lg }}>

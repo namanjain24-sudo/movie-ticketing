@@ -221,6 +221,7 @@ export async function listShowtimes(params: {
       // not subtitles for a translation, and the two get conflated.
       accessibility: true,
       accessibilityVia: true,
+      adsMinutes: true,
       currency: true,
       salesCloseAt: true,
       tierPrices: { select: { priceMinor: true } },
@@ -262,6 +263,7 @@ export async function listShowtimes(params: {
       language: s.language,
       accessibility: s.accessibility,
       accessibilityVia: s.accessibilityVia,
+      adsMinutes: s.adsMinutes,
       currency: s.currency,
       salesCloseAt: s.salesCloseAt.toISOString(),
       fromPriceMinor: Math.min(...s.tierPrices.map((t) => t.priceMinor)),
@@ -491,6 +493,7 @@ export async function getSeatMap(params: {
       salesCloseAt: true,
       accessibility: true,
       accessibilityVia: true,
+      adsMinutes: true,
       movie: { select: { id: true, title: true, posterUrl: true } },
       event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
       tierPrices: {
@@ -564,6 +567,7 @@ export async function getSeatMap(params: {
     // was ever said and the advisory is about the page somebody books on.
     accessibility: showtime.accessibility,
     accessibilityVia: showtime.accessibilityVia,
+    adsMinutes: showtime.adsMinutes,
     // From the same place the charge itself comes from, so the figure the
     // seat map shows and the figure checkout charges cannot drift apart.
     bookingFeeMinor: bookingFeeMinor(),

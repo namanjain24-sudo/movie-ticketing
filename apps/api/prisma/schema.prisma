@@ -430,6 +430,25 @@ model Showtime {
   /// common case and means exactly that: nothing is claimed.
   accessibility AccessibilityFeature[]
 
+  /// Minutes of advertising and trailers between the printed start and the
+  /// first frame of the film.
+  ///
+  /// The time on a ticket in this market is when the lights go down on the
+  /// commercials, not when the film begins, and the gap runs to twenty-odd
+  /// minutes. Consumer commissions have now ruled on it repeatedly - a
+  /// Bengaluru bench fined PVR and INOX a lakh over twenty-five minutes of it
+  /// and directed that tickets carry the actual start of the film, and
+  /// Hyderabad and Telangana benches have held the same since.
+  ///
+  /// This project already assumed the gap and never said so: `endsAt` has
+  /// always been the runtime plus twenty minutes, so the app knew when the
+  /// room would empty and could not tell anybody when the film would start.
+  /// Storing it makes the two agree and makes the disclosure possible.
+  ///
+  /// Zero means the film starts when the ticket says, which is what an event
+  /// does - a match does not run trailers.
+  adsMinutes Int @default(0)
+
   /// The app somebody needs on their own phone to receive the above, where it
   /// is not simply on the screen and in the room.
   ///

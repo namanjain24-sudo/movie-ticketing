@@ -38,6 +38,7 @@ import {
 import { leaveByAt } from '../../features/notifications/scheduling';
 import { useTickAt } from '../../lib/use-tick-at';
 import { endsNextDay, formatMonthDay, formatTime } from '../../lib/format';
+import { filmStartsAt } from '../../features/catalog/film-start';
 import { formatDistance } from '../../lib/maps';
 import { notify } from '../../lib/notify';
 import { useLastKnownLocation } from '../../features/cinemas/use-location';
@@ -240,6 +241,10 @@ export default function BookingTicket() {
 
   const ticket = booking.data;
   const { showtime } = ticket;
+  // Null for an event, which runs no trailers, and null on a ticket cached
+  // before the field existed - both say nothing rather than repeating the
+  // printed time back as if it were news.
+  const filmStart = filmStartsAt(showtime.startsAt, showtime.adsMinutes);
   // A film or an event; the ticket renders the same either way.
   const subject = subjectOf(showtime);
   /**
@@ -343,7 +348,19 @@ export default function BookingTicket() {
               ) : null}
             </View>
 
-            <View style={{ flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm }}>
+            {/* Wraps, because the three do not fit side by side once the time
+                reads "1:30 pm - 3:24 pm": the date was being cut to "10" and
+                losing the month, on the one screen somebody checks when they
+                are not sure which day they booked. */}
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                columnGap: spacing.xl,
+                rowGap: spacing.sm,
+                marginTop: spacing.sm,
+              }}
+            >
               <Field label="Date" value={formatMonthDay(showtime.startsAt)} />
               {/* Ends, not just starts. Somebody looking at this ticket is
                   working out when they are free again — the last metro, the
@@ -357,6 +374,19 @@ export default function BookingTicket() {
               />
               <Field label="Screen" value={showtime.screen.name} />
             </View>
+
+            {/* The time above is when the advertising starts, which is the
+                thing consumer commissions have actually ruled on: a Bengaluru
+                bench, fining PVR and INOX over twenty-five minutes of it,
+                directed that tickets carry the start of the film. This app
+                had the figure all along - `endsAt` has always been the
+                runtime plus the ads - and used it only to say when the room
+                would empty. */}
+            {filmStart ? (
+              <Text variant="caption" tone="muted">
+                {`Film starts ${formatTime(filmStart)} · about ${showtime.adsMinutes} min of ads and trailers first`}
+              </Text>
+            ) : null}
 
             <Field
               label="Seats"
