@@ -1,4 +1,5 @@
 import { prisma } from '../src/db';
+import { refreshCatalogue } from './refresh-catalogue';
 import { seed } from './seed';
 import { seedEvents } from './seed-events';
 
@@ -58,7 +59,34 @@ async function main() {
   );
 }
 
+/**
+ * The same question as the events check, asked about columns rather than
+ * tables.
+ *
+ * A migration that adds a column gives every existing row its default, and
+ * nothing ever fills them in: the code deploys, the payload carries the
+ * field, and the field is empty for ever. Three features shipped that way in
+ * one week and none of them had appeared on the deployed app.
+ *
+ * Run after the seeding decision rather than inside it, because it is the
+ * right thing to do in both cases - a database just seeded already has these
+ * values, so every check below answers "already applied" and stops.
+ */
+async function refresh() {
+  const filled = await refreshCatalogue(prisma);
+  const said = Object.entries(filled)
+    .filter(([, count]) => count > 0)
+    .map(([what, count]) => `${what}: ${count}`);
+
+  console.log(
+    said.length > 0
+      ? `[seed-if-empty] Catalogue brought up to date — ${said.join(', ')}.`
+      : '[seed-if-empty] Catalogue already up to date.',
+  );
+}
+
 main()
+  .then(refresh)
   .catch((err) => {
     console.error(err);
     process.exitCode = 1;

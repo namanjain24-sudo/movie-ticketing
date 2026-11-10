@@ -1009,9 +1009,9 @@ function accessibilityFor(
  * handed twenty-two and twenty-five minute delays, so it is not a cautious
  * figure.
  */
-const ADS_MINUTES = 20;
+export const ADS_MINUTES = 20;
 
-function accessibilityViaFor(features: AccessibilityFeature[]): string | null {
+export function accessibilityViaFor(features: AccessibilityFeature[]): string | null {
   return features.includes('AUDIO_DESCRIPTION') || features.includes('INDIAN_SIGN_LANGUAGE')
     ? 'XL Cinema'
     : null;
