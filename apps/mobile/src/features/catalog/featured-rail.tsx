@@ -3,13 +3,18 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useState } from 'react';
 import {
   Dimensions,
-  FlatList,
   Pressable,
   StyleSheet,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Poster, Text } from '../../components/ui';
@@ -33,6 +38,18 @@ const GUTTER = 16;
  */
 const GAP = GUTTER;
 const CARD_WIDTH = SCREEN - GUTTER * 2;
+/** One card to the next, which is also what the list snaps by. */
+const PAGE = CARD_WIDTH + GAP;
+/**
+ * How far the blurred backdrop lags the card it sits in, as a fraction of the
+ * distance scrolled.
+ *
+ * The depth cue is only ever this: things further away move less. A fifth is
+ * enough to feel and small enough that nobody catches it happening, and the
+ * backdrop is scaled a little so the lag never drags an edge into view.
+ */
+const PARALLAX = 0.2;
+const BACKDROP_SCALE = 1.2;
 const POSTER_WIDTH = 116;
 
 /**
@@ -52,21 +69,30 @@ export function FeaturedRail({
   const [index, setIndex] = useState(0);
 
   const onScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setIndex(Math.round(e.nativeEvent.contentOffset.x / (CARD_WIDTH + GAP)));
+    setIndex(Math.round(e.nativeEvent.contentOffset.x / PAGE));
   }, []);
+
+  // Written on the UI thread by the scroll itself, so the backdrops move with
+  // the finger rather than one React render behind it.
+  const scrollX = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollX.value = event.contentOffset.x;
+  });
 
   return (
     <View style={{ gap: spacing.md }}>
-      <FlatList
+      <Animated.FlatList
         data={movies}
         horizontal
         keyExtractor={(m) => m.id}
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_WIDTH + GAP}
         decelerationRate="fast"
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         onMomentumScrollEnd={onScrollEnd}
         contentContainerStyle={{ paddingHorizontal: GUTTER, gap: GAP }}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const rated = item.rating.average !== null && item.rating.count > 0;
           return (
             <Pressable
@@ -89,15 +115,10 @@ export function FeaturedRail({
                 elevation.card,
               ]}
             >
-              {/* The poster's own colours, out of focus, as the card's light. */}
-              <Image
-                source={item.posterUrl}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                blurRadius={40}
-                cachePolicy="memory-disk"
-                accessible={false}
-              />
+              {/* The poster's own colours, out of focus, as the card's light
+                  - and held back a little as the rail moves, which is the
+                  only thing depth has ever been on a flat screen. */}
+              <Backdrop uri={item.posterUrl} index={index} scrollX={scrollX} />
               <LinearGradient
                 colors={[...gradients.scrim]}
                 start={{ x: 0, y: 0 }}
@@ -196,5 +217,43 @@ export function FeaturedRail({
         ))}
       </View>
     </View>
+  );
+}
+
+/**
+ * The blurred poster behind a card, lagging the rail it is drawn in.
+ *
+ * Its own component because the animated style has to be a hook, and a hook
+ * cannot live inside `renderItem`. Which card this is deciding where it sits
+ * relative to the scroll: at rest the offset is zero and the backdrop is
+ * centred; a page either side and it has drifted by a fifth of a page.
+ */
+function Backdrop({
+  uri,
+  index,
+  scrollX,
+}: {
+  uri: string;
+  index: number;
+  scrollX: SharedValue<number>;
+}) {
+  const style = useAnimatedStyle(() => ({
+    transform: [
+      { scale: BACKDROP_SCALE },
+      { translateX: -(scrollX.value - index * PAGE) * PARALLAX },
+    ],
+  }));
+
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
+      <Image
+        source={uri}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        blurRadius={40}
+        cachePolicy="memory-disk"
+        accessible={false}
+      />
+    </Animated.View>
   );
 }
