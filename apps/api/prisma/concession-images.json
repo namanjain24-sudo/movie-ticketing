@@ -1,0 +1,42 @@
+{
+  "Classic popcorn (large)": {
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Bowl_of_Popcorn_%28Unsplash%29.jpg/960px-Bowl_of_Popcorn_%28Unsplash%29.jpg",
+    "creator": "Alex Munsell alexmunsell",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Bowl_of_Popcorn_(Unsplash).jpg",
+    "source": "commons"
+  },
+  "Popcorn & drink combo": {
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Lahaina%2C_Maui%2C_Hawaii_%28June_2019%29_-_popcorn_and_drink.jpg/960px-Lahaina%2C_Maui%2C_Hawaii_%28June_2019%29_-_popcorn_and_drink.jpg",
+    "creator": "Sharon Hahn Darlin",
+    "licence": "CC BY 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Lahaina,_Maui,_Hawaii_(June_2019)_-_popcorn_and_drink.jpg",
+    "source": "commons"
+  },
+  "Nachos with cheese dip": {
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/Nachos-cheese.jpg/960px-Nachos-cheese.jpg",
+    "creator": "chee.hong from Kuala Lumpur, Malaysia",
+    "licence": "CC BY 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Nachos-cheese.jpg",
+    "source": "commons"
+  },
+  "Soft drink (regular)": {
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Coca-Cola_Glas_mit_Eis.jpg/960px-Coca-Cola_Glas_mit_Eis.jpg",
+    "creator": "Summi",
+    "licence": "Public domain",
+    "licenceUrl": "",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Coca-Cola_Glas_mit_Eis.jpg",
+    "source": "commons"
+  },
+  "Packaged drinking water": {
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/68/Kirkland_Signature_Drinking_Water_1.5L_20050508.jpg",
+    "creator": "Jm51",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Kirkland_Signature_Drinking_Water_1.5L_20050508.jpg",
+    "source": "commons"
+  }
+}

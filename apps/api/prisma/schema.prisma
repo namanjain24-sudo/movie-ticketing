@@ -253,6 +253,19 @@ model ConcessionItem {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 
+  /// A photograph of the thing itself, scaled for a list row. Null means the
+  /// row draws without one rather than with a placeholder standing in.
+  imageUrl    String?
+  /// Author and licence, already assembled: "Briejones, CC BY-SA 3.0".
+  ///
+  /// Not decoration. These photographs are used under CC BY and CC BY-SA,
+  /// which require the author to be named - an image shipped without this is
+  /// a licence breach, so the credit travels with the URL rather than being
+  /// something a screen might remember to add.
+  imageCredit String?
+  /// The file's page, which carries the author and the licence in full.
+  imageCreditUrl String?
+
   bookingAddOns BookingAddOn[]
 }
 

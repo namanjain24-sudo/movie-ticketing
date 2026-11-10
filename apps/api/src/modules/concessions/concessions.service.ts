@@ -14,6 +14,12 @@ export async function listConcessions(): Promise<ConcessionItem[]> {
     description: i.description,
     priceMinor: i.priceMinor,
     currency: i.currency,
+    // Both, or neither. A CC BY photograph without its author named is a
+    // licence breach, so a row that lost its credit must not keep the
+    // picture either.
+    imageUrl: i.imageCredit ? i.imageUrl : null,
+    imageCredit: i.imageUrl ? i.imageCredit : null,
+    imageCreditUrl: i.imageUrl && i.imageCredit ? i.imageCreditUrl : null,
   }));
 }
 

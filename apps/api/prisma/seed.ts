@@ -9,6 +9,49 @@ import { prisma } from '../src/db';
 import { seedEvents } from './seed-events';
 
 /**
+ * Photographs for the concession menu, resolved at build time by
+ * `npm run fetch:concession-images` and cached so seeding needs no network.
+ *
+ * Keyed by item name because that is what the fetcher curated a search term
+ * for; an item added here without a matching entry simply has no picture.
+ */
+interface ConcessionImage {
+  imageUrl: string;
+  creator: string;
+  licence: string;
+  licenceUrl: string;
+  sourcePage: string;
+  source: 'commons' | 'placeholder';
+}
+
+const CONCESSION_IMAGES: Record<string, ConcessionImage> = JSON.parse(
+  readFileSync(resolve(import.meta.dirname, 'concession-images.json'), 'utf8'),
+) as Record<string, ConcessionImage>;
+
+/**
+ * The picture and the credit it is only usable with.
+ *
+ * Returned together, and both null when either is missing: a CC BY photograph
+ * shown without naming its author is a licence breach, so there is no state
+ * in which drawing the image but not the credit is correct.
+ */
+function concessionArt(name: string): {
+  imageUrl: string | null;
+  imageCredit: string | null;
+  imageCreditUrl: string | null;
+} {
+  const art = CONCESSION_IMAGES[name];
+  if (!art?.imageUrl || !art.creator || !art.licence) {
+    return { imageUrl: null, imageCredit: null, imageCreditUrl: null };
+  }
+  return {
+    imageUrl: art.imageUrl,
+    imageCredit: `${art.creator}, ${art.licence}`,
+    imageCreditUrl: art.sourcePage || null,
+  };
+}
+
+/**
  * Seed data shaped like real cinemas, because the seat map is judged on how it
  * looks and a perfect rectangle of identical seats does not exercise it. Rows
  * are staggered, aisles are real gaps, tiers sit in bands, and one auditorium
@@ -658,23 +701,32 @@ async function main() {
         name: 'Classic popcorn (large)',
         description: 'Salted, freshly popped.',
         priceMinor: 25_000,
+        ...concessionArt('Classic popcorn (large)'),
       },
       {
         name: 'Popcorn & drink combo',
         description: 'Large popcorn with a regular soft drink.',
         priceMinor: 42_000,
+        ...concessionArt('Popcorn & drink combo'),
       },
       {
         name: 'Nachos with cheese dip',
         description: 'Crisp nachos, warm cheese dip.',
         priceMinor: 22_000,
+        ...concessionArt('Nachos with cheese dip'),
       },
       {
         name: 'Soft drink (regular)',
         description: 'Coke, Sprite or Thums Up.',
         priceMinor: 12_000,
+        ...concessionArt('Soft drink (regular)'),
       },
-      { name: 'Packaged drinking water', description: '500ml, sealed.', priceMinor: 4_000 },
+      {
+        name: 'Packaged drinking water',
+        description: '500ml, sealed.',
+        priceMinor: 4_000,
+        ...concessionArt('Packaged drinking water'),
+      },
     ],
   });
 

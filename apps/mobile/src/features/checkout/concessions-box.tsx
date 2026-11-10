@@ -1,8 +1,9 @@
 import { formatMoney, type ConcessionItem } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View } from 'react-native';
-import { Text } from '../../components/ui';
+import { Poster, Text } from '../../components/ui';
 import { tapFeedback } from '../../lib/haptics';
+import { photoCreditLine } from './photo-credits';
 import { useTheme } from '../../theme';
 
 const MAX_QUANTITY = 10;
@@ -31,6 +32,11 @@ export function ConcessionsBox({
   if (items.length === 0) return null;
   if (locked && Object.values(quantities).every((q) => q === 0)) return null;
 
+  // Built from the whole menu rather than the rows currently drawn, so the
+  // line does not shuffle as quantities change. A locked order still shows
+  // the photographs for what was bought, so it still owes the credit.
+  const credits = photoCreditLine(items);
+
   return (
     <View style={{ gap: spacing.sm }}>
       <Text variant="heading">Popcorn & drinks</Text>
@@ -53,10 +59,34 @@ export function ConcessionsBox({
                 backgroundColor: colors.surface,
               }}
             >
-              <View style={{ flex: 1 }}>
-                <Text variant="label">{item.name}</Text>
+              {/* A picture of the thing, which is how every food list in this
+                  market is read. `Poster` draws the item's initials when
+                  there is no photograph, so a menu that is half-credited does
+                  not look half-broken. */}
+              {item.imageUrl && item.imageCredit ? (
+                <Poster
+                  uri={item.imageUrl}
+                  title={item.name}
+                  rounded={radius.sm}
+                  sheen={false}
+                  style={{ width: 56, height: 56 }}
+                />
+              ) : null}
+
+              <View style={{ flex: 1, gap: 1 }}>
+                <Text variant="label" numberOfLines={1}>
+                  {item.name}
+                </Text>
+                {/* The price gets its own line rather than trailing the
+                    description. Sharing one line, it was the half that got cut
+                    when a photograph took the width: "Coke, Sprite or Thums
+                    Up. · ₹1…". A description that runs out mid-sentence is a
+                    description; a price that does is a trap. */}
                 <Text variant="caption" tone="muted" numberOfLines={1}>
-                  {item.description} · {formatMoney(item.priceMinor, item.currency)}
+                  {item.description}
+                </Text>
+                <Text variant="caption" numeric>
+                  {formatMoney(item.priceMinor, item.currency)}
                 </Text>
               </View>
 
@@ -75,6 +105,14 @@ export function ConcessionsBox({
           );
         })}
       </View>
+
+      {/* Required, not decorative: these photographs are used under CC BY and
+          CC BY-SA, which name the author as the condition of use. */}
+      {credits ? (
+        <Text variant="caption" tone="muted">
+          {credits}
+        </Text>
+      ) : null}
 
       {/* An entitlement almost nobody knows they have, said where it is worth
           money: directly under a 500ml bottle this app is charging for.

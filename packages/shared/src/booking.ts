@@ -108,6 +108,22 @@ export const concessionItemSchema = z.object({
   description: z.string(),
   priceMinor: z.number().int(),
   currency: z.string(),
+  /**
+   * A photograph of the item, scaled for a list row. Null where none was
+   * found: the row draws without one rather than with a grey box pretending
+   * to be a picture.
+   */
+  imageUrl: z.string().nullable().default(null),
+  /**
+   * Author and licence, as "Briejones, CC BY-SA 3.0".
+   *
+   * Sent with the picture, not left to the client to look up. These are used
+   * under CC BY and CC BY-SA, which require the author to be named, so a
+   * photograph that arrives without its credit is one the app must not draw.
+   */
+  imageCredit: z.string().nullable().default(null),
+  /** The file's page, carrying the author and the licence in full. */
+  imageCreditUrl: z.string().nullable().default(null),
 });
 export type ConcessionItem = z.infer<typeof concessionItemSchema>;
 
