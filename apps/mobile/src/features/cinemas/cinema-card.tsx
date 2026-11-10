@@ -34,6 +34,25 @@ export function CinemaCard({
     label: cinema.name,
   };
 
+  /**
+   * "4 screens · 7 films on", with each half held together.
+   *
+   * A ground has stands and fixtures, not screens and films, which is why the
+   * nouns come from the venue kind: this read "1 screen · 1 films on" for
+   * Wankhede, three wrong words out of six.
+   *
+   * The spaces inside each half are non-breaking, so the line breaks at the
+   * separator or not at all. Three icon buttons share this row and leave the
+   * text about a hundred points on a narrow phone, which is not enough - and
+   * the break was landing between "films" and "on", stranding a word on a
+   * line of its own.
+   */
+  const summary =
+    `${cinema.screenCount}\u00a0${spaces[cinema.screenCount === 1 ? 'one' : 'many']}` +
+    (cinema.nowShowingCount > 0
+      ? ` \u00b7 ${cinema.nowShowingCount}\u00a0${programme[cinema.nowShowingCount === 1 ? 'one' : 'many']}\u00a0on`
+      : ' \u00b7 nothing\u00a0on');
+
   return (
     // The footer's IconActions are siblings of the card's Pressable, not
     // descendants of it: on web a Pressable with accessibilityRole="button"
@@ -148,14 +167,8 @@ export function CinemaCard({
           paddingTop: spacing.sm,
         }}
       >
-        {/* A ground has stands and fixtures, not screens and films. This read
-            "1 screen · 1 films on" for Wankhede, which is three wrong words
-            out of six. */}
         <Text variant="caption" tone="muted" numeric style={{ flex: 1 }}>
-          {cinema.screenCount} {spaces[cinema.screenCount === 1 ? 'one' : 'many']}
-          {cinema.nowShowingCount > 0
-            ? ` · ${cinema.nowShowingCount} ${programme[cinema.nowShowingCount === 1 ? 'one' : 'many']} on`
-            : ' · nothing on'}
+          {summary}
         </Text>
 
         {/* Siblings of the card's Pressable, not children: these go somewhere
