@@ -136,6 +136,30 @@ describe('cheapestIsWorthMarking', () => {
     expect(cheapestIsWorthMarking([venue('only', 1, slot('a', AT(18), 22_000))])).toBe(false);
   });
 
+  it('is not worth marking when two venues tie for cheapest', () => {
+    // Found on a device: two cinemas at 220 and one dearer put the word
+    // CHEAPEST on two different rows, which is a contradiction rather than a
+    // recommendation. The sort control already reads "Cheapest · ₹220" for
+    // somebody who wants the whole band.
+    expect(
+      cheapestIsWorthMarking([
+        venue('a', 1, slot('a', AT(18), 22_000)),
+        venue('b', 2, slot('b', AT(20), 22_000)),
+        venue('c', 3, slot('c', AT(21), 30_000)),
+      ]),
+    ).toBe(false);
+  });
+
+  it('is worth marking when exactly one venue is under the rest', () => {
+    expect(
+      cheapestIsWorthMarking([
+        venue('cheap', 1, slot('a', AT(18), 20_000)),
+        venue('b', 2, slot('b', AT(20), 22_000)),
+        venue('c', 3, slot('c', AT(21), 22_000)),
+      ]),
+    ).toBe(true);
+  });
+
   it('is not worth marking when there is nothing to compare', () => {
     expect(cheapestIsWorthMarking([])).toBe(false);
     expect(cheapestIsWorthMarking([venue('empty', 1)])).toBe(false);

@@ -55,17 +55,31 @@ export function cheapestInList<T extends ShowtimeSummary>(cinemas: Entry<T>[]): 
  * wearing a "Cheapest" badge. Every one of them was telling the truth and the
  * badge was worth nothing - a label on every row is a label on none.
  *
- * So it is only worth drawing when at least one venue is dearer than the
- * cheapest. One cinema in the list is the same case: it cannot be cheaper
- * than itself.
+ * The first rule here only caught that worst case, "every venue is tied", and
+ * a later device run found the same nonsense one step down: two cinemas at
+ * 220 and a third dearer, so the list carried two badges reading CHEAPEST. A
+ * superlative on two rows is not a recommendation, it is a contradiction the
+ * reader has to resolve.
+ *
+ * So the badge is drawn only for a cheapest that is actually alone. Nothing
+ * is lost when there is a tie: the sort control beside the list already reads
+ * "Cheapest · ₹220", which is how somebody who cares about price finds the
+ * whole band rather than one row of it.
+ *
+ * Venues with no showtimes left after a filter are ignored rather than
+ * counted as dearer; they have no price to compare.
  */
 export function cheapestIsWorthMarking<T extends ShowtimeSummary>(cinemas: Entry<T>[]): boolean {
-  const lowest = cheapestInList(cinemas);
-  if (lowest === null) return false;
-  return cinemas.some((entry) => {
+  const prices: number[] = [];
+  for (const entry of cinemas) {
     const here = cheapestAt(entry);
-    return here !== null && here > lowest;
-  });
+    if (here !== null) prices.push(here);
+  }
+  // One comparable venue cannot be cheaper than anything.
+  if (prices.length < 2) return false;
+
+  const lowest = Math.min(...prices);
+  return prices.filter((price) => price === lowest).length === 1;
 }
 
 /** The first showtime at one cinema, as a timestamp. Infinity when it has none. */
