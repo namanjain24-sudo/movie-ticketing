@@ -199,6 +199,42 @@ export default function SeatMapScreen() {
   const allSeats = seatMap.data?.seats;
   const isEvent = Boolean(seatMap.data?.event);
   const statusOf = selection.statusOf;
+  /**
+   * What "Best N seats" would actually pick, worked out before it is offered.
+   *
+   * In a cinema nobody chooses a band first - every seat faces the same
+   * screen and the row is the decision - so this button searches the whole
+   * room. On a real auditorium that meant tapping it while looking at a
+   * ₹220 Standard header and being given two Premium seats at ₹340, with the
+   * only notice being the total quietly changing in the bar below. This file
+   * already treats that jump as a hazard worth guarding: it is why choosing a
+   * stand narrows the search at a ground, where the same tap could answer
+   * "the cheap end, please" with the Club House.
+   *
+   * Running the search up front costs one pass over rows already in memory
+   * and lets the button say which band it is about to put somebody in and
+   * what it will cost. The press then uses this same result rather than
+   * searching again, so the label and the tap cannot disagree.
+   */
+  const bestPreview = useMemo(() => {
+    const data = seatMap.data;
+    if (!data) return null;
+    const want = Math.min(partySize ?? 2, data.maxSeatsPerBooking);
+    const searchRows = chosenTier
+      ? rows.filter((r) => r.seats.some((seat) => seat.tier === chosenTier))
+      : rows;
+    const seats = findBestSeats(searchRows, statusOf, want, data.screen.columnCount);
+    if (!seats) return null;
+    const picked = new Set(seats.map((seat) => seat.tier));
+    return {
+      seats,
+      subtotalMinor: seats.reduce((sum, seat) => sum + seat.priceMinor, 0),
+      // Null when a block straddles two bands, which a price alone describes
+      // better than either band's name would.
+      tier: picked.size === 1 ? [...picked][0] : null,
+    };
+  }, [seatMap.data, partySize, chosenTier, rows, statusOf]);
+
   const stands = useMemo(
     // Every event, not only the ones shaped like a bowl. A concert in a hall
     // and a workshop in a studio are sold the same way a match is — pick the
@@ -237,6 +273,14 @@ export default function SeatMapScreen() {
   const chosenStandLabel = chosenTier
     ? (map.tiers.find((t) => t.tier === chosenTier)?.label ?? null)
     : null;
+
+  // The venue's own name for the band the auto-pick landed in, so the button
+  // and the header above the seats call it the same thing.
+  const bestBandLabel =
+    chosenStandLabel ??
+    (bestPreview?.tier
+      ? (map.tiers.find((t) => t.tier === bestPreview.tier)?.label ?? null)
+      : null);
 
   // Plain derivation, not a hook, so it is fine below the guard: which stand
   // the seat list is currently in, so the plan and the list can both light it.
@@ -420,24 +464,22 @@ export default function SeatMapScreen() {
             {salesClosed ? null : (
               <Button
                 label={
-                  chosenStandLabel
-                    ? `Best ${wanted} in ${chosenStandLabel}`
-                    : `Best ${wanted} seat${wanted === 1 ? '' : 's'} for me`
+                  bestPreview
+                    ? `${
+                        bestBandLabel
+                          ? `Best ${wanted} in ${bestBandLabel}`
+                          : `Best ${wanted} seat${wanted === 1 ? '' : 's'}`
+                      } · ${formatMoney(bestPreview.subtotalMinor, map.currency)}`
+                    : chosenStandLabel
+                      ? `Best ${wanted} in ${chosenStandLabel}`
+                      : `Best ${wanted} seat${wanted === 1 ? '' : 's'} for me`
                 }
                 variant="secondary"
                 onPress={() => {
-                  // Inside the chosen stand when there is one. Searching the
-                  // whole bowl would answer "the cheap end, please" with the
-                  // most expensive seats in the ground.
-                  const searchRows = chosenTier
-                    ? selection.rows.filter((r) => r.seats.some((x) => x.tier === chosenTier))
-                    : selection.rows;
-                  const best = findBestSeats(
-                    searchRows,
-                    selection.statusOf,
-                    wanted,
-                    map.screen.columnCount,
-                  );
+                  // The block the label just quoted, not a fresh search: two
+                  // searches are two chances to promise one price and take
+                  // another.
+                  const best = bestPreview?.seats ?? null;
                   if (best) {
                     setHoldError(null);
                     selection.selectSeats(best);
