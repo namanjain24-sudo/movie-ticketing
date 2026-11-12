@@ -7,6 +7,7 @@ import { tapFeedback } from '../../lib/haptics';
 import { callNumber, formatDistance, openDirections } from '../../lib/maps';
 import { AnimatedPressable, usePressScale } from '../../lib/use-press-scale';
 import { useTheme } from '../../theme';
+import { brandInitials, brandTint } from './brand-mark';
 import { HIT_SIZE } from '../../theme/tokens';
 import { useFavoriteCinemas } from './use-favorite-cinemas';
 
@@ -47,6 +48,10 @@ export function CinemaCard({
    * the break was landing between "films" and "on", stranding a word on a
    * line of its own.
    */
+  // Stable per chain, so the same brand is the same colour on every card.
+  const tint = brandTint(cinema.brand);
+  const mark = brandInitials(cinema.brand);
+
   const summary =
     `${cinema.screenCount}\u00a0${spaces[cinema.screenCount === 1 ? 'one' : 'many']}` +
     (cinema.nowShowingCount > 0
@@ -87,6 +92,40 @@ export function CinemaCard({
         style={[{ gap: spacing.md }, press.style]}
       >
         <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
+          {/* The chain, as a mark. This tab was eighteen cards of grey text
+              and the only screen in the app with no artwork at all; a stock
+              photograph of somebody else's foyer standing in for this venue
+              would have been colour bought with a small lie. The name is
+              true, and it gives the list a rhythm to scan down. */}
+          <View
+            accessible={false}
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: radius.md,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors[`${tint}Muted`],
+            }}
+          >
+            {/* Two sizes, both still "large text" to WCAG - 24px, or bold
+                at 18.66px and over - which is the bar two of these four
+                tints only clear in dark mode because the mark is big. A
+                single letter gets the full 24; an acronym is set at 19 so it
+                fits, because `title` ellipsised AMB to "A…" and the whole
+                point of keeping an acronym was keeping it whole. */}
+            <Text
+              variant="title"
+              style={{
+                color: colors[tint],
+                ...(mark.length > 1 ? { fontSize: 19, lineHeight: 23 } : null),
+              }}
+              numberOfLines={1}
+            >
+              {mark}
+            </Text>
+          </View>
+
           <View style={{ flex: 1, gap: spacing['2xs'] }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <Text variant="overline" tone="primary">

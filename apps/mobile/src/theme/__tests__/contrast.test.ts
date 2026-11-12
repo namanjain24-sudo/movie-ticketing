@@ -93,6 +93,16 @@ function deltaE(a: string, b: string): number {
 }
 
 const AA_NORMAL = 4.5;
+/**
+ * WCAG's bar for large text, which it defines as 24px, or 18.66px bold.
+ *
+ * Used for exactly one thing here: the letter or acronym in a brand mark,
+ * which is set bold at 24px for a single letter and 19px for an acronym -
+ * both above the threshold. If that mark is ever set smaller than 18.66px,
+ * this is the wrong bar for it and two of the four tints stop being safe in
+ * dark mode.
+ */
+const AA_LARGE = 3;
 
 /**
  * How far apart two blocks of colour have to be to read as two things.
@@ -154,6 +164,29 @@ describe('contrast', () => {
     ['light', lightColors],
     ['dark', darkColors],
   ])('%s theme', (_name, colors: Colors) => {
+    /**
+     * Every tint a brand mark can be handed.
+     *
+     * `brandTint` hashes a chain's name into this set, so which pair a cinema
+     * gets is decided by its name rather than by anybody looking at it. That
+     * is only safe while all four are readable - a mark nobody checked would
+     * be the one the hash picks for the chain added next year.
+     */
+    it.each([
+      ['primary', 'primaryMuted'],
+      ['accent', 'accentMuted'],
+      ['success', 'successMuted'],
+      ['warning', 'warningMuted'],
+    ] as const)('sets a brand mark in %s on its own tint', (ink, tint) => {
+      // Composited over `surface`, which is the card a mark sits on, and not
+      // over the page: in the dark theme both of these tints are rgba, and
+      // measuring a translucent fill as if it were solid - or over the wrong
+      // thing - answers a contrast the screen never shows.
+      expect(contrast(colors[ink], over(colors[tint], colors.surface))).toBeGreaterThanOrEqual(
+        AA_LARGE,
+      );
+    });
+
     it('can carry its own label on a filled primary control', () => {
       // Buttons, selected seats, selected chips, the avatar, the urgent
       // countdown. All of them put `onPrimary` on `primarySolid`.
