@@ -18,13 +18,29 @@ import { useRecentSearches } from '../../features/search/use-recent-searches';
 import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
 import { STORAGE_KEYS } from '../../lib/storage';
-import { useTheme } from '../../theme';
+import { DarkSection, useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
 /** How tall the map is when it sits above the list rather than filling it. */
 const MAP_PEEK_HEIGHT = 220;
 
-export default function Cinemas() {
+/**
+ * Dark, like home: this is a browsing screen.
+ *
+ * Home went dark on its own first, which left the app half one thing and
+ * half another - two of the three tabs somebody browses on were still white.
+ * Tickets and Profile stay light, because that is where a person manages
+ * what they already bought.
+ */
+export default function CinemasScreen() {
+  return (
+    <DarkSection>
+      <Cinemas />
+    </DarkSection>
+  );
+}
+
+function Cinemas() {
   const router = useRouter();
   const { colors, radius, spacing } = useTheme();
 
