@@ -4,6 +4,7 @@ import { ScrollView, View } from 'react-native';
 import { Text } from '../../components/ui';
 import { useTheme } from '../../theme';
 import { SectionHeader } from '../catalog/section-header';
+import { campaignSlogan } from './campaign';
 import { offerTerms as terms } from './offer-terms';
 
 /**
@@ -38,6 +39,7 @@ export function OffersRail({ offers }: { offers: PromoOffer[] }) {
       >
         {live.map((offer) => {
           const shown = terms(offer);
+          const slogan = campaignSlogan(offer.code);
           return (
             <View
               key={offer.code}
@@ -53,9 +55,24 @@ export function OffersRail({ offers }: { offers: PromoOffer[] }) {
                 borderColor: colors.accent,
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <Ionicons name="pricetag" size={16} color={colors.accent} />
-                <Text variant="heading" style={{ color: colors.accent, letterSpacing: 1 }}>
+              {/* The campaign line first, where a campaign puts it, and the
+                  code demoted to the thing you type. An offer that leads with
+                  "₹50 off your booking. Minimum ₹200 on seats." is accurate
+                  and invites nobody. The terms are still here, in full, under
+                  it - and an offer nobody has written a line for simply leads
+                  with them, as before. */}
+              {slogan ? (
+                <Text variant="heading" numberOfLines={2} style={{ color: colors.accent }}>
+                  {slogan}
+                </Text>
+              ) : null}
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                <Ionicons name="pricetag" size={13} color={colors.accent} />
+                <Text
+                  variant={slogan ? 'caption' : 'heading'}
+                  style={{ color: colors.accent, letterSpacing: 1 }}
+                >
                   {offer.code}
                 </Text>
               </View>
