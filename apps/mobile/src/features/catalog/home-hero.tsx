@@ -57,17 +57,21 @@ export function HomeHero({
         {whenItIs(now).toUpperCase()}
       </Text>
 
-      {/* Two lines by construction, not by wrapping: the count and the place
-          are different facts and the line break is where the sentence turns. */}
-      <Text variant="displayLg" accessibilityRole="header">
+      {/* One line, and a small one.
+          
+          This was two lines of display type, forty points tall, and with the
+          greeting above it and the chips and search below it a third of the
+          screen was gone before a film appeared. The artwork does the
+          announcing now; this says the fact and gets out of the way. */}
+      <Text variant="heading" accessibilityRole="header">
         {count === undefined ? (
-          `What's on in\n${place}`
+          `What's on in ${place}`
         ) : (
           <>
-            <Text variant="displayLg" style={{ color: colors.primary }} numeric>
+            <Text variant="heading" style={{ color: colors.primary }} numeric>
               {count}
             </Text>
-            {` ${count === 1 ? 'film' : 'films'} on in\n${place}`}
+            {` ${count === 1 ? 'film' : 'films'} on in ${place}`}
           </>
         )}
       </Text>

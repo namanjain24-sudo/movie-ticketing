@@ -1,5 +1,7 @@
 import type { MovieSummary } from '@app/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useState } from 'react';
 import {
   Dimensions,
@@ -15,48 +17,44 @@ import Animated, {
   useSharedValue,
   type SharedValue,
 } from 'react-native-reanimated';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Poster, Text } from '../../components/ui';
+import { Text } from '../../components/ui';
 import { formatRuntime } from '../../lib/format';
 import { useTheme } from '../../theme';
 import { gradients } from '../../theme/tokens';
 
-const { width: SCREEN } = Dimensions.get('window');
-const GUTTER = 16;
-/**
- * The gap between cards is the gutter, and that is not a coincidence.
- *
- * A card is the screen less a gutter each side, so when one is snapped its
- * right edge sits a gutter from the screen edge. The next card begins a gap
- * after that, which means anything less than a gutter leaves a slice of it
- * showing. At twelve that slice was four points: too thin to read as "there
- * is more this way", wide enough to read as a dark sliver that should not be
- * there. Matching the gutter puts the next card exactly at the edge, so the
- * carousel pages cleanly and the dots below say what the sliver was failing
- * to.
- */
-const GAP = GUTTER;
-const CARD_WIDTH = SCREEN - GUTTER * 2;
-/** One card to the next, which is also what the list snaps by. */
-const PAGE = CARD_WIDTH + GAP;
-/**
- * How far the blurred backdrop lags the card it sits in, as a fraction of the
- * distance scrolled.
- *
- * The depth cue is only ever this: things further away move less. A fifth is
- * enough to feel and small enough that nobody catches it happening, and the
- * backdrop is scaled a little so the lag never drags an edge into view.
- */
-const PARALLAX = 0.2;
-const BACKDROP_SCALE = 1.2;
-const POSTER_WIDTH = 116;
+const { width: SCREEN, height: WINDOW } = Dimensions.get('window');
 
 /**
- * The first thing on the home screen. The poster keeps its own 2:3 shape rather
- * than being cropped into a banner — the catalogue ships portrait art, and a
- * letterboxed crop of a poster throws away the half that was composed to sell
- * the film.
+ * How tall the hero stands.
+ *
+ * A poster is 2:3, so full-bleed it wants to be a screen and a half tall -
+ * more than the viewport, and the whole film would never be on screen at
+ * once. Just under two thirds of the window leaves the top of the artwork
+ * doing the work, the title legible over the bottom of it, and enough of the
+ * page below to say the screen keeps going.
+ */
+const HERO_HEIGHT = Math.min(Math.round(WINDOW * 0.62), Math.round(SCREEN * 1.5));
+
+/**
+ * How far the artwork lags the page it is in, as a fraction of the distance
+ * scrolled. The only depth cue a flat screen has: things further away move
+ * less. The image is scaled a little so the lag never drags an edge in.
+ */
+const PARALLAX = 0.2;
+const ARTWORK_SCALE = 1.16;
+
+/**
+ * The first thing on the home screen, and now the size of one.
+ *
+ * It used to be a card: a 116-point poster beside three lines of text on a
+ * dark rectangle, with a third of the screen above it spent on a greeting, a
+ * headline and a search field before any film appeared at all. The app's best
+ * asset is its artwork and it was being shown at the size of a thumbnail.
+ *
+ * Full-bleed now, with the title and the price of entry over the bottom of
+ * the picture and the picture melting into the page under them. The image is
+ * anchored to its top because posters put faces there and a centre crop takes
+ * the chin off every one of them.
  */
 export function FeaturedRail({
   movies,
@@ -65,14 +63,14 @@ export function FeaturedRail({
   movies: MovieSummary[];
   onSelect: (movie: MovieSummary) => void;
 }) {
-  const { colors, radius, spacing, elevation } = useTheme();
+  const { colors, spacing } = useTheme();
   const [index, setIndex] = useState(0);
 
   const onScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setIndex(Math.round(e.nativeEvent.contentOffset.x / PAGE));
+    setIndex(Math.round(e.nativeEvent.contentOffset.x / SCREEN));
   }, []);
 
-  // Written on the UI thread by the scroll itself, so the backdrops move with
+  // Written on the UI thread by the scroll itself, so the artwork moves with
   // the finger rather than one React render behind it.
   const scrollX = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -80,138 +78,45 @@ export function FeaturedRail({
   });
 
   return (
-    <View style={{ gap: spacing.md }}>
+    <View>
       <Animated.FlatList
         data={movies}
         horizontal
+        pagingEnabled
         keyExtractor={(m) => m.id}
         showsHorizontalScrollIndicator={false}
-        snapToInterval={CARD_WIDTH + GAP}
         decelerationRate="fast"
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         onMomentumScrollEnd={onScrollEnd}
-        contentContainerStyle={{ paddingHorizontal: GUTTER, gap: GAP }}
-        renderItem={({ item, index }) => {
-          const rated = item.rating.average !== null && item.rating.count > 0;
-          return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${item.title}. ${item.certification}, ${formatRuntime(
-                item.durationMins,
-              )}. Book tickets`}
-              onPress={() => onSelect(item)}
-              style={({ pressed }) => [
-                {
-                  width: CARD_WIDTH,
-                  borderRadius: radius.xl,
-                  overflow: 'hidden',
-                  // Dark in both themes: a hero is a screen in a dark room.
-                  backgroundColor: colors.onImageSurface,
-                  borderWidth: 1,
-                  borderColor: 'rgba(255,255,255,0.08)',
-                  transform: [{ scale: pressed ? 0.985 : 1 }],
-                },
-                elevation.card,
-              ]}
-            >
-              {/* The poster's own colours, out of focus, as the card's light
-                  - and held back a little as the rail moves, which is the
-                  only thing depth has ever been on a flat screen. */}
-              <Backdrop uri={item.posterUrl} index={index} scrollX={scrollX} />
-              <LinearGradient
-                colors={[...gradients.scrim]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-
-              <View style={{ flexDirection: 'row', gap: spacing.lg, padding: spacing.lg }}>
-                <Poster
-                  uri={item.posterUrl}
-                  title={item.title}
-                  rounded={radius.md}
-                  style={{ width: POSTER_WIDTH, aspectRatio: 2 / 3, ...elevation.raised }}
-                />
-
-                <View style={{ flex: 1, justifyContent: 'center', gap: spacing.sm }}>
-                  <Text variant="title" numberOfLines={2} style={{ color: colors.onImage }}>
-                    {item.title}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                    <Text variant="caption" style={{ color: colors.onImageMuted }}>
-                      {item.certification} · {formatRuntime(item.durationMins)}
-                    </Text>
-                    {rated ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                        <Ionicons name="star" size={11} color={colors.warning} />
-                        <Text variant="caption" numeric style={{ color: colors.onImage }}>
-                          {item.rating.average?.toFixed(1)}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text variant="caption" numberOfLines={1} style={{ color: colors.onImageMuted }}>
-                    {item.genres.join(' · ')}
-                  </Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
-                    {item.languages.slice(0, 2).map((language) => (
-                      <View
-                        key={language}
-                        style={{
-                          paddingHorizontal: spacing.sm,
-                          paddingVertical: 2,
-                          borderRadius: radius.sm,
-                          borderWidth: 1,
-                          borderColor: 'rgba(255,255,255,0.35)',
-                        }}
-                      >
-                        <Text variant="overline" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                          {language.toUpperCase()}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  <LinearGradient
-                    colors={gradients.primary}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[
-                      {
-                        alignSelf: 'flex-start',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: spacing.xs,
-                        marginTop: spacing.xs,
-                        paddingHorizontal: spacing.lg,
-                        paddingVertical: spacing.sm,
-                        borderRadius: radius.full,
-                      },
-                      elevation.glow,
-                    ]}
-                  >
-                    <Text variant="label" style={{ color: colors.onImage }}>
-                      Book tickets
-                    </Text>
-                    <Ionicons name="arrow-forward" size={14} color={colors.onImage} />
-                  </LinearGradient>
-                </View>
-              </View>
-            </Pressable>
-          );
-        }}
+        renderItem={({ item, index: i }) => (
+          <HeroPanel movie={item} index={i} scrollX={scrollX} onPress={() => onSelect(item)} />
+        )}
       />
 
-      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xs }}>
-        {movies.map((m, i) => (
+      {/* Over the bottom of the artwork rather than under it: the gradient
+          has already taken the picture down to the page colour by then, so
+          the dots sit on the page and cost no height. */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: spacing.md,
+          left: 0,
+          right: 0,
+          flexDirection: 'row',
+          justifyContent: 'center',
+          gap: spacing.xs,
+        }}
+        pointerEvents="none"
+      >
+        {movies.map((movie, i) => (
           <View
-            key={m.id}
+            key={movie.id}
             style={{
-              width: i === index ? 18 : 6,
+              width: i === index ? 20 : 6,
               height: 6,
               borderRadius: 3,
-              backgroundColor: i === index ? colors.primary : colors.borderStrong,
+              backgroundColor: i === index ? colors.primary : colors.border,
             }}
           />
         ))}
@@ -220,40 +125,117 @@ export function FeaturedRail({
   );
 }
 
-/**
- * The blurred poster behind a card, lagging the rail it is drawn in.
- *
- * Its own component because the animated style has to be a hook, and a hook
- * cannot live inside `renderItem`. Which card this is deciding where it sits
- * relative to the scroll: at rest the offset is zero and the backdrop is
- * centred; a page either side and it has drifted by a fifth of a page.
- */
-function Backdrop({
-  uri,
+function HeroPanel({
+  movie,
   index,
   scrollX,
+  onPress,
 }: {
-  uri: string;
+  movie: MovieSummary;
   index: number;
   scrollX: SharedValue<number>;
+  onPress: () => void;
 }) {
-  const style = useAnimatedStyle(() => ({
+  const { colors, radius, spacing, elevation } = useTheme();
+
+  const artwork = useAnimatedStyle(() => ({
     transform: [
-      { scale: BACKDROP_SCALE },
-      { translateX: -(scrollX.value - index * PAGE) * PARALLAX },
+      { scale: ARTWORK_SCALE },
+      { translateX: -(scrollX.value - index * SCREEN) * PARALLAX },
     ],
   }));
 
+  const rated = movie.rating.average !== null && movie.rating.count > 0;
+
   return (
-    <Animated.View style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
-      <Image
-        source={uri}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${movie.title}. ${movie.certification}, ${formatRuntime(
+        movie.durationMins,
+      )}. Book tickets`}
+      onPress={onPress}
+      style={{ width: SCREEN, height: HERO_HEIGHT }}
+    >
+      <Animated.View style={[StyleSheet.absoluteFill, artwork]} pointerEvents="none">
+        <Image
+          source={movie.posterUrl}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          // Posters put faces at the top. A centre crop takes the chin off
+          // every one of them.
+          contentPosition="top"
+          cachePolicy="memory-disk"
+          transition={240}
+          accessible={false}
+        />
+      </Animated.View>
+
+      {/* Transparent over the face, the page colour by the time it reaches
+          the bottom, so the artwork ends without an edge - and solidly dark
+          through the band the title sits in. At a gentler middle stop the
+          poster's own credit block ("STAR STUDIOS presents") read straight
+          through the overlay and the hero looked like two posters at once. */}
+      <LinearGradient
+        colors={['transparent', 'rgba(11,11,16,0.35)', 'rgba(11,11,16,0.88)', colors.background]}
+        locations={[0.22, 0.48, 0.78, 1]}
         style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        blurRadius={40}
-        cachePolicy="memory-disk"
-        accessible={false}
+        pointerEvents="none"
       />
-    </Animated.View>
+
+      <View
+        style={{
+          position: 'absolute',
+          left: spacing.lg,
+          right: spacing.lg,
+          bottom: spacing['2xl'],
+          gap: spacing.sm,
+        }}
+      >
+        <Text variant="displayLg" numberOfLines={2} style={{ color: colors.onImage }}>
+          {movie.title}
+        </Text>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Text variant="label" style={{ color: colors.onImageMuted }}>
+            {movie.certification} · {formatRuntime(movie.durationMins)}
+          </Text>
+          {rated ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing['2xs'] }}>
+              <Ionicons name="star" size={13} color={colors.accent} />
+              <Text variant="label" numeric style={{ color: colors.onImage }}>
+                {movie.rating.average?.toFixed(1)}
+              </Text>
+            </View>
+          ) : null}
+          <Text variant="label" style={{ color: colors.onImageMuted }} numberOfLines={1}>
+            {movie.genres.slice(0, 2).join(' · ')}
+          </Text>
+        </View>
+
+        <LinearGradient
+          colors={gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            {
+              alignSelf: 'flex-start',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.xs,
+              marginTop: spacing['2xs'],
+              paddingHorizontal: spacing.xl,
+              paddingVertical: spacing.md,
+              borderRadius: radius.full,
+            },
+            elevation.glow,
+          ]}
+        >
+          <Text variant="label" style={{ color: colors.onImage }}>
+            Book tickets
+          </Text>
+          <Ionicons name="arrow-forward" size={14} color={colors.onImage} />
+        </LinearGradient>
+      </View>
+    </Pressable>
   );
 }

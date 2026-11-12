@@ -33,6 +33,7 @@ import { ADS_MINUTES, accessibilityViaFor } from './seed';
 export interface CatalogueRefresh {
   adsMinutes: number;
   accessibility: number;
+  cityNames: number;
   concessionImages: number;
 }
 
@@ -73,7 +74,12 @@ function featuresFor(id: string): AccessibilityFeature[] {
 }
 
 export async function refreshCatalogue(prisma: PrismaClient): Promise<CatalogueRefresh> {
-  const done: CatalogueRefresh = { adsMinutes: 0, accessibility: 0, concessionImages: 0 };
+  const done: CatalogueRefresh = {
+    adsMinutes: 0,
+    accessibility: 0,
+    cityNames: 0,
+    concessionImages: 0,
+  };
 
   // --- Advertising before the film -----------------------------------------
   // Films only. A match runs no trailers, so zero is the right answer for an
@@ -112,6 +118,21 @@ export async function refreshCatalogue(prisma: PrismaClient): Promise<CatalogueR
       done.accessibility += count;
     }
   }
+
+  // --- One name per city ---------------------------------------------------
+  //
+  // The only correction here rather than a fill-in, and it earns the
+  // exception: the stadium in Delhi was seeded as "New Delhi" while every
+  // cinema said "Delhi", and the city picker lists whatever the catalogue
+  // calls a place. That put one city in the list twice, with the films under
+  // one entry and the stadium under the other. Narrow enough to be safe -
+  // nobody chose "New Delhi" deliberately - and idempotent, because after it
+  // runs there is nothing left matching.
+  const renamed = await prisma.cinema.updateMany({
+    where: { city: 'New Delhi' },
+    data: { city: 'Delhi' },
+  });
+  done.cityNames = renamed.count;
 
   // --- Photographs on the concession menu ----------------------------------
   if ((await prisma.concessionItem.count({ where: { imageUrl: { not: null } } })) === 0) {

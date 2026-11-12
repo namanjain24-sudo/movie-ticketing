@@ -331,7 +331,13 @@ export const VENUES: VenueSpec[] = [
     kind: 'STADIUM',
     name: 'Jawaharlal Nehru Stadium',
     brand: 'Sports Authority of India',
-    city: 'New Delhi',
+    // "Delhi", as every cinema in this catalogue says, not "New Delhi".
+    //
+    // The city picker lists whatever the catalogue calls a place, so two
+    // names for one city became two entries in it: pick Delhi and the
+    // stadium is missing, pick New Delhi and there are no films. The address
+    // below still says New Delhi because that is the address.
+    city: 'Delhi',
     address: 'Pragati Vihar, Lodhi Road, New Delhi 110003',
     latitude: 28.5829,
     longitude: 77.2336,

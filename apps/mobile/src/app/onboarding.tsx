@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   interpolate,
+  runOnUI,
   scrollTo,
   useAnimatedRef,
   useAnimatedScrollHandler,
@@ -102,7 +103,17 @@ export default function Onboarding() {
       return;
     }
     const next = index + 1;
-    scrollTo(scrollRef, next * SCREEN, 0, true);
+    // `runOnUI`, because Reanimated's `scrollTo` is a worklet and does
+    // nothing at all when it is called from the JS thread - no error, no
+    // warning, no movement. Tapping Next advanced the dots and the button
+    // label while the pager stayed on the first panel, so anybody who used
+    // the button rather than swiping read the same slide three times and
+    // then arrived in the app. Swiping always worked, which is why this
+    // survived: it is only broken for the control everybody actually taps.
+    runOnUI(() => {
+      'worklet';
+      scrollTo(scrollRef, next * SCREEN, 0, true);
+    })();
     setIndex(next);
   };
 

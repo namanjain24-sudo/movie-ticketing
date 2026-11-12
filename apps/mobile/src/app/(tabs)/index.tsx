@@ -47,7 +47,7 @@ import { useLastKnownLocation } from '../../features/cinemas/use-location';
 import { toDateKey } from '../../lib/format';
 import { useDebouncedValue } from '../../lib/use-debounced-value';
 import { useTickAt } from '../../lib/use-tick-at';
-import { useTheme } from '../../theme';
+import { DarkSection, useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
 /**
@@ -68,7 +68,24 @@ const COLUMNS = 3;
 /** How many films head the carousel before the grid takes over. */
 const FEATURED_COUNT = 3;
 
-export default function NowShowing() {
+/**
+ * Dark, because this is the screen where somebody is looking at films.
+ *
+ * The wrapper exists rather than a palette swap inside the screen because
+ * `useTheme()` is read at the top of the component: to answer dark it has to
+ * be called underneath the provider, and the cheapest way to arrange that is
+ * one component outside it. Everything below - the rails, the cards, the
+ * headers, the chips - follows without knowing anything about it.
+ */
+export default function Home() {
+  return (
+    <DarkSection>
+      <NowShowing />
+    </DarkSection>
+  );
+}
+
+function NowShowing() {
   const router = useRouter();
   const { colors, radius, spacing } = useTheme();
 
@@ -210,18 +227,25 @@ export default function NowShowing() {
 
   const header = (
     <View style={{ gap: spacing.xl, paddingBottom: spacing.lg }}>
-      {/* Only when browsing. Mid-search the hero is a large block of type
-          saying how many films exist, directly above a list of the three that
-          matched - which is the screen arguing with itself. */}
+      {/* The artwork first, at the top of the screen, before anything else.
+          It used to come fourth: a greeting, a headline the height of two
+          lines of display type, a pair of chips and a search field all ran
+          ahead of it, and on a 411-point phone a third of the screen was
+          spent before a film appeared at all. */}
+      {!searching && featured.length > 0 ? (
+        <FeaturedRail movies={featured} onSelect={open} />
+      ) : null}
+
+      {/* Only when browsing. Mid-search this is a line saying how many films
+          exist directly above the three that matched, which is the screen
+          arguing with itself. */}
       {!searching ? (
-        <View style={{ paddingTop: spacing.lg }}>
-          <HomeHero
-            city={city}
-            count={movies.isPending ? undefined : all.length}
-            onPressCity={() => setCityOpen(true)}
-            onDiscover={() => router.push('/discover')}
-          />
-        </View>
+        <HomeHero
+          city={city}
+          count={movies.isPending ? undefined : all.length}
+          onPressCity={() => setCityOpen(true)}
+          onDiscover={() => router.push('/discover')}
+        />
       ) : null}
 
       <View
@@ -283,8 +307,6 @@ export default function NowShowing() {
           onClear={recentSearches.clear}
         />
       ) : null}
-
-      {featured.length > 0 ? <FeaturedRail movies={featured} onSelect={open} /> : null}
 
       {!searching && !narrowed ? <StartingSoonRail shows={soon} onSelect={openShow} /> : null}
 

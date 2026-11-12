@@ -99,6 +99,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return <ThemeContext value={value}>{children}</ThemeContext>;
 }
 
+/**
+ * Forces the dark palette on a subtree, whatever the device prefers.
+ *
+ * Contextual immersion, which is the one idea worth stealing from every
+ * cinema app that has been redesigned well: the screens where somebody is
+ * *browsing films* are dark, because that is what a film looks like, and the
+ * screens where they are *managing what they bought* stay light, because a
+ * ticket is a receipt and a receipt is paper.
+ *
+ * It re-provides the same theme with the other palette rather than asking
+ * every card and label on the screen to know where it is. Nothing inside has
+ * to change: `useTheme()` answers dark and the whole subtree follows.
+ *
+ * `preference` and `setPreference` pass through untouched, so the settings
+ * screen - which is not inside one of these - still reads and writes the real
+ * preference.
+ */
+export function DarkSection({ children }: { children: ReactNode }) {
+  const outer = useTheme();
+  const value = useMemo<Theme>(() => ({ ...outer, colors: darkColors, isDark: true }), [outer]);
+  return <ThemeContext value={value}>{children}</ThemeContext>;
+}
+
 export function useTheme(): Theme {
   const theme = use(ThemeContext);
   if (!theme) throw new Error('useTheme must be used inside <ThemeProvider>');

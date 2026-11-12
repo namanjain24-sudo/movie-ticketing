@@ -71,6 +71,26 @@ describe('refreshCatalogue', () => {
     expect(after.imageCredit).toBeTruthy();
   });
 
+  it('gives one city one name, so the picker does not list it twice', async () => {
+    // Seeded as "New Delhi" while every cinema said "Delhi", which put the
+    // films under one entry in the city picker and the stadium under another.
+    const made = await createShowtime();
+    const screen = await prisma.screen.findUniqueOrThrow({
+      where: { id: made.screenId },
+      select: { cinemaId: true },
+    });
+    await prisma.cinema.update({ where: { id: screen.cinemaId }, data: { city: 'New Delhi' } });
+
+    const filled = await refreshCatalogue(prisma);
+
+    expect(filled.cityNames).toBe(1);
+    const after = await prisma.cinema.findUniqueOrThrow({
+      where: { id: screen.cinemaId },
+      select: { city: true },
+    });
+    expect(after.city).toBe('Delhi');
+  });
+
   it('does nothing the second time, which is why it is safe on every boot', async () => {
     await createShowtime();
     await prisma.concessionItem.create({
@@ -80,7 +100,7 @@ describe('refreshCatalogue', () => {
     await refreshCatalogue(prisma);
     const again = await refreshCatalogue(prisma);
 
-    expect(again).toEqual({ adsMinutes: 0, accessibility: 0, concessionImages: 0 });
+    expect(again).toEqual({ adsMinutes: 0, accessibility: 0, cityNames: 0, concessionImages: 0 });
   });
 
   it('leaves a figure somebody set deliberately alone', async () => {
