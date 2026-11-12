@@ -32,12 +32,28 @@ import { formatMonthDay, formatTime, joinWords } from '../../lib/format';
 import { rejectFeedback, successFeedback, tapFeedback } from '../../lib/haptics';
 import { idempotencyKey } from '../../lib/idempotency';
 import { queryKeys } from '../../lib/query-client';
-import { useTheme } from '../../theme';
+import { DarkSection, useTheme } from '../../theme';
 import { subjectTitle } from '../../features/catalog/subject';
 import { useAuth } from '../../features/auth/auth-provider';
 import { signInThenReturn } from '../../features/auth/return-to';
 
-export default function SeatMapScreen() {
+/**
+ * Dark, like the film page that leads here and the tabs before it.
+ *
+ * It is also simply what the room is: a seat map is a plan of an auditorium
+ * with the lights down, and the legend - lime for free, violet for the ones
+ * you are holding, grey for gone - was drawn for both palettes and contrast
+ * tested in both long before either was looked at on a dark screen.
+ */
+export default function SeatMapRoute() {
+  return (
+    <DarkSection>
+      <SeatMapScreen />
+    </DarkSection>
+  );
+}
+
+function SeatMapScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isSignedIn } = useAuth();
   const router = useRouter();
