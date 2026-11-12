@@ -225,7 +225,7 @@ export async function listShowtimes(params: {
       currency: true,
       salesCloseAt: true,
       tierPrices: { select: { priceMinor: true } },
-      screen: { select: { cinema: { select: CINEMA_SELECT } } },
+      screen: { select: { name: true, cinema: { select: CINEMA_SELECT } } },
       movie: { select: { id: true, slug: true, title: true, posterUrl: true } },
       event: { select: { id: true, slug: true, kind: true, title: true, posterUrl: true } },
       _count: { select: { showSeats: true } },
@@ -268,6 +268,7 @@ export async function listShowtimes(params: {
       salesCloseAt: s.salesCloseAt.toISOString(),
       fromPriceMinor: Math.min(...s.tierPrices.map((t) => t.priceMinor)),
       availability: band(availability.get(s.id) ?? 0, s._count.showSeats),
+      screenName: s.screen.name,
       // Exactly one of these is set on the row; the listing passes both
       // through rather than choosing, so a screen can render either.
       movie: s.movie,

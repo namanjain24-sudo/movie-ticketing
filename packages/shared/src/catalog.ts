@@ -183,6 +183,16 @@ export const showtimeSummarySchema = z.object({
   fromPriceMinor: z.number().int(),
   availability: availabilityBandSchema,
   /**
+   * Which auditorium, so two showings at one time can be told apart.
+   *
+   * A cinema runs a big release on several screens at once, and a day's
+   * listing for one of those is four chips reading "4:45 pm · 2D · Hindi ·
+   * ₹220 onwards", identical down to the price. They are different rooms
+   * with different seats left, and without this the list looks like it
+   * printed the same thing four times.
+   */
+  screenName: z.string().default(''),
+  /**
    * What this screening offers, for the MIB disclosure. Empty is the common
    * case: nothing is claimed rather than nothing exists.
    */

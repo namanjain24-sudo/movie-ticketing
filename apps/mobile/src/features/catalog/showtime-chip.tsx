@@ -29,6 +29,7 @@ import { AVAILABILITY_LABELS, availabilityColor, isBookable } from './availabili
 export function ShowtimeChip({
   showtime,
   closed = false,
+  ambiguous = false,
   onPress,
 }: {
   showtime: ShowtimeSummary;
@@ -38,6 +39,11 @@ export function ShowtimeChip({
    * the authority that actually refuses a late request.
    */
   closed?: boolean;
+  /**
+   * True when another showing in this cinema shares this one's time, format
+   * and language, so the auditorium is the only thing telling them apart.
+   */
+  ambiguous?: boolean;
   onPress: () => void;
 }) {
   const { colors, radius, spacing } = useTheme();
@@ -54,7 +60,9 @@ export function ShowtimeChip({
       accessibilityState={{ disabled: !bookable }}
       accessibilityLabel={`${formatTime(showtime.startsAt)}${
         late ? `, ends ${formatTime(showtime.endsAt)} the next day` : ''
-      }, ${describeShow(showtime)}, ${
+      }, ${describeShow(showtime)}${
+        ambiguous && showtime.screenName ? `, ${showtime.screenName}` : ''
+      }, ${
         bookable ? AVAILABILITY_LABELS[showtime.availability] : unavailableLabel
       }, from ${formatMoney(showtime.fromPriceMinor, showtime.currency)}${
         /* Spelled out, never the initials. The people this disclosure exists
@@ -87,6 +95,16 @@ export function ShowtimeChip({
       <Text variant="caption" tone="muted">
         {describeShow(showtime)}
       </Text>
+      {/* Only when the time alone does not identify it. A cinema runs a big
+          release on four screens at once, and four chips reading "4:45 pm ·
+          2D · Hindi · ₹220 onwards" look like the list printed one of them
+          four times. A room number on every chip in the catalogue would
+          disambiguate eight rows and clutter a hundred. */}
+      {ambiguous && showtime.screenName ? (
+        <Text variant="caption" tone="muted">
+          {showtime.screenName}
+        </Text>
+      ) : null}
       {late ? (
         <Text variant="caption" style={{ color: colors.warning }}>
           ends {formatTime(showtime.endsAt)}

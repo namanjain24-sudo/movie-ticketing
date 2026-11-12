@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Share, View } from 'react-native';
+import { Dimensions, Pressable, Share, View } from 'react-native';
 import Animated, {
   Extrapolation,
   FadeInDown,
@@ -17,7 +17,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { catalogApi } from '../../../api/catalog';
 import { EmptyState, ErrorState } from '../../../components/query-state';
-import { Badge, Card, Poster, RatingStars, Skeleton, Text } from '../../../components/ui';
+import { Badge, Card, RatingStars, Skeleton, Text } from '../../../components/ui';
 import { DateStrip } from '../../../features/catalog/date-strip';
 import {
   cheapestAt,
@@ -27,6 +27,7 @@ import {
   type ShowtimeOrder,
 } from '../../../features/catalog/ordering';
 import { ShowtimeOrderPicker } from '../../../features/catalog/showtime-order';
+import { ambiguousShowtimeIds } from '../../../features/catalog/ambiguous-times';
 import { ShowtimeChip } from '../../../features/catalog/showtime-chip';
 import { SimilarMoviesRail } from '../../../features/catalog/similar-movies-rail';
 import { useRecentlyViewed } from '../../../features/catalog/use-recently-viewed';
@@ -49,7 +50,7 @@ import { formatDistance, openDirections } from '../../../lib/maps';
 import { queryKeys } from '../../../lib/query-client';
 import { shareLink } from '../../../lib/share-link';
 import { useWatchlist } from '../../../features/watchlist/use-watchlist';
-import { useTheme } from '../../../theme';
+import { DarkSection, useTheme } from '../../../theme';
 import { HIT_SIZE } from '../../../theme/tokens';
 import { markClosed, nextCloseAfter } from '../../../features/catalog/closing';
 import { useLastKnownLocation } from '../../../features/cinemas/use-location';
@@ -57,21 +58,34 @@ import { useTickAt } from '../../../lib/use-tick-at';
 
 /** How far ahead the date strip runs. The API windows a week by default. */
 const DAYS_AHEAD = 7;
-/**
- * A landscape still earns this much of the screen. The blurred-poster
- * fallback does not: it carries no information the sharp poster below it is
- * not already carrying, and at 260 it was handing roughly a fifth of the
- * first screen to an out-of-focus wash with a back button in it. Most films
- * in the catalogue have no still, so the fallback is the common case rather
- * than the exception.
- */
-const BACKDROP_STILL = 260;
-const BACKDROP_WASH = 196;
+const { width: SCREEN, height: WINDOW } = Dimensions.get('window');
 
-export default function MovieDetail() {
+/**
+ * The artwork gets the top of the screen, the same as it does on home.
+ *
+ * It used to get 196 points of itself blurred to an eighteen-point radius -
+ * a smear with a back button in it - and then the sharp poster appeared
+ * underneath at 104 points wide. Two copies of one image, neither of them
+ * big, and a third of the first screen spent before the title.
+ */
+const HERO_HEIGHT = Math.min(Math.round(WINDOW * 0.62), Math.round(SCREEN * 1.5));
+
+/**
+ * Dark, like the tabs that lead here. This is still browsing: somebody is
+ * deciding whether and when to watch, not managing a ticket they hold.
+ */
+export default function MovieDetailScreen() {
+  return (
+    <DarkSection>
+      <MovieDetail />
+    </DarkSection>
+  );
+}
+
+function MovieDetail() {
   const { idOrSlug } = useLocalSearchParams<{ idOrSlug: string }>();
   const router = useRouter();
-  const { colors, radius, spacing, elevation } = useTheme();
+  const { colors, radius, spacing } = useTheme();
   const watchlist = useWatchlist();
   const { record: recordViewed } = useRecentlyViewed();
   const insets = useSafeAreaInsets();
@@ -92,7 +106,7 @@ export default function MovieDetail() {
   // Declared after the query so it can read which backdrop is being shown.
   // Both are unconditional hooks and both run before the pending branch
   // below, so the order is the same on every render.
-  const backdropHeight = movie.data?.backdropUrl ? BACKDROP_STILL : BACKDROP_WASH;
+  const backdropHeight = HERO_HEIGHT;
 
   // The backdrop's one authored moment: it stretches on the overscroll bounce
   // and drifts slower than the page as you scroll past it, the way a header
@@ -228,8 +242,12 @@ export default function MovieDetail() {
               source={film.backdropUrl ?? film.posterUrl}
               style={{ width: '100%', height: '100%' }}
               contentFit="cover"
-              blurRadius={film.backdropUrl ? 0 : 18}
-              contentPosition={{ top: '12%' }}
+              // Sharp. A poster blurred to eighteen points is a smear, and
+              // the scrim below already gives the title its ground - the
+              // blur was only ever hiding that the image was too small to
+              // fill the space. Anchored to the top, because posters put
+              // faces there and a centre crop takes the chin off each one.
+              contentPosition="top"
               transition={220}
               accessible={false}
             />
@@ -238,8 +256,13 @@ export default function MovieDetail() {
               at the bottom. A hard edge where the wash stops and the page
               begins read as a cropped photo; a fade reads as one surface. */}
           <LinearGradient
-            colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.08)', colors.background]}
-            locations={[0, 0.45, 1]}
+            // Dark at the very top so the back button and the status bar
+            // have something to sit on, clear through the faces, then down
+            // hard: a poster carries its own title near the bottom, and
+            // without this the film is named twice - once in the artwork's
+            // type and once in ours directly underneath it.
+            colors={['rgba(0,0,0,0.55)', 'transparent', 'rgba(11,11,16,0.72)', colors.background]}
+            locations={[0, 0.26, 0.68, 0.97]}
             style={{ position: 'absolute', inset: 0 }}
           />
 
@@ -266,29 +289,17 @@ export default function MovieDetail() {
 
         {/* The poster straddles the backdrop, which is what makes this read as
             a film page rather than an article with a picture on top. */}
-        <View
-          style={{
-            flexDirection: 'row',
-            gap: spacing.lg,
-            paddingHorizontal: spacing.lg,
-            marginTop: -72,
-          }}
-        >
-          <Poster
-            uri={film.posterUrl}
-            title={film.title}
-            rounded={radius.lg}
-            style={{
-              width: 104,
-              aspectRatio: 2 / 3,
-              borderWidth: 2,
-              borderColor: colors.surface,
-              ...elevation.card,
-            }}
-          />
-
-          <View style={{ flex: 1, paddingTop: 76, gap: spacing.xs }}>
-            <Text variant="title" numberOfLines={2}>
+        {/* No second copy of the poster.
+        
+            There used to be one here, 104 points wide, overlapping the
+            blurred version of itself above - and the title column beside it
+            waited 76 points before starting, so the dark half of the backdrop
+            would not eat it. That left a block of empty page beside the
+            poster's top on every film in the catalogue. The artwork is the
+            hero now, so the title simply follows it. */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: -spacing.lg }}>
+          <View style={{ gap: spacing.xs }}>
+            <Text variant="display" numberOfLines={3}>
               {film.title}
             </Text>
             <Text variant="caption" tone="muted">
@@ -524,86 +535,100 @@ export default function MovieDetail() {
                   }
                 />
               ) : (
-                visible.map(({ cinema, showtimes: slots }, index) => (
-                  <Animated.View
-                    key={cinema.id}
-                    entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}
-                  >
-                    <Card style={{ gap: spacing.md }}>
-                      {/* The venue block is a link now that a venue is a place:
+                visible.map(({ cinema, showtimes: slots }, index) => {
+                  // Per cinema, not per page: two cinemas showing the same
+                  // film at 4:45 are told apart by the cinema's own name
+                  // above them, and only a clash inside one list is
+                  // ambiguous.
+                  const ambiguousHere = ambiguousShowtimeIds(slots);
+                  return (
+                    <Animated.View
+                      key={cinema.id}
+                      entering={FadeInDown.delay(Math.min(index, 6) * 40).duration(260)}
+                    >
+                      <Card style={{ gap: spacing.md }}>
+                        {/* The venue block is a link now that a venue is a place:
                       it has a map, a phone number and the rest of its week. */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`${cinema.name}, ${
-                            cinema.distanceKm === null
-                              ? ''
-                              : `${formatDistance(cinema.distanceKm)} away, `
-                          }${cinema.address}. Open this cinema`}
-                          onPress={() => router.push(`/cinema/${cinema.slug}`)}
-                          hitSlop={4}
-                          style={{ flex: 1, gap: spacing['2xs'] }}
+                        <View
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
                         >
-                          <View
-                            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`${cinema.name}, ${
+                              cinema.distanceKm === null
+                                ? ''
+                                : `${formatDistance(cinema.distanceKm)} away, `
+                            }${cinema.address}. Open this cinema`}
+                            onPress={() => router.push(`/cinema/${cinema.slug}`)}
+                            hitSlop={4}
+                            style={{ flex: 1, gap: spacing['2xs'] }}
                           >
-                            <Text variant="label" numberOfLines={1} style={{ flexShrink: 1 }}>
-                              {cinema.name}
-                            </Text>
-                            <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
-                            {/* Marked rather than only sorted, so the cheapest
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: spacing.xs,
+                              }}
+                            >
+                              <Text variant="label" numberOfLines={1} style={{ flexShrink: 1 }}>
+                                {cinema.name}
+                              </Text>
+                              <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
+                              {/* Marked rather than only sorted, so the cheapest
                                 venue is findable while reading the list by
                                 distance - which is how most people read it.
                                 Only with something to be cheaper than. */}
-                            {markCheapest &&
-                            lowestMinor !== null &&
-                            cheapestAt({ cinema, showtimes: slots }) === lowestMinor ? (
-                              <Badge label="Cheapest" tone="success" />
-                            ) : null}
-                          </View>
-                          <Text variant="caption" tone="muted" numberOfLines={1}>
-                            {cinema.distanceKm === null
-                              ? cinema.address
-                              : `${formatDistance(cinema.distanceKm)} · ${cinema.address}`}
-                          </Text>
-                        </Pressable>
+                              {markCheapest &&
+                              lowestMinor !== null &&
+                              cheapestAt({ cinema, showtimes: slots }) === lowestMinor ? (
+                                <Badge label="Cheapest" tone="success" />
+                              ) : null}
+                            </View>
+                            <Text variant="caption" tone="muted" numberOfLines={1}>
+                              {cinema.distanceKm === null
+                                ? cinema.address
+                                : `${formatDistance(cinema.distanceKm)} · ${cinema.address}`}
+                            </Text>
+                          </Pressable>
 
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Directions to ${cinema.name}`}
-                          onPress={() =>
-                            void openDirections({
-                              latitude: cinema.latitude,
-                              longitude: cinema.longitude,
-                              label: cinema.name,
-                            })
-                          }
-                          hitSlop={8}
-                          style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: radius.full,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: colors.surfaceMuted,
-                          }}
-                        >
-                          <Ionicons name="navigate-outline" size={16} color={colors.accent} />
-                        </Pressable>
-                      </View>
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                        {slots.map((slot) => (
-                          <ShowtimeChip
-                            key={slot.id}
-                            showtime={slot}
-                            closed={slot.closed}
-                            onPress={() => router.push(`/showtime/${slot.id}`)}
-                          />
-                        ))}
-                      </View>
-                    </Card>
-                  </Animated.View>
-                ))
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Directions to ${cinema.name}`}
+                            onPress={() =>
+                              void openDirections({
+                                latitude: cinema.latitude,
+                                longitude: cinema.longitude,
+                                label: cinema.name,
+                              })
+                            }
+                            hitSlop={8}
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: radius.full,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: colors.surfaceMuted,
+                            }}
+                          >
+                            <Ionicons name="navigate-outline" size={16} color={colors.accent} />
+                          </Pressable>
+                        </View>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                          {slots.map((slot) => (
+                            <ShowtimeChip
+                              key={slot.id}
+                              showtime={slot}
+                              closed={slot.closed}
+                              ambiguous={ambiguousHere.has(slot.id)}
+                              onPress={() => router.push(`/showtime/${slot.id}`)}
+                            />
+                          ))}
+                        </View>
+                      </Card>
+                    </Animated.View>
+                  );
+                })
               )}
             </View>
           </View>
@@ -626,7 +651,7 @@ function MovieDetailSkeleton() {
   const { spacing, radius } = useTheme();
   return (
     <View style={{ flex: 1 }}>
-      <Skeleton style={{ height: BACKDROP_STILL, borderRadius: 0 }} />
+      <Skeleton style={{ height: HERO_HEIGHT, borderRadius: 0 }} />
 
       <View
         style={{

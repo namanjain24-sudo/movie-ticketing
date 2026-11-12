@@ -15,6 +15,7 @@ const base = {
   accessibility: [],
   accessibilityVia: null,
   adsMinutes: 20,
+  screenName: 'Audi 1',
 } satisfies Omit<ShowtimeSummary, 'id' | 'movie' | 'event'>;
 
 function film(id: string, movieId: string, title: string): ShowtimeSummary {
