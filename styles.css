@@ -46,8 +46,10 @@
      reading a word.
 
      Measured on this page's background: #9079ff is 5.99:1, and white on
-     #5b31f0 is 6.68:1. Both clear AA for body text, which the red pair only
-     managed for large text and for buttons.
+     #5b31f0 is 6.68:1. The red pair cleared AA for body text as well, at
+     5.65:1 and 4.71:1, so this is not a contrast fix and should not be sold
+     as one — it is the product's colour, with a little more headroom than
+     the colour it replaced.
 
      The two never touch: one fills, the other draws. */
   --accent-solid: #5b31f0;
