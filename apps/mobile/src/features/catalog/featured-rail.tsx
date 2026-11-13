@@ -29,11 +29,15 @@ const { width: SCREEN, height: WINDOW } = Dimensions.get('window');
  *
  * A poster is 2:3, so full-bleed it wants to be a screen and a half tall -
  * more than the viewport, and the whole film would never be on screen at
- * once. Just under two thirds of the window leaves the top of the artwork
- * doing the work, the title legible over the bottom of it, and enough of the
- * page below to say the screen keeps going.
+ * once. The height is what decides how far down the poster the crop reaches,
+ * which is the whole question: a poster carries its own title about seven
+ * tenths of the way down, in its own type, and anything that shows it puts
+ * two titles on the hero. At 0.62 of the window the crop reached three
+ * quarters and the film was named twice - no scrim fixes that, because 90%
+ * black over bright type is still bright type. At 0.55 the crop stops above
+ * it, which costs some height and buys a hero with one title on it.
  */
-const HERO_HEIGHT = Math.min(Math.round(WINDOW * 0.62), Math.round(SCREEN * 1.5));
+const HERO_HEIGHT = Math.min(Math.round(WINDOW * 0.55), Math.round(SCREEN * 1.5));
 
 /**
  * How far the artwork lags the page it is in, as a fraction of the distance
@@ -154,7 +158,17 @@ function HeroPanel({
         movie.durationMins,
       )}. Book tickets`}
       onPress={onPress}
-      style={{ width: SCREEN, height: HERO_HEIGHT }}
+      style={{
+        width: SCREEN,
+        height: HERO_HEIGHT,
+        // The card's own shape. Everything inside stops here: the artwork,
+        // the scrim over it, and the parallax that slides the one under the
+        // other.
+        borderBottomLeftRadius: radius.xl,
+        borderBottomRightRadius: radius.xl,
+        overflow: 'hidden',
+        backgroundColor: colors.chrome,
+      }}
     >
       <Animated.View style={[StyleSheet.absoluteFill, artwork]} pointerEvents="none">
         <Image
@@ -170,18 +184,24 @@ function HeroPanel({
         />
       </Animated.View>
 
-      {/* Transparent over the face, the page colour by the time it reaches
-          the bottom, so the artwork ends without an edge - and solidly dark
-          through the band the title sits in. At a gentler middle stop the
-          poster's own credit block ("STAR STUDIOS presents") read straight
-          through the overlay and the hero looked like two posters at once. */}
+      {/* Transparent over the face, solid dark by the time the title
+          arrives, and it stays there.
+
+          It used to end on the page colour so the artwork would dissolve
+          into the page with no edge. That meant the last stretch of the
+          scrim was interpolating from near-black to the background, and on
+          a light theme that stretch is lit - which is exactly where the
+          title and the button sit, and exactly where the poster's own
+          credit block came back through. The hero read as two posters at
+          once.
+
+          Nothing dissolves now. The artwork ends on its own rounded bottom
+          edge, like a card lying on the page, and the scrim under the title
+          is simply dark - one less thing to be lit through, and the same
+          either way somebody has set their theme. */}
       <LinearGradient
-        colors={['transparent', 'rgba(11,11,16,0.35)', 'rgba(11,11,16,0.88)', colors.background]}
-        // The fade to the page is late and short. Held longer and ended
-        // sooner, the artwork meets the page as an edge; stretched out it
-        // becomes a band that is neither picture nor page, and on a light
-        // theme that band is where the title loses its contrast.
-        locations={[0.22, 0.5, 0.86, 1]}
+        colors={['transparent', 'rgba(11,11,16,0.4)', 'rgba(11,11,16,0.9)']}
+        locations={[0.25, 0.55, 0.88]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />

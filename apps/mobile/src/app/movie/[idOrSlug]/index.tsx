@@ -67,8 +67,14 @@ const { width: SCREEN, height: WINDOW } = Dimensions.get('window');
  * a smear with a back button in it - and then the sharp poster appeared
  * underneath at 104 points wide. Two copies of one image, neither of them
  * big, and a third of the first screen spent before the title.
+ *
+ * The fraction is what decides how far down the poster the crop reaches, and
+ * a poster carries its own title about seven tenths of the way down. Past
+ * that the film is named twice, in two typefaces, one of them ours - and no
+ * scrim fixes it, because ninety per cent black over bright type is still
+ * bright type. Same number as the home hero, for the same reason.
  */
-const HERO_HEIGHT = Math.min(Math.round(WINDOW * 0.62), Math.round(SCREEN * 1.5));
+const HERO_HEIGHT = Math.min(Math.round(WINDOW * 0.55), Math.round(SCREEN * 1.5));
 
 export default function MovieDetail() {
   const { idOrSlug } = useLocalSearchParams<{ idOrSlug: string }>();
@@ -214,7 +220,19 @@ export default function MovieDetail() {
         onScroll={onScroll}
         scrollEventThrottle={16}
       >
-        <View style={{ height: backdropHeight, backgroundColor: colors.surfaceMuted }}>
+        <View
+          style={{
+            height: backdropHeight,
+            backgroundColor: colors.chrome,
+            // The artwork stops on its own edge rather than dissolving into
+            // the page, for the reason the home hero does: the last stretch
+            // of a fade to the background is lit, and a poster's credit
+            // block sits exactly there.
+            borderBottomLeftRadius: radius.xl,
+            borderBottomRightRadius: radius.xl,
+            overflow: 'hidden',
+          }}
+        >
           {/*
             Not every source ships a landscape still. When only the poster
             exists, it becomes an out-of-focus wash rather than a second, sharp
@@ -249,8 +267,8 @@ export default function MovieDetail() {
             // hard: a poster carries its own title near the bottom, and
             // without this the film is named twice - once in the artwork's
             // type and once in ours directly underneath it.
-            colors={['rgba(0,0,0,0.55)', 'transparent', 'rgba(11,11,16,0.72)', colors.background]}
-            locations={[0, 0.26, 0.76, 0.99]}
+            colors={['rgba(0,0,0,0.55)', 'transparent', 'rgba(11,11,16,0.9)']}
+            locations={[0, 0.3, 0.92]}
             style={{ position: 'absolute', inset: 0 }}
           />
 
@@ -284,8 +302,11 @@ export default function MovieDetail() {
             waited 76 points before starting, so the dark half of the backdrop
             would not eat it. That left a block of empty page beside the
             poster's top on every film in the catalogue. The artwork is the
-            hero now, so the title simply follows it. */}
-        <View style={{ paddingHorizontal: spacing.lg, marginTop: -spacing.lg }}>
+            hero now, so the title simply follows it - below the hero's edge,
+            not tucked under it: the artwork used to fade out there and the
+            overlap was invisible, and now that it ends on a hard edge the
+            title was sitting half on the picture and half off it. */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <View style={{ gap: spacing.xs }}>
             <Text variant="display" numberOfLines={3}>
               {film.title}
