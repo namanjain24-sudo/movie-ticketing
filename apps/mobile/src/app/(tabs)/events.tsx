@@ -13,7 +13,7 @@ import { EventCard } from '../../features/events/event-card';
 import { useDebouncedValue } from '../../lib/use-debounced-value';
 import { tapFeedback } from '../../lib/haptics';
 import { queryKeys } from '../../lib/query-client';
-import { DarkSection, useTheme } from '../../theme';
+import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
 /**
@@ -24,23 +24,7 @@ import { HIT_SIZE } from '../../theme/tokens';
  * never offers "Workshops" in a city with no workshop on. A filter that can
  * only ever disappoint is worse than one fewer filter.
  */
-/**
- * Dark, like home: this is a browsing screen.
- *
- * Home went dark on its own first, which left the app half one thing and
- * half another - two of the three tabs somebody browses on were still white.
- * Tickets and Profile stay light, because that is where a person manages
- * what they already bought.
- */
-export default function EventsScreen() {
-  return (
-    <DarkSection>
-      <Events />
-    </DarkSection>
-  );
-}
-
-function Events() {
+export default function Events() {
   const router = useRouter();
   const { colors, radius, spacing } = useTheme();
 

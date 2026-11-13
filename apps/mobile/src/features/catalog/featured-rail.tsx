@@ -177,7 +177,11 @@ function HeroPanel({
           through the overlay and the hero looked like two posters at once. */}
       <LinearGradient
         colors={['transparent', 'rgba(11,11,16,0.35)', 'rgba(11,11,16,0.88)', colors.background]}
-        locations={[0.22, 0.48, 0.78, 1]}
+        // The fade to the page is late and short. Held longer and ended
+        // sooner, the artwork meets the page as an edge; stretched out it
+        // becomes a band that is neither picture nor page, and on a light
+        // theme that band is where the title loses its contrast.
+        locations={[0.22, 0.5, 0.86, 1]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />

@@ -9,7 +9,7 @@ import { HeldSeatsBanner } from '../../features/checkout/held-seats-banner';
 import { useAuth } from '../../features/auth/auth-provider';
 import { queryKeys } from '../../lib/query-client';
 import { useTheme } from '../../theme';
-import { darkColors, motion } from '../../theme/tokens';
+import { motion } from '../../theme/tokens';
 
 /** A small settle on arrival, not a bounce on every render — keyed to the one
  * moment that actually changed, which tab is focused.
@@ -30,7 +30,7 @@ function TabIcon({
   size: number;
   focused: boolean;
 }) {
-  const { radius } = useTheme();
+  const { colors, radius } = useTheme();
   const scale = useSharedValue(focused ? 1 : 0.88);
 
   useEffect(() => {
@@ -57,11 +57,7 @@ function TabIcon({
           // work out where they are; a filled pill answers it at a glance,
           // and spends the brand on the one piece of chrome that is on every
           // screen.
-          //
-          // From the dark palette, like the bar it sits on. Read from the
-          // theme it was the light tint on a dark bar, which is a pale
-          // lavender lozenge in a row of white glyphs.
-          backgroundColor: focused ? darkColors.primaryMuted : 'transparent',
+          backgroundColor: focused ? colors.primaryMuted : 'transparent',
         },
       ]}
     >
@@ -100,15 +96,10 @@ export default function TabsLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          // Chrome, like the bar at the top, and the same in both themes.
-          //
-          // It was `surface`, which is white in the light theme - a bright
-          // strip under a screen that is now cinema-dark, reading as a seam
-          // rather than a frame. The two bars bracket the content instead.
-          tabBarActiveTintColor: darkColors.primary,
-          tabBarInactiveTintColor: darkColors.textMuted,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textMuted,
           tabBarStyle: {
-            backgroundColor: darkColors.chrome,
+            backgroundColor: colors.surface,
             borderTopColor: colors.border,
             // Padding only, never an explicit height: React Navigation sizes
             // this bar from the bottom safe area, and overriding the height

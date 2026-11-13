@@ -50,7 +50,7 @@ import { formatDistance, openDirections } from '../../../lib/maps';
 import { queryKeys } from '../../../lib/query-client';
 import { shareLink } from '../../../lib/share-link';
 import { useWatchlist } from '../../../features/watchlist/use-watchlist';
-import { DarkSection, useTheme } from '../../../theme';
+import { useTheme } from '../../../theme';
 import { HIT_SIZE } from '../../../theme/tokens';
 import { markClosed, nextCloseAfter } from '../../../features/catalog/closing';
 import { useLastKnownLocation } from '../../../features/cinemas/use-location';
@@ -70,19 +70,7 @@ const { width: SCREEN, height: WINDOW } = Dimensions.get('window');
  */
 const HERO_HEIGHT = Math.min(Math.round(WINDOW * 0.62), Math.round(SCREEN * 1.5));
 
-/**
- * Dark, like the tabs that lead here. This is still browsing: somebody is
- * deciding whether and when to watch, not managing a ticket they hold.
- */
-export default function MovieDetailScreen() {
-  return (
-    <DarkSection>
-      <MovieDetail />
-    </DarkSection>
-  );
-}
-
-function MovieDetail() {
+export default function MovieDetail() {
   const { idOrSlug } = useLocalSearchParams<{ idOrSlug: string }>();
   const router = useRouter();
   const { colors, radius, spacing } = useTheme();
@@ -262,7 +250,7 @@ function MovieDetail() {
             // without this the film is named twice - once in the artwork's
             // type and once in ours directly underneath it.
             colors={['rgba(0,0,0,0.55)', 'transparent', 'rgba(11,11,16,0.72)', colors.background]}
-            locations={[0, 0.26, 0.68, 0.97]}
+            locations={[0, 0.26, 0.76, 0.99]}
             style={{ position: 'absolute', inset: 0 }}
           />
 

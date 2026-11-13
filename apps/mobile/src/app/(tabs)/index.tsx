@@ -47,7 +47,7 @@ import { useLastKnownLocation } from '../../features/cinemas/use-location';
 import { toDateKey } from '../../lib/format';
 import { useDebouncedValue } from '../../lib/use-debounced-value';
 import { useTickAt } from '../../lib/use-tick-at';
-import { DarkSection, useTheme } from '../../theme';
+import { useTheme } from '../../theme';
 import { HIT_SIZE } from '../../theme/tokens';
 
 /**
@@ -68,24 +68,7 @@ const COLUMNS = 3;
 /** How many films head the carousel before the grid takes over. */
 const FEATURED_COUNT = 3;
 
-/**
- * Dark, because this is the screen where somebody is looking at films.
- *
- * The wrapper exists rather than a palette swap inside the screen because
- * `useTheme()` is read at the top of the component: to answer dark it has to
- * be called underneath the provider, and the cheapest way to arrange that is
- * one component outside it. Everything below - the rails, the cards, the
- * headers, the chips - follows without knowing anything about it.
- */
-export default function Home() {
-  return (
-    <DarkSection>
-      <NowShowing />
-    </DarkSection>
-  );
-}
-
-function NowShowing() {
+export default function NowShowing() {
   const router = useRouter();
   const { colors, radius, spacing } = useTheme();
 

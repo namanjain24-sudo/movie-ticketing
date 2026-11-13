@@ -53,13 +53,20 @@ export function SponsorFilm({
     p.volume = 0;
   });
 
-  // `null` until the player says otherwise — a frame drawn before the first
+  // False until the player says otherwise — a frame drawn before the first
   // decoded frame is a black rectangle, and the overlay below covers it.
-  const [ready, setReady] = useState(false);
-  const [playing, setPlaying] = useState(false);
+  //
+  // Seeded from the player's current status rather than waiting only for a
+  // change event, because a change event fires on a *change*: a player that
+  // reached `readyToPlay` before this component subscribed - a cached file, a
+  // fast decode, a remount while scrolling - sends none, and the opaque cover
+  // over the film would never lift. Hardening rather than a fix for anything
+  // observed; the event did arrive when this was measured.
+  const [ready, setReady] = useState(() => player.status === 'readyToPlay');
+  const [playing, setPlaying] = useState(() => player.playing);
 
   useEventListener(player, 'statusChange', ({ status }) => {
-    if (status === 'readyToPlay') setReady(true);
+    setReady(status === 'readyToPlay');
   });
   useEventListener(player, 'playingChange', ({ isPlaying }) => setPlaying(isPlaying));
 
@@ -92,6 +99,21 @@ export function SponsorFilm({
         // platform's playback furniture on top of it would be a second,
         // contradictory set of controls on a nine second loop.
         nativeControls={false}
+        // A TextureView, not the default SurfaceView.
+        //
+        // A SurfaceView is its own hardware layer punched through the window.
+        // It does not clip to a rounded corner, and this card has one; it is
+        // also invisible to `screencap`, which this project's whole way of
+        // checking a screen depends on.
+        //
+        // It is not what makes this card black on the Android emulator. That
+        // is the emulator: `c2.goldfish.h264.decoder` answers
+        // `setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)`
+        // and then `queueBuffer failed: -32`, so nothing is ever rendered
+        // while the player reports playing with the position advancing. The
+        // file is a 960x540 Constrained Baseline H.264 that decodes fine with
+        // ffmpeg. Needs a real device to confirm, not another guess here.
+        surfaceType="textureView"
         fullscreenOptions={{ enable: false }}
         allowsPictureInPicture={false}
         accessibilityLabel={`${sponsor.name}: ${sponsor.kicker}. A house ad for a project by this app's author.`}

@@ -22,10 +22,15 @@ function dayParts(iso: string): { day: string; month: string } {
  * the category chips directly above it had already been used to choose — and
  * buried the date as the third of four identically weighted grey lines.
  *
- * So: a date block on the left, because a date is a number and a number
- * should look like one; the title as the only loud thing; the venue and the
- * price sharing the last line so the card balances rather than trailing off;
- * and the kind demoted to a quiet word beside the price, where it belongs.
+ * So: the date first and in the accent, the title as the only loud thing,
+ * the venue under it, and the kind demoted to a quiet word beside the price,
+ * where it belongs.
+ *
+ * The date had its own tile for a while, on the grounds that a date is a
+ * number and a number should look like one. That tile cost 64 points on
+ * every row, and it was being paid for by the artwork - 56 points square,
+ * last in the row, in an app whose film pages hand a poster the whole
+ * screen. The accent does the same job in a line.
  */
 export function EventCard({ event, onPress }: { event: EventSummary; onPress: () => void }) {
   const { colors, radius, spacing } = useTheme();
@@ -61,39 +66,39 @@ export function EventCard({ event, onPress }: { event: EventSummary; onPress: ()
         backgroundColor: pressed ? colors.surfaceMuted : colors.surface,
       })}
     >
-      {/* The date, as a date. A tile of three short lines reads at a glance
-          in a way "27 Oct · 9:30 am" set in body grey never does. */}
-      <View
-        style={{
-          // Wide enough for "10:00 am", which wrapped to two lines at 52.
-          width: 64,
-          paddingVertical: spacing.sm,
-          borderRadius: radius.md,
-          backgroundColor: colors.surfaceMuted,
-          alignItems: 'center',
-          gap: 1,
-        }}
-      >
-        {when ? (
-          <>
-            <Text variant="overline" style={{ color: colors.primary }}>
-              {when.month}
-            </Text>
-            <Text variant="title" numeric style={{ lineHeight: 26 }}>
-              {when.day}
-            </Text>
-            <Text variant="caption" tone="muted" numeric>
-              {formatTime(event.nextShowAt!)}
-            </Text>
-          </>
-        ) : (
-          <Text variant="caption" tone="muted" align="center">
-            No{'\n'}dates
-          </Text>
-        )}
-      </View>
+      {/* The artwork, at a size somebody can recognise.
+      
+          It was 56 points square, on the right, with a 64-point date tile on
+          the left and the text squeezed between them. A crest, a face, a
+          painting - the one thing that tells you instantly what an event is -
+          shown at the size of a stamp, in an app whose film pages give the
+          artwork the whole screen.
+      
+          Moving the date into the column pays for it twice: the picture goes
+          from 56 to 96 and the text column gets *wider* than it was, so the
+          titles that wrapped to two lines have more room rather than less.
+      
+          Square, not a tall frame: this art is a team crest, a portrait or a
+          painting rather than a poster shot to one ratio, and a square is the
+          shape they all survive. */}
+      <Poster
+        uri={event.posterUrl}
+        title={event.title}
+        rounded={radius.md}
+        style={{ width: 96, height: 96 }}
+      />
 
-      <View style={{ flex: 1, gap: 4 }}>
+      <View style={{ flex: 1, gap: 3 }}>
+        {/* The date keeps its own weight by taking the accent rather than a
+            tile. It was moved out of the body text once already because it
+            was "the third of four identically weighted grey lines"; it is not
+            grey here. */}
+        <Text variant="overline" style={{ color: colors.accent }} numberOfLines={1}>
+          {when
+            ? `${when.month} ${when.day} · ${formatTime(event.nextShowAt!)}`
+            : 'NO DATES ON SALE'}
+        </Text>
+
         <Text variant="label" numberOfLines={2}>
           {event.title}
         </Text>
@@ -128,16 +133,6 @@ export function EventCard({ event, onPress }: { event: EventSummary; onPress: ()
           ) : null}
         </View>
       </View>
-
-      {/* Small and square. The artwork here is a team crest, a portrait or a
-          painting rather than a poster shot to one ratio, so a tall frame
-          crops half of them badly; a square is the shape they all survive. */}
-      <Poster
-        uri={event.posterUrl}
-        title={event.title}
-        rounded={radius.md}
-        style={{ width: 56, height: 56 }}
-      />
     </Pressable>
   );
 }
