@@ -30,6 +30,7 @@ import { AppBar, Button, Card, Text } from '../../components/ui';
 import { ConcessionsBox } from '../../features/checkout/concessions-box';
 import { LoyaltyBox } from '../../features/checkout/loyalty-box';
 import { useCountdown } from '../../features/checkout/use-countdown';
+import { declineReason, isSettled, isWaiting } from '../../features/checkout/payment-state';
 import { joinWords } from '../../lib/format';
 import {
   cancelHoldExpiryNudge,
@@ -175,10 +176,11 @@ export default function Checkout() {
     queryKey: queryKeys.payment(paymentId as string),
     queryFn: () => bookingApi.payment(paymentId as string),
     enabled: paymentId !== null,
-    refetchInterval: (query) => {
-      const status = query.state.data?.bookingStatus;
-      return status === 'CONFIRMED' || status === 'FAILED' || status === 'CANCELLED' ? false : 1500;
-    },
+    // Stop once there is an outcome — which includes a declined payment on a
+    // booking the server is deliberately leaving PENDING so it can be retried.
+    // Reading only `bookingStatus` here polled a decided payment every 1.5s
+    // until the hold expired.
+    refetchInterval: (query) => (isSettled(query.state.data) ? false : 1500),
   });
 
   const settled = payment.data;
@@ -221,14 +223,14 @@ export default function Checkout() {
    * started with.
    */
   const scrollRef = useRef<ScrollView>(null);
-  const settledStatus = payment.data?.bookingStatus;
+  const settledDecline = declineReason(payment.data);
   useEffect(() => {
-    const bad = failure !== null || settledStatus === 'FAILED' || settledStatus === 'CANCELLED';
+    const bad = failure !== null || settledDecline !== null;
     if (!bad) return;
     // After the card has been laid out, or there is nothing new to scroll to.
     const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
     return () => clearTimeout(timer);
-  }, [failure, settledStatus]);
+  }, [failure, settledDecline]);
 
   /**
    * Giving the seats back.
@@ -338,36 +340,18 @@ export default function Checkout() {
   /** "G8 and G9", so the confirmation names what is being given up. */
   const seatList = joinWords(held.seats.map((seat) => `${seat.rowLabel}${seat.number}`));
   /**
-   * `pay.isPending` belongs here, not just `paymentId`. The id only exists
-   * once the charge has come back, so between tapping Pay and that response
-   * the screen used to count as "not waiting". A countdown crossing zero in
-   * that window swapped the checkout for "Your seats were released. Nothing
-   * was charged." while the request was still in flight and could still
-   * succeed, because hold expiry is decided by the server's clock, not this
-   * one. The screen would then jump back to the checkout once the payment
-   * confirmed, having already told the user they were not charged.
-   *
-   * CANCELLED counts as settled here for the same reason FAILED does, and it
-   * is the status a declined charge actually leaves behind: the gateway fails
-   * the payment and the webhook cancels the booking. `declined` below has
-   * always read both, so leaving CANCELLED out of this line meant a declined
-   * payment stayed "waiting" forever — no way back to the seat map once the
-   * hold ran out, and the release button hidden the whole time.
+   * Both of these live in `payment-state.ts`, with the reasoning and the
+   * tests: reading a decline off the wrong field is a mistake that costs a
+   * real person a spinner that never stops, and it is not visible here.
    */
-  const waiting =
-    (paymentId !== null || pay.isPending) &&
-    settled?.bookingStatus !== 'FAILED' &&
-    settled?.bookingStatus !== 'CANCELLED';
+  const waiting = isWaiting({ result: settled, paymentId, submitting: pay.isPending });
   /**
    * Polling that keeps failing is not the same as polling that has not
    * finished. Without this the CTA span forever on "Confirming payment" with
    * no way out, which is the worst possible silence right after a charge.
    */
   const pollStuck = payment.isError && payment.failureCount >= 3;
-  const declined =
-    settled?.bookingStatus === 'FAILED' || settled?.bookingStatus === 'CANCELLED'
-      ? (settled.failureReason ?? 'The payment was declined.')
-      : null;
+  const declined = declineReason(settled);
 
   // The hold is gone. There is nothing to pay for, so the screen stops being a
   // checkout and becomes a way back to the map.
