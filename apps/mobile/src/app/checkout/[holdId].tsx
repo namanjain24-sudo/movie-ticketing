@@ -208,6 +208,29 @@ export default function Checkout() {
   }, [paymentId]);
 
   /**
+   * A decline is the one thing on this screen that is never where the eye is.
+   *
+   * The card that explains it is the last thing in the scroll view, and the
+   * button is on its own bar below that, so somebody who taps Pay at the
+   * bottom of a long checkout watches the CTA go from a spinner to "Try
+   * again" with the reason a screenful above them, off the bottom of a list
+   * they have no reason to scroll. Found exactly that way: a declined payment
+   * on a device read as a stuck spinner until the page was dragged down.
+   *
+   * The same goes for `failure`, which is the error the charge never even
+   * started with.
+   */
+  const scrollRef = useRef<ScrollView>(null);
+  const settledStatus = payment.data?.bookingStatus;
+  useEffect(() => {
+    const bad = failure !== null || settledStatus === 'FAILED' || settledStatus === 'CANCELLED';
+    if (!bad) return;
+    // After the card has been laid out, or there is nothing new to scroll to.
+    const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+    return () => clearTimeout(timer);
+  }, [failure, settledStatus]);
+
+  /**
    * Giving the seats back.
    *
    * A hold runs for five minutes whether or not anybody still wants it, and
@@ -323,8 +346,18 @@ export default function Checkout() {
    * succeed, because hold expiry is decided by the server's clock, not this
    * one. The screen would then jump back to the checkout once the payment
    * confirmed, having already told the user they were not charged.
+   *
+   * CANCELLED counts as settled here for the same reason FAILED does, and it
+   * is the status a declined charge actually leaves behind: the gateway fails
+   * the payment and the webhook cancels the booking. `declined` below has
+   * always read both, so leaving CANCELLED out of this line meant a declined
+   * payment stayed "waiting" forever — no way back to the seat map once the
+   * hold ran out, and the release button hidden the whole time.
    */
-  const waiting = (paymentId !== null || pay.isPending) && settled?.bookingStatus !== 'FAILED';
+  const waiting =
+    (paymentId !== null || pay.isPending) &&
+    settled?.bookingStatus !== 'FAILED' &&
+    settled?.bookingStatus !== 'CANCELLED';
   /**
    * Polling that keeps failing is not the same as polling that has not
    * finished. Without this the CTA span forever on "Confirming payment" with
@@ -390,6 +423,7 @@ export default function Checkout() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}
         showsVerticalScrollIndicator={false}
       >

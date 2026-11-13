@@ -74,7 +74,12 @@ export function ConcessionsBox({
               ) : null}
 
               <View style={{ flex: 1, gap: 1 }}>
-                <Text variant="label" numberOfLines={1}>
+                {/* Two lines, because between a photograph and a stepper the
+                    column is narrow enough that one line turned "Packaged
+                    drinking water" into "Packaged drinking wa…" — the name of
+                    the thing being sold, cut. A row that is a few points
+                    taller costs less than a menu nobody can read. */}
+                <Text variant="label" numberOfLines={2}>
                   {item.name}
                 </Text>
                 {/* The price gets its own line rather than trailing the
@@ -82,7 +87,7 @@ export function ConcessionsBox({
                     when a photograph took the width: "Coke, Sprite or Thums
                     Up. · ₹1…". A description that runs out mid-sentence is a
                     description; a price that does is a trap. */}
-                <Text variant="caption" tone="muted" numberOfLines={1}>
+                <Text variant="caption" tone="muted" numberOfLines={2}>
                   {item.description}
                 </Text>
                 <Text variant="caption" numeric>

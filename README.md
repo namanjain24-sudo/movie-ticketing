@@ -21,7 +21,7 @@ React Native (Expo) · React · Node/TypeScript · Postgres · Redis
 
 ## Booking a ticket
 
-<img src="site/media/booking.gif" alt="Choosing two seats on the seat map. The selected seats turn red and the summary bar updates to show the seats and the running total." width="280" align="right" />
+<img src="site/media/booking.gif" alt="Choosing two seats on the seat map. The selected seats fill violet and the summary bar updates to show the seats and the running total." width="280" align="right" />
 
 Nine seconds of the real app, cut from a single unedited take: tapping two
 seats, the summary bar picking them up, and the total that is about to be

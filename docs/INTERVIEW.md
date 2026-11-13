@@ -914,7 +914,7 @@ promo-code chapter reads the Pay button before and after applying the code and
 only claims a discount once the total has actually moved.
 
 <p align="center">
-  <img src="../site/media/booking.gif" width="240" alt="Choosing two seats on the seat map; the selected seats turn red and the summary bar updates" />
+  <img src="../site/media/booking.gif" width="240" alt="Choosing two seats on the seat map; the selected seats fill violet and the summary bar updates" />
 </p>
 
 ---

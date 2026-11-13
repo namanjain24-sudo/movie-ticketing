@@ -297,51 +297,84 @@ reproducible:
 
 ### Recording the walkthrough
 
-`scripts/record-walkthrough.mjs` drives the shipping app through a whole
-booking and records it. Nothing in the result is staged: the hold counts down
-real server time, the promo code goes through a real
-`POST /v1/promos/validate`, and the booking reference at the end is a row that
-is still in Postgres afterwards. The script refuses to narrate anything it has
-not verified, which is why the promo chapter reads the PAY button before and
-after applying the code and only claims a discount once that total has moved.
+`scripts/record-walkthrough.mjs` drives the shipping app on the **web** target
+through a whole booking and records it. It needs `playwright-core`, which is
+deliberately not a dependency of this workspace, and on a machine where that
+cannot be installed there is a second route that needs nothing but the
+Android SDK and ffmpeg — the one the 1.0.11 take was shot with:
 
 ```bash
-npm run infra                                   # Postgres and Redis
-npm run db:seed --workspace @app/api            # prints a usable showtime id
+npm run infra:local                             # Postgres and Redis
+npm run db:seed --workspace @app/api
 npm run api                                     # :4000
-npm run mobile -- --web                         # metro on :8081
-npx playwright-core install ffmpeg              # once
-node scripts/record-walkthrough.mjs <showtimeId> [movieSlug]
+npm run mobile                                  # metro on :8081
+adb shell wm size 780x1688 && adb shell wm density 320   # = 390x844 dp
+adb shell cmd uimode night no
+adb shell screenrecord --size 780x1688 --bit-rate 10000000 --time-limit 170 /sdcard/take.mp4
 ```
 
-It writes `site/media/raw/*.webm` at the phone's true 390x844, plus
-`chapters.json`. Playwright captures CSS pixels, so asking for a bigger frame
-pads it rather than adding detail; the site never scales the video past 1:1
-for the same reason.
-
-Encode what the site serves from that take. `-ss 9` drops the metro bundle
-wait at the head, so every timestamp in `chapters.json` needs 9 subtracting
-before it goes into the chapter list in `site/index.html`:
+Drive the app from a second shell with `adb shell input` while that runs. Do
+not drive it by screen coordinates alone: layouts move, and a take that misses
+one tap is 150 seconds wasted. Dump the tree between steps and tap what you
+find —
 
 ```bash
-cd site/media
-V=raw/<take>.webm
-ffmpeg -ss 9 -i "$V" -c:v libvpx-vp9 -crf 33 -b:v 0 -row-mt 1 \
-  -deadline good -cpu-used 2 -pix_fmt yuv420p -an tutorial.webm
-ffmpeg -ss 9 -i "$V" -c:v libx264 -crf 24 -preset slow \
-  -pix_fmt yuv420p -movflags +faststart -an tutorial.mp4
-ffmpeg -ss 76 -i "$V" -frames:v 1 /tmp/p.png && cwebp -q 84 /tmp/p.png -o poster.webp
+adb shell uiautomator dump /sdcard/d.xml && adb exec-out cat /sdcard/d.xml > d.xml
+# then tap the centre of the node whose content-desc contains what you want
+```
+
+Two things that cost a take each: Android's own time formatter puts U+202F,
+not a space, before `am`/`pm`, so grepping for `"10:45 pm"` finds nothing —
+match `10:45`. And a downward swipe that starts near the top of a list that is
+already at the top pulls the notification shade instead of scrolling.
+
+Record the loops for `site/clips/` the same way, in ten to fifteen second
+takes. Nothing in any of this is staged: the hold counts down real server
+time, the promo code goes through a real `POST /v1/promos/validate`, and the
+booking reference at the end is a row that is still in Postgres afterwards.
+
+Encode what the site serves from that take, scaling the 780x1688 capture down
+to the 390x844 the page lays out for:
+
+```bash
+V=/path/to/take.mp4
+S="scale=390:844:flags=lanczos,fps=30"
+ffmpeg -i "$V" -vf "$S" -c:v libvpx-vp9 -crf 35 -b:v 0 -row-mt 1 \
+  -deadline good -cpu-used 2 -g 90 -keyint_min 90 -auto-alt-ref 0 \
+  -pix_fmt yuv420p -an site/media/tutorial.webm
+ffmpeg -i "$V" -vf "$S" -c:v libx264 -crf 26 -preset slow -g 90 -keyint_min 30 \
+  -pix_fmt yuv420p -movflags +faststart -an site/media/tutorial.mp4
+ffmpeg -ss 26 -i "$V" -frames:v 1 -vf "$S" /tmp/p.png && cwebp -q 84 /tmp/p.png -o site/media/poster.webp
 
 # the README's loop: nine seconds of seat picking
-ffmpeg -ss 79.5 -t 9.5 -i "$V" \
+ffmpeg -ss 80 -t 9.5 -i "$V" \
   -vf "fps=11,scale=280:-1:flags=lanczos,palettegen=max_colors=128:stats_mode=diff" /tmp/pal.png
-ffmpeg -ss 79.5 -t 9.5 -i "$V" -i /tmp/pal.png \
+ffmpeg -ss 80 -t 9.5 -i "$V" -i /tmp/pal.png \
   -lavfi "fps=11,scale=280:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle" \
-  booking.gif
+  site/media/booking.gif
 ```
 
 `+faststart` is not optional: without the moov atom at the front the browser
-cannot seek the mp4, and every chapter link silently lands at zero.
+cannot seek the mp4, and every chapter link silently lands at zero. `-g 90` is
+not optional either, for the same reason on the other codec: VP9 left to its
+own devices writes one keyframe and nothing else, and a chapter link into a
+webm with a single keyframe lands at zero too.
+
+Then read the chapter times off the take itself rather than trusting the
+script that drove it — the emulator drops frames under load, so wall clock and
+video clock drift apart by a good fifteen seconds over two minutes:
+
+```bash
+for t in 2 10 18 26 34 42 50 58 66 74 82 90 98 106 114 122 130 140; do
+  ffmpeg -ss $t -i "$V" -frames:v 1 -vf scale=150:-1 g$t.png
+done
+ffmpeg -pattern_type glob -i 'g*.png' -filter_complex tile=6x3 -frames:v 1 sheet.png
+```
+
+Note that seeking cannot be tested against `python3 -m http.server`: it
+answers a `Range` request with a 200 and the whole file, so the browser
+reports the video as not seekable and every chapter lands at zero. GitHub
+Pages serves ranges; test there, or on a server that does.
 
 **Serving it needs HTTP Range support.** GitHub Pages has it. `python3 -m
 http.server` does not, and a video served without it plays from the start and

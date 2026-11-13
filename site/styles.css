@@ -6,7 +6,7 @@
    is set in an unlit auditorium. A light mode would frame dark product
    photography in white, which reads as broken rather than as a theme.
 
-   One accent (#f84464, the app's own primary). One radius rule: interactive
+   One accent (#9079ff, the app's own violet). One radius rule: interactive
    things are pills, surfaces are 14px. Numbers are always mono.
 --------------------------------------------------------------------------- */
 
@@ -34,25 +34,29 @@
   --text-dim: #a4a4b0;
   --text-faint: #6e6e7c;
 
-  --accent: #f84464;
-  --accent-line: rgba(248, 68, 100, 0.38);
+  --accent: #9079ff;
+  --accent-line: rgba(144, 121, 255, 0.38);
   /* The same hue, deepened, and used only as a solid fill under white text.
-     White on #f84464 is 3.50:1, which clears WCAG AA for large text and fails
-     it for a 14px button label.
 
-     This said #e13354 and claimed 4.54:1. Measured, it is 4.37:1 — still
-     short of AA, so the fix did not quite land and the comment asserted that
-     it had. #d92e50 is 4.71:1, and is the same value the app uses for exactly
-     this job, so the button on the page and the button in the product are now
-     one colour rather than two that nearly match.
+     Both values are the app's own: #9079ff is the violet it draws type and
+     strokes in on a dark screen, and #5b31f0 is the one it fills a button
+     with. They were a red pair here until the product's brand moved to
+     violet, which left a crimson page wrapped around screenshots and clips
+     full of violet buttons — the one mismatch a visitor can see without
+     reading a word.
 
-     The two reds never touch: one fills buttons, the other draws type and
-     strokes. */
-  --accent-solid: #d92e50;
+     Measured on this page's background: #9079ff is 5.99:1, and white on
+     #5b31f0 is 6.68:1. Both clear AA for body text, which the red pair only
+     managed for large text and for buttons.
 
-  /* Seat states, borrowed from the app so the film matches the screenshots. */
-  --seat-free: #3f9b58;
-  --seat-taken: #2a2a33;
+     The two never touch: one fills, the other draws. */
+  --accent-solid: #5b31f0;
+
+  /* Seat states, borrowed from the app so the film matches the screenshots.
+     A free seat is the acid lime the app outlines one in, not a green of this
+     page's own choosing. */
+  --seat-free: #8fd400;
+  --seat-taken: #262633;
 
   --r-surface: 14px;
   --r-small: 10px;

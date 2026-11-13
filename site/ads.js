@@ -17,7 +17,7 @@
   const rail = document.getElementById('adRail');
   if (!rail) return;
 
-  const ACCENT = '#f84464';
+  const ACCENT = '#9079ff';
   const DIM = 'rgba(255,255,255,0.22)';
   const INK = 'rgba(255,255,255,0.86)';
 

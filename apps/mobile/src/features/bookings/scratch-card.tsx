@@ -34,7 +34,12 @@ export function RewardsSection() {
   const { spacing } = useTheme();
   const cards = useQuery({ queryKey: queryKeys.rewards, queryFn: rewardsApi.cards });
 
-  const unopened = (cards.data ?? []).filter((card) => card.scratchedAt === null);
+  // Newest first, and sorted here rather than trusted from the response: the
+  // endpoint does not promise an order, and the heading below says "your last
+  // booking", which is only true of whichever card is actually first.
+  const unopened = (cards.data ?? [])
+    .filter((card) => card.scratchedAt === null)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   // Opened cards are history, and the profile already has somewhere for
   // history. Only the ones with something left in them earn space here.
@@ -42,14 +47,14 @@ export function RewardsSection() {
 
   return (
     <View style={{ gap: spacing.md }}>
-      {unopened.map((card) => (
-        <RewardCard key={card.id} card={card} />
+      {unopened.map((card, index) => (
+        <RewardCard key={card.id} card={card} latest={index === 0} />
       ))}
     </View>
   );
 }
 
-function RewardCard({ card }: { card: Card }) {
+function RewardCard({ card, latest }: { card: Card; latest: boolean }) {
   const { colors, radius, spacing, gradients, elevation } = useTheme();
   const queryClient = useQueryClient();
   const scale = useSharedValue(1);
@@ -133,7 +138,14 @@ function RewardCard({ card }: { card: Card }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <Ionicons name="gift" size={22} color={colors.onImage} />
                 <Text variant="heading" style={{ color: colors.onImage }}>
-                  {open.isPending ? 'Opening…' : 'A reward from your last booking'}
+                  {/* Two unopened cards both headed "your last booking" is one
+                      of them lying, and it reads as a duplicate rather than as
+                      two rewards. Only the newest gets that line. */}
+                  {open.isPending
+                    ? 'Opening…'
+                    : latest
+                      ? 'A reward from your last booking'
+                      : 'A reward from an earlier booking'}
                 </Text>
               </View>
               <Text variant="caption" style={{ color: colors.onImageMuted }} numeric>

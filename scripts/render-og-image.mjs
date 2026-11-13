@@ -53,7 +53,7 @@ const html = `<!doctype html>
     display: flex; flex-direction: column; justify-content: space-between;
     padding: 72px 80px;
     background:
-      radial-gradient(900px 500px at 78% 12%, rgba(248, 68, 100, 0.16), transparent 68%),
+      radial-gradient(900px 500px at 78% 12%, rgba(91, 49, 240, 0.20), transparent 68%),
       #0a0a0e;
     color: #f3f3f6;
     font-family: 'Geist', system-ui, sans-serif;
@@ -62,12 +62,12 @@ const html = `<!doctype html>
   }
   .brand { display: flex; align-items: center; gap: 16px; font-size: 30px; font-weight: 640; letter-spacing: -0.03em; }
   .mark {
-    width: 46px; height: 46px; border-radius: 13px; background: #f84464;
+    width: 46px; height: 46px; border-radius: 13px; background: #5b31f0;
     display: flex; align-items: center; justify-content: center;
     font-size: 27px; font-weight: 700; color: #fff;
   }
   h1 { font-size: 86px; line-height: 1.02; letter-spacing: -0.045em; font-weight: 680; max-width: 15ch; }
-  h1 em { font-style: normal; color: #f84464; }
+  h1 em { font-style: normal; color: #9079ff; }
   .stats { display: flex; gap: 56px; align-items: flex-end; }
   .stat .n { font-size: 46px; font-weight: 660; letter-spacing: -0.03em; }
   .stat .l { margin-top: 6px; font-size: 19px; color: #a4a4b0; letter-spacing: 0.01em; }
@@ -86,7 +86,10 @@ const html = `<!doctype html>
 </div>`;
 
 const browser = await chromium.launch({ args: ['--no-sandbox'] });
-const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
+const page = await browser.newPage({
+  viewport: { width: 1200, height: 630 },
+  deviceScaleFactor: 1,
+});
 await page.setContent(html, { waitUntil: 'load' });
 await page.evaluate(() => document.fonts.ready);
 const out = join(site, 'media', 'og.png');
