@@ -17,11 +17,39 @@
       property="og:description"
       content="Ten load tests, up to 5,000 people booking the same 300 seats at once. Zero oversells, zero double charges. The whole proof is public."
     />
+    <!--
+      The card `twitter:card` was already promising. `summary_large_image`
+      says "there is a large picture here", and there was no og:image to be
+      it, so every share of this link — and a page whose whole job is a link
+      somebody passes on — arrived as a bare title with a blank box.
+
+      Absolute, because Open Graph is read by machines that never saw this
+      page's own address and cannot resolve a relative path against it.
+      1200x630 is the slot; saying so saves a scraper from downloading the
+      file to find out, and keeps the card from being rendered small while it
+      waits.
+    -->
+    <meta property="og:url" content="https://namanjain24-sudo.github.io/movie-ticketing/" />
+    <meta
+      property="og:image"
+      content="https://namanjain24-sudo.github.io/movie-ticketing/media/og.png"
+    />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Boxoffice. A seat that cannot be sold twice. Zero oversells, zero double charges, 5,000 booking at once, ten load tests."
+    />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:image"
+      content="https://namanjain24-sudo.github.io/movie-ticketing/media/og.png"
+    />
 
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f84464'/%3E%3Ctext x='16' y='23' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='19' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b31f0'/%3E%3Ctext x='16' y='23' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='19' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E"
     />
 
     <link rel="preload" href="fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin />
@@ -33,6 +61,21 @@
       crossorigin
     />
     <link rel="stylesheet" href="styles.css" />
+    <!--
+      Marks the document as having working JavaScript, before anything paints.
+      `.reveal` hides fifty-six elements on this page and only the observer in
+      site.js ever un-hides them, so without this the whole page — the
+      headline, the pitch, the download button it exists for — was a blank
+      screen under the header whenever that script did not run. Not only for
+      somebody who turns JavaScript off: one syntax error, one blocked or
+      half-loaded script on a bad connection, and the page is empty.
+
+      Scoped to `html.js` below, so nothing is ever hidden that something is
+      not already guaranteed to show again.
+    -->
+    <script>
+      document.documentElement.classList.add('js');
+    </script>
   </head>
 
   <body>
@@ -43,7 +86,7 @@
       <div class="wrap">
         <a class="brand" href="#top">
           <span class="brand-mark" aria-hidden="true">B</span>
-          Boxoffice
+          <span class="brand-name">Boxoffice</span>
         </a>
         <ul class="nav-links">
           <li><a href="#proof">The proof</a></li>
@@ -60,8 +103,40 @@
           rel="noopener"
           >Download the APK</a
         >
+        <!--
+          The phone's way in. Below 880px the links above are hidden, and
+          until now nothing replaced them: every section on this page was
+          reachable only by scrolling past all the others — on the one device
+          the thing being sold actually runs on.
+        -->
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="navSheet"
+          aria-label="Open the menu"
+        >
+          <span class="nav-toggle-bars" aria-hidden="true"><i></i><i></i></span>
+        </button>
       </div>
     </nav>
+
+    <!--
+      Outside the sticky bar rather than inside it, so it is free to be as
+      tall as it needs without the bar growing to hold it.
+    -->
+    <div class="nav-sheet" id="navSheet" hidden>
+      <ul>
+        <li><a href="#proof">The proof</a></li>
+        <li><a href="#events">Events</a></li>
+        <li><a href="#support">Support</a></li>
+        <li><a href="#clips">The app</a></li>
+        <li><a href="#booking">Booking</a></li>
+        <li><a href="#cinemas">Cinemas</a></li>
+        <li><a href="#faq">Questions</a></li>
+      </ul>
+    </div>
 
     <main id="main">
       <!-- ===== hero: copy left, the film on the wide side ================= -->
@@ -486,7 +561,7 @@
                   muted
                   loop
                   preload="none"
-                  aria-label="The seat map scrolling through Standard, Premium and Recliner tiers of a full auditorium."
+                  aria-label="The seat map scrolling through the Standard and Premium tiers of a full auditorium, with each tier priced on the map."
                 >
                   <source src="clips/seatmap.webm" type="video/webm" />
                   <source src="clips/seatmap.mp4" type="video/mp4" />
@@ -494,8 +569,8 @@
               </div>
               <figcaption>
                 <b>A whole house, scrollable</b>
-                Tiers are marked and priced on the map. The screen is at the top, so row A means
-                what it says.
+                Tiers are marked and priced on the map, the screen is at the top so row A means what
+                it says, and the wheelchair spaces are counted before you go looking.
               </figcaption>
             </figure>
 
@@ -509,7 +584,7 @@
                   muted
                   loop
                   preload="none"
-                  aria-label="Two seats being tapped; they turn red and the summary bar picks up the seats and the running total."
+                  aria-label="Two seats being tapped; they fill violet and the summary bar picks up the seats and the running total."
                 >
                   <source src="clips/pick.webm" type="video/webm" />
                   <source src="clips/pick.mp4" type="video/mp4" />
@@ -531,7 +606,7 @@
                   muted
                   loop
                   preload="none"
-                  aria-label="The home screen scrolling past a featured film, offer cards and a filtered grid of films."
+                  aria-label="The home screen scrolling from a full-bleed featured film past offer cards to a filtered grid of everything now showing."
                 >
                   <source src="clips/browse.webm" type="video/webm" />
                   <source src="clips/browse.mp4" type="video/mp4" />
@@ -539,7 +614,8 @@
               </div>
               <figcaption>
                 <b>What is actually on</b>
-                Filtered by city, genre and language, with ratings computed from real reviews.
+                A film at the size of a film, then offers, then everything playing — filtered by
+                city, genre and language.
               </figcaption>
             </figure>
 
@@ -588,13 +664,14 @@
                 src="shots/home.webp"
                 width="780"
                 height="1688"
-                alt="The Boxoffice home screen showing a featured film, offer cards, and a grid of films now showing with genre and language filters."
+                alt="The Boxoffice home screen: a featured film filling the top of the screen with its certification, runtime and rating over the artwork, and a Book tickets button."
                 loading="lazy"
                 decoding="async"
               />
               <figcaption>
-                <b>Now showing</b>
-                Filtered by city, genre and language, with ratings computed from real reviews.
+                <b>The film gets the screen</b>
+                Artwork edge to edge, then what is on tonight, filtered by city, genre and language,
+                with ratings computed from real reviews.
               </figcaption>
             </figure>
 
@@ -603,13 +680,14 @@
                 src="shots/film.webp"
                 width="780"
                 height="1688"
-                alt="A film detail screen with certification, runtime, cast and a strip of dates to choose a showtime from."
+                alt="A film page with the poster running the full width of the screen, then the title, certification, runtime, rating, the formats it plays in and a synopsis."
                 loading="lazy"
                 decoding="async"
               />
               <figcaption>
-                <b>Every showtime for the week</b>
-                Certification, runtime and language up front, because they decide the booking.
+                <b>Named once, shown large</b>
+                The poster is cropped above its own title, so nothing is printed twice. Below it,
+                ten days of showtimes with the format, the language and what each one costs.
               </figcaption>
             </figure>
 
@@ -618,13 +696,14 @@
                 src="shots/seatmap.webp"
                 width="780"
                 height="1688"
-                alt="The seat map, with the screen at the top, seats grouped into Standard, Premium and Recliner tiers, and two seats selected in red."
+                alt="The seat map, with the screen at the top, seats grouped into Standard and Premium tiers with a price on each, two wheelchair spaces counted, and two seats selected in violet."
                 loading="lazy"
                 decoding="async"
               />
               <figcaption>
                 <b>The seat map</b>
-                Tiers priced on the map, and a legend that says what every colour means.
+                Tiers priced on the map, a legend that says what every colour means, and the
+                accessible spaces counted before you have to hunt for them.
               </figcaption>
             </figure>
 
@@ -633,13 +712,14 @@
                 src="shots/checkout.webp"
                 width="780"
                 height="1688"
-                alt="The checkout screen showing the chosen seats, a subtotal, a booking fee and a banner counting down from four minutes fifty."
+                alt="The checkout screen showing the chosen seats, a subtotal, a booking fee, a snacks line, a banner counting the hold down, and a photographed concessions menu."
                 loading="lazy"
                 decoding="async"
               />
               <figcaption>
                 <b>Checkout</b>
-                Snacks, promo codes and points, with the hold counting down the whole time.
+                Snacks photographed rather than listed, promo codes and points, with the hold
+                counting down on the server&rsquo;s clock the whole time.
               </figcaption>
             </figure>
 
@@ -648,13 +728,14 @@
                 src="shots/ticket.webp"
                 width="780"
                 height="1688"
-                alt="A confirmed booking with the film, screen, seats, a booking reference and a signed QR code."
+                alt="A confirmed booking with the film, date, time, screen, seats, the time the film itself starts, a booking reference and a signed QR code."
                 loading="lazy"
                 decoding="async"
               />
               <figcaption>
                 <b>The ticket</b>
-                A signed QR, a reference, and the points that booking earned.
+                A signed QR the gate can read offline &mdash; and the time the film actually starts,
+                ads counted, not the time on the ticket.
               </figcaption>
             </figure>
 
@@ -663,7 +744,7 @@
                 src="shots/cinemas.webp"
                 width="780"
                 height="1688"
-                alt="A list of nearby cinemas with their address, amenities and shortcuts to directions and phone."
+                alt="A list of cinemas, each with its chain mark, street address, amenities, how many screens it has and shortcuts to directions and phone."
                 loading="lazy"
                 decoding="async"
               />
@@ -678,13 +759,14 @@
                 src="shots/profile.webp"
                 width="780"
                 height="1688"
-                alt="The profile screen with booking counts, loyalty points and account settings."
+                alt="The profile screen with upcoming bookings, films seen, loyalty points, two unopened reward cards and a streak."
                 loading="lazy"
                 decoding="async"
               />
               <figcaption>
                 <b>Your account</b>
-                Past bookings, saved films, loyalty points earned on what you actually paid.
+                Past bookings, saved films, a reward for each booking, and points earned on what you
+                actually paid.
               </figcaption>
             </figure>
           </div>
@@ -697,9 +779,9 @@
           <div class="tut-head reveal">
             <h2>Watch a ticket actually get booked</h2>
             <p>
-              Two minutes and twenty seconds, recorded in one take against a running server. The
-              hold really counts down, the promo code is really validated, and the booking at the
-              end is in the database.
+              Two minutes and twenty-five seconds, recorded in one take against a running server.
+              The hold really counts down, the promo code is really validated, and the booking at
+              the end is in the database &mdash; with the reference the app prints on the ticket.
             </p>
           </div>
 
@@ -715,7 +797,7 @@
                 loop
                 preload="metadata"
                 controls
-                aria-label="A screen recording of the Boxoffice app: signing in, browsing films, picking a showtime, choosing seats, applying a promo code, paying, and arriving at a confirmed ticket."
+                aria-label="A screen recording of the Boxoffice app: browsing what is on, opening a film, picking a showtime, choosing two seats, adding a popcorn combo, applying a promo code, paying, and arriving at a confirmed ticket."
               >
                 <source src="media/tutorial.webm" type="video/webm" />
                 <source src="media/tutorial.mp4" type="video/mp4" />
@@ -726,40 +808,55 @@
 
             <ol class="tut-chapters reveal" style="--i: 1">
               <li>
-                <button type="button" data-at="2.85">
+                <button type="button" data-at="2">
                   <span class="mono">0:02</span>
-                  <span><b>Sign in</b>Or register. Both write to a real database.</span>
+                  <span><b>The film gets the screen</b>Artwork edge to edge, not a thumbnail.</span>
                 </button>
               </li>
               <li>
-                <button type="button" data-at="17.29">
-                  <span class="mono">0:17</span>
+                <button type="button" data-at="16">
+                  <span class="mono">0:16</span>
                   <span><b>What is playing</b>Filtered by city, genre and language.</span>
                 </button>
               </li>
               <li>
-                <button type="button" data-at="26.09">
+                <button type="button" data-at="26">
                   <span class="mono">0:26</span>
                   <span
-                    ><b>A film, then a showtime</b>With how full each screening already is.</span
+                    ><b>A film</b>Certification, runtime, rating and the formats it plays in.</span
                   >
                 </button>
               </li>
               <li>
-                <button type="button" data-at="56.65">
-                  <span class="mono">0:56</span>
+                <button type="button" data-at="41">
+                  <span class="mono">0:41</span>
+                  <span
+                    ><b>Then a showtime</b>Ten days ahead, with how full each screening already
+                    is.</span
+                  >
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="57">
+                  <span class="mono">0:57</span>
+                  <span><b>How many seats</b>Asked once, so the map knows when to stop.</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-at="65">
+                  <span class="mono">1:05</span>
                   <span><b>Choose your seats</b>The price is on the map, before you commit.</span>
                 </button>
               </li>
               <li>
-                <button type="button" data-at="78.64">
-                  <span class="mono">1:18</span>
+                <button type="button" data-at="106">
+                  <span class="mono">1:46</span>
                   <span><b>Checkout</b>Those seats are held for five minutes, on server time.</span>
                 </button>
               </li>
               <li>
-                <button type="button" data-at="92.93">
-                  <span class="mono">1:32</span>
+                <button type="button" data-at="121">
+                  <span class="mono">2:01</span>
                   <span
                     ><b>A promo code</b>Validated by the server, never trusted from the
                     client.</span
@@ -767,14 +864,8 @@
                 </button>
               </li>
               <li>
-                <button type="button" data-at="108.58">
-                  <span class="mono">1:48</span>
-                  <span><b>Pay</b>If the hold expires first, you were never charged.</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" data-at="126.49">
-                  <span class="mono">2:06</span>
+                <button type="button" data-at="142">
+                  <span class="mono">2:22</span>
                   <span><b>Your ticket</b>A signed QR the gate can read without a connection.</span>
                 </button>
               </li>
@@ -814,6 +905,67 @@
               <p>
                 Every countdown is anchored to the server's clock, so a five minute hold is five
                 minutes even on a phone whose time is wrong.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== what it tells you that it is not obliged to ============== -->
+      <section class="honesty" id="disclosure">
+        <div class="wrap">
+          <h2 class="reveal">The things a counter would never tell you</h2>
+
+          <div class="honesty-grid" data-stagger>
+            <div class="reveal">
+              <h3>The film starts at 11:05, not 10:45</h3>
+              <p>
+                Every ticket carries the time the film itself begins and how many minutes of ads and
+                trailers come first. The showtime is when you have to be there; this is when the
+                thing you paid for starts.
+              </p>
+            </div>
+
+            <div class="reveal">
+              <h3>Which showings you can actually use</h3>
+              <p>
+                Closed captions, audio description and Indian Sign Language are marked on the
+                showing itself &mdash; and so is how they reach you, whether that is a headset at
+                the counter or an app on your own phone.
+              </p>
+            </div>
+
+            <div class="reveal">
+              <h3>The water is free, and it says so</h3>
+              <p>
+                Cinemas have to give you drinking water if you ask: the Supreme Court required it in
+                2023, in the same judgment that let them bar outside food. It is written on the
+                snacks list, next to the bottle they would rather sell you.
+              </p>
+            </div>
+
+            <div class="reveal">
+              <h3>The auditorium, only when it matters</h3>
+              <p>
+                Audi 4 means nothing to somebody who has not been there. The screen is named only
+                when two showings of the same film, at the same minute, in the same format, would
+                otherwise be impossible to tell apart.
+              </p>
+            </div>
+
+            <div class="reveal">
+              <h3>The wheelchair spaces are counted</h3>
+              <p>
+                Not drawn somewhere on the map and left to be found. The seat map says how many
+                there are and how many are still free, and will take you to them.
+              </p>
+            </div>
+
+            <div class="reveal">
+              <h3>A snack is a photograph, credited</h3>
+              <p>
+                The concessions menu is pictures, not a price list &mdash; freely licensed ones,
+                with every photographer and licence named at the bottom of the same screen.
               </p>
             </div>
           </div>
@@ -994,9 +1146,7 @@
 
           <p class="get-note reveal" style="--i: 4">
             The button hands you the file directly.
-            <a
-              href="https://github.com/namanjain24-sudo/movie-ticketing/releases"
-              rel="noopener"
+            <a href="https://github.com/namanjain24-sudo/movie-ticketing/releases" rel="noopener"
               >Release notes and older builds</a
             >
             live on GitHub.
@@ -1033,7 +1183,7 @@
       <div class="wrap">
         <a class="brand" href="#top">
           <span class="brand-mark" aria-hidden="true">B</span>
-          Boxoffice
+          <span class="brand-name">Boxoffice</span>
         </a>
         <ul class="footer-links">
           <li>

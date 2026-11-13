@@ -169,9 +169,9 @@
   const read = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
   const palette = {
     bg: read('--bg-deep', '#07070a'),
-    free: read('--seat-free', '#3f9b58'),
-    accent: read('--accent', '#f84464'),
-    taken: read('--seat-taken', '#2a2a33'),
+    free: read('--seat-free', '#8fd400'),
+    accent: read('--accent', '#9079ff'),
+    taken: read('--seat-taken', '#262633'),
     dim: read('--text-faint', '#6e6e7c'),
     text: read('--text', '#f3f3f6'),
   };

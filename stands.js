@@ -19,9 +19,9 @@
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const ctx = canvas.getContext('2d');
 
-  const ACCENT = '#f84464';
-  const ACCENT_SOLID = '#d92e50';
-  const FREE = '#3f9b58';
+  const ACCENT = '#9079ff';
+  const ACCENT_SOLID = '#5b31f0';
+  const FREE = '#8fd400';
   const DIM = 'rgba(255,255,255,0.20)';
   const INK = 'rgba(255,255,255,0.88)';
   const FAINT = 'rgba(255,255,255,0.45)';
