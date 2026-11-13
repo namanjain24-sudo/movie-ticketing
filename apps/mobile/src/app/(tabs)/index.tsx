@@ -15,7 +15,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
 import { eventsApi } from '../../api/events';
 import { EmptyState, ErrorState } from '../../components/query-state';
-import { AppBar, Skeleton } from '../../components/ui';
+import { AppBar, PageTexture, Skeleton } from '../../components/ui';
 import { EventCard } from '../../features/events/event-card';
 import { CitySheet } from '../../features/catalog/city-sheet';
 import { FeaturedRail } from '../../features/catalog/featured-rail';
@@ -407,6 +407,7 @@ export default function NowShowing() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <PageTexture />
       <AppBar
         title={city ?? 'All cities'}
         subtitle="Location"

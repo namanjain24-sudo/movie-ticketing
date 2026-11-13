@@ -7,7 +7,7 @@ import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
 import { cinemasApi } from '../../api/cinemas';
 import { EmptyState, ErrorState } from '../../components/query-state';
-import { AppBar, Skeleton, Text } from '../../components/ui';
+import { AppBar, PageTexture, Skeleton, Text } from '../../components/ui';
 import { CinemaCard } from '../../features/cinemas/cinema-card';
 import { CinemaMap } from '../../features/cinemas/cinema-map';
 import { useFavoriteCinemas } from '../../features/cinemas/use-favorite-cinemas';
@@ -246,6 +246,7 @@ export default function Cinemas() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <PageTexture />
       <AppBar
         title="Cinemas"
         subtitle="Where to watch"

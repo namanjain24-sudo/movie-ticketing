@@ -1,5 +1,12 @@
 import { seatColors } from '../../features/seatmap/seat-grid';
-import { darkColors, gradients, lightColors, scannerBackground, scannerInk } from '../tokens';
+import {
+  darkColors,
+  gradients,
+  lightColors,
+  scannerBackground,
+  scannerInk,
+  textureOpacity,
+} from '../tokens';
 import type { Colors } from '../tokens';
 
 /**
@@ -53,6 +60,15 @@ function over(fill: string, backdrop: string): string {
     return Math.round([r, g, b][n] * alpha + under * (1 - alpha));
   });
   return `#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** A solid token at a given alpha, in the form `over` parses. */
+function withAlpha(hex: string, alpha: number): string {
+  const value = hex.replace('#', '');
+  const r = Number.parseInt(value.slice(0, 2), 16);
+  const g = Number.parseInt(value.slice(2, 4), 16);
+  const b = Number.parseInt(value.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 /**
@@ -185,6 +201,21 @@ describe('contrast', () => {
       expect(contrast(colors[ink], over(colors[tint], colors.surface))).toBeGreaterThanOrEqual(
         AA_LARGE,
       );
+    });
+
+    /**
+     * The page texture sits under body text on the page background, at its
+     * own opacity, in the text colour. At worst a glyph lands directly
+     * behind a letter, so the figure that matters is the contrast of text
+     * against the page *with a mark on it* - a texture that costs legibility
+     * is not a texture, it is a stain.
+     */
+    it('leaves text on the page readable through the texture under it', () => {
+      const opacity = _name === 'dark' ? textureOpacity.dark : textureOpacity.light;
+      const marked = over(withAlpha(colors.text, opacity), colors.background);
+
+      expect(contrast(colors.text, marked)).toBeGreaterThanOrEqual(AA_NORMAL);
+      expect(contrast(colors.textMuted, marked)).toBeGreaterThanOrEqual(AA_NORMAL);
     });
 
     it('can carry its own label on a filled primary control', () => {

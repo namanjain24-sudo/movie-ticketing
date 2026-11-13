@@ -8,7 +8,7 @@ import { bookingApi } from '../../api/booking';
 import { useAuth } from '../../features/auth/auth-provider';
 import { SignedOutState } from '../../features/auth/signed-out-state';
 import { EmptyState, ErrorState } from '../../components/query-state';
-import { AppBar, Skeleton, Text } from '../../components/ui';
+import { AppBar, PageTexture, Skeleton, Text } from '../../components/ui';
 import { BookingCard } from '../../features/bookings/booking-card';
 import { SavedTicketsList } from '../../features/bookings/saved-tickets-list';
 import { listSavedTickets, type SavedTicket } from '../../features/bookings/ticket-vault';
@@ -93,6 +93,7 @@ export default function Bookings() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <PageTexture />
       <AppBar title="My bookings" subtitle="Tickets" />
 
       {!isSignedIn ? (

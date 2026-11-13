@@ -5,6 +5,7 @@ export { Card } from './card';
 export { EmptyState, ErrorState, LoadingState } from '../query-state';
 export { Poster } from './poster';
 export { RatingInput, RatingPill, RatingStars } from './rating-stars';
+export { PageTexture } from './page-texture';
 export { Screen } from './screen';
 export { Skeleton } from './skeleton';
 export { Text } from './text';

@@ -8,7 +8,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { catalogApi } from '../../api/catalog';
 import { eventsApi } from '../../api/events';
 import { EmptyState, ErrorState } from '../../components/query-state';
-import { AppBar, Skeleton, Text } from '../../components/ui';
+import { AppBar, PageTexture, Skeleton, Text } from '../../components/ui';
 import { EventCard } from '../../features/events/event-card';
 import { useDebouncedValue } from '../../lib/use-debounced-value';
 import { tapFeedback } from '../../lib/haptics';
@@ -131,6 +131,7 @@ export default function Events() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <PageTexture />
       <AppBar title="Events" subtitle="Live" />
 
       {events.isPending ? (

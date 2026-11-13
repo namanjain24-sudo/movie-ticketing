@@ -8,7 +8,7 @@ import { authApi } from '../../api/auth';
 import { bookingApi } from '../../api/booking';
 import { loyaltyApi } from '../../api/loyalty';
 import { ErrorState } from '../../components/query-state';
-import { AppBar, Button, Skeleton, Text, TextField } from '../../components/ui';
+import { AppBar, Button, PageTexture, Skeleton, Text, TextField } from '../../components/ui';
 import { DeleteAccountSheet } from '../../features/auth/delete-account-sheet';
 import { RewardsSection } from '../../features/bookings/scratch-card';
 import { PlansSection } from '../../features/catalog/plans-section';
@@ -306,6 +306,7 @@ function ProfileSkeleton() {
   const { colors, radius, spacing } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <PageTexture />
       <AppBar title="Profile" subtitle="Account" />
       <View style={{ padding: spacing.lg, gap: spacing.xl }}>
         <View style={{ alignItems: 'center', gap: spacing.md }}>

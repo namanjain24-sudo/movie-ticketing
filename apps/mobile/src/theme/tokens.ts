@@ -297,6 +297,26 @@ export const scannerInk = palette.n950;
  * is a screensaver; these exist to give a flat rectangle a direction and a
  * light source, and two stops is all that takes.
  */
+/**
+ * How strongly the page texture is drawn, per theme.
+ *
+ * It has to be felt and not seen, and these are the strongest figures that
+ * still leave the page readable - not a taste call, a measured one.
+ *
+ * The limit is `textMuted` on `background`, which in the light theme is
+ * already 4.63:1 against WCAG's 4.5. There is almost no headroom there, so
+ * any ink laid over that page eats what little there is: at four and a half
+ * per cent muted text drops to 4.24 and fails. One per cent is what it will
+ * carry. The dark theme starts at 5.71 and will carry nearly ten.
+ *
+ * That asymmetry is the finding, not the texture: muted grey on the light
+ * page is a hair above the line to begin with.
+ *
+ * Asserted in the contrast suite rather than eyeballed. A texture that costs
+ * legibility is not a texture, it is a stain.
+ */
+export const textureOpacity = { light: 0.01, dark: 0.07 } as const;
+
 export const gradients = {
   /**
    * The commit action, and nothing else.

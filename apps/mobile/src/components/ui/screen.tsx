@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
+import { PageTexture } from './page-texture';
 
 type ScreenProps = {
   children: ReactNode;
@@ -46,6 +47,8 @@ export function Screen({ children, scroll = false, edges, contentStyle }: Screen
       style={[styles.fill, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {/* Under the content, over the colour. */}
+      <PageTexture />
       {body}
     </KeyboardAvoidingView>
   );
