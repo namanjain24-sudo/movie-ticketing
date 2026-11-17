@@ -33,12 +33,34 @@ import { publishSeatDeltas } from '../modules/realtime/seat-events';
  */
 const REFRESH_REUSE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * How long a screening nobody booked is kept after it has happened.
+ *
+ * Three days is far longer than anything reads one. Nothing in the app asks
+ * for a past screening that was never sold: the listings are future-only, a
+ * ticket is read through its booking, and `extend-showtimes` derives its
+ * pattern from the *latest* day on a screen, never an old one.
+ */
+const SPENT_SHOWTIME_RETENTION_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * Screenings removed per tick.
+ *
+ * One screening is roughly 260 seat rows, so this is about 50,000 rows a
+ * tick — enough to clear a day's backlog in a few minutes of sweeping, small
+ * enough that no single statement holds a lock worth noticing. A deployment
+ * that has been running for weeks before this shipped works through its
+ * backlog over a few hours rather than in one enormous delete.
+ */
+const SPENT_SHOWTIME_BATCH = 200;
+
 export interface SweepResult {
   seatsReleased: number;
   holdsExpired: number;
   bookingsCancelled: number;
   idempotencyPurged: number;
   refreshTokensPurged: number;
+  spentShowtimesPurged: number;
 }
 
 export async function sweepOnce(): Promise<SweepResult> {
@@ -106,6 +128,46 @@ export async function sweepOnce(): Promise<SweepResult> {
     },
   });
 
+  /**
+   * Screenings that have happened and that nobody booked.
+   *
+   * This is the table that actually fills the disk, and by a distance. The
+   * note above says refresh tokens were "the one table nothing ever cleaned";
+   * they are 25 rows. `ShowSeat` is 583,000 rows and 249 MB on a fresh seed,
+   * because a seat map is one row per seat per screening — about 260 rows a
+   * screening, 82,000 rows and 35 MB for every day of schedule.
+   *
+   * And the schedule only ever grows. `extend-showtimes` runs on every boot
+   * and keeps ten days on sale; nothing has ever removed the days that fell
+   * off the back. On a free-tier Postgres with a gigabyte to spend, that is
+   * about three weeks from seed to a database that cannot be written to, and
+   * the first thing that fails is a booking.
+   *
+   * What is deleted is only a screening with no booking against it. That
+   * matters more than the retention window does: `Booking.showtimeId` is
+   * ON DELETE CASCADE, so removing a screening somebody bought a seat at
+   * would take their ticket, their split shares and their loyalty history
+   * with it. A screening nobody bought has nothing hanging off it but its own
+   * inventory, its tier prices, its expired holds and any plan option that
+   * pointed at it — all of which are over.
+   *
+   * Batched, and `id IN (...)` rather than a join, so the planner is given an
+   * ordered, bounded set to delete and the cascade follows the five indexes
+   * that already exist on `showtimeId`.
+   */
+  const cutoff = new Date(Date.now() - SPENT_SHOWTIME_RETENTION_MS);
+  const spentShowtimesPurged = await prisma.$executeRaw`
+    DELETE FROM "Showtime"
+    WHERE id IN (
+      SELECT t.id
+      FROM "Showtime" t
+      WHERE t."startsAt" < ${cutoff}
+        AND NOT EXISTS (SELECT 1 FROM "Booking" b WHERE b."showtimeId" = t.id)
+      ORDER BY t."startsAt"
+      LIMIT ${SPENT_SHOWTIME_BATCH}
+    )
+  `;
+
   // Group the released seats per showtime so each channel gets one message.
   const byShowtime = new Map<string, SeatDelta[]>();
   for (const row of released) {
@@ -123,6 +185,7 @@ export async function sweepOnce(): Promise<SweepResult> {
     bookingsCancelled,
     idempotencyPurged,
     refreshTokensPurged,
+    spentShowtimesPurged,
   };
 }
 
@@ -136,6 +199,15 @@ export function startSweeper(): void {
       const result = await sweepOnce();
       if (result.seatsReleased > 0 || result.bookingsCancelled > 0) {
         logger.info(result, 'Sweeper released expired holds');
+      }
+      // Logged on its own, because it is the line that says whether the
+      // database is still growing. A deployment working through a backlog
+      // prints it every tick until there is nothing left to remove.
+      if (result.spentShowtimesPurged > 0) {
+        logger.info(
+          { spentShowtimesPurged: result.spentShowtimesPurged },
+          'Sweeper removed screenings that have happened and were never booked',
+        );
       }
       await reconcilePendingPayments();
     } catch (err) {

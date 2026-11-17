@@ -81,6 +81,28 @@ never oversells. That is asserted directly by the `sweeper-disabled` chaos
 scenario, which ages holds out and then books the seats again with no sweep in
 between.
 
+One of the things it tidies is the only part of this schema that grows without
+limit. A seat map is a row per seat per screening — about 260 rows, and a day
+of schedule across eighteen cinemas is roughly 82,000 rows and 35 MB.
+`extend-showtimes` tops the schedule up on every boot to keep ten days on sale,
+and until recently nothing removed the days that fell off the back: on a
+free-tier Postgres with a gigabyte to spend, about three weeks from seed to a
+database that cannot be written to, where the first thing to fail is a booking.
+
+The sweeper now deletes screenings that started more than three days ago **and
+that have no booking against them**. The second half is the part that matters:
+`Booking.showtimeId` is `ON DELETE CASCADE`, so deleting a screening somebody
+bought a seat at would take the ticket, its split shares and its loyalty
+history with it. A screening nobody bought has nothing hanging off it but its
+own inventory, its tier prices, its expired holds and any plan option that
+pointed at it. Deletes are batched at 200 screenings a tick so a deployment
+with weeks of backlog works through it steadily rather than in one statement.
+
+`VACUUM` returns those pages to the table's free space rather than to the
+operating system, which is the behaviour wanted here: the next day of schedule
+reuses them instead of extending the file, so the table settles at about
+thirteen days of schedule instead of growing for ever.
+
 Comparisons are made against `now()` — the **database** clock — never the API
 process's clock, so several API instances with drifting clocks cannot disagree
 about whether a hold is alive.

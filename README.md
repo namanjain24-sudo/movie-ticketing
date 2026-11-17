@@ -124,7 +124,20 @@ npm run dev                                 # API on :4000, Expo on :8081
 services; it publishes the dev Postgres on 5433 (a common local port conflicts
 with a native install on 5432), Redis on 6380, and a second, tmpfs-backed test
 Postgres on 5434. Adjust `DATABASE_URL` and `REDIS_URL` in `apps/api/.env` to
-match; the test database port is already wired into `vitest.config.ts`.
+match.
+
+`vitest.config.ts` defaults to those Docker ports and takes `DATABASE_URL` and
+`REDIS_URL` from the environment when they are set, so the native setup above
+runs the API suite like this:
+
+```bash
+DATABASE_URL='postgresql://ticketing:ticketing@localhost:5432/ticketing_test?options=-c%20timezone%3DUTC' \
+REDIS_URL='redis://localhost:6379/1' npm test --workspace @app/api
+```
+
+Redis database 1, because 0 is the one the dev API is on and the suite flushes
+what it touches. (`scripts/local-infra.sh start` sets the same two services up
+without Docker and creates `ticketing_test` for you.)
 
 Generate the secrets with `openssl rand -base64 48`. The API refuses to start
 with a missing or short secret, on purpose.
@@ -188,7 +201,7 @@ pricing and the run dates are generated demo data.
 ## Proving it yourself
 
 ```bash
-npm test                    # 182 API tests including real concurrent HTTP, 203 in the app
+npm test                    # 345 API tests including real concurrent HTTP, 634 in the app
 npm run verify:invariants   # 13 assertions against the live database
 
 # Load

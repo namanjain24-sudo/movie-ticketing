@@ -16,12 +16,33 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     env: {
       NODE_ENV: 'test',
-      // timezone pinned on the connection: Prisma's DateTime is `timestamp`
-      // without time zone, and a non-UTC session shifts every value it round trips.
+      /**
+       * The ports `docker compose up -d` publishes, and only the default.
+       *
+       * `scripts/local-infra.sh` is the other supported way to get a database
+       * here — it runs Postgres on 5432 and Redis on 6379, and it already
+       * creates `ticketing_test` for this suite to use. Hardcoded, those two
+       * lines made the whole API suite unrunnable on a machine without Docker:
+       * all thirty files failed in `beforeAll` with `Command failed: npx
+       * prisma migrate deploy`, which says nothing about a port.
+       *
+       * So they are defaults now. With local-infra running:
+       *
+       *   DATABASE_URL='postgresql://ticketing:ticketing@localhost:5432/ticketing_test?options=-c%20timezone%3DUTC' \
+       *   REDIS_URL='redis://localhost:6379/1' npm test --workspace @app/api
+       *
+       * Redis database 1 there, because 0 is the one the dev API is using and
+       * this suite flushes what it touches.
+       *
+       * timezone is pinned on the connection whichever is used: Prisma's
+       * DateTime is `timestamp` without time zone, and a non-UTC session
+       * shifts every value it round trips.
+       */
       DATABASE_URL:
+        process.env.DATABASE_URL ??
         'postgresql://ticketing:ticketing@localhost:5434/ticketing_test?options=-c%20timezone%3DUTC',
       DATABASE_POOL_MAX: '40',
-      REDIS_URL: 'redis://localhost:6380',
+      REDIS_URL: process.env.REDIS_URL ?? 'redis://localhost:6380',
       SWEEPER_ENABLED: 'false',
       MOCK_PAYMENT_FAILURE_RATE: '0',
       MOCK_PAYMENT_LATENCY_MS: '0',
